@@ -604,7 +604,7 @@ function renderOnlineScoreboard(){
     <div class="player-card ${oroom.activePlayer===p.id?'active':''}">
       <div class="pname">${p.name}${p.id===myId?' (나)':''}</div>
       <div class="pscore">${p.score}</div>
-      ${p.id===myId?`<button class="claim-btn" id="my-claim-btn" ${oroom.activePlayer!==null?'disabled':''}>SET!</button>`:''}
+      ${p.id===myId?`<button class="claim-btn" id="my-claim-btn" ${oroom.activePlayer?'disabled':''}>SET!</button>`:''}
     </div>`).join('');
   const btn=document.getElementById('my-claim-btn');
   if(btn) btn.addEventListener('click', onlineClaim);
