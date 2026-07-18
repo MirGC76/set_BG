@@ -151,9 +151,21 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
     <div class="panel">
       <h2>진행 방식</h2>
       <div class="row-btns" id="mode-grid">
+        <button class="opt-btn" data-mode="solo">혼자 (컴퓨터 대전)</button>
         <button class="opt-btn selected" data-mode="local">한 기기에서 함께</button>
         <button class="opt-btn" data-mode="online">온라인으로 함께</button>
       </div>
+    </div>
+
+    <div class="panel hidden" id="solo-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="solo-count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+      <h2 style="margin-top:18px;">내가 플레이할 색</h2>
+      <div class="row-btns" id="solo-color-grid"></div>
     </div>
 
     <div class="panel" id="local-panel">
@@ -434,29 +446,34 @@ function activeColorsFor(numPlayers){
 }
 function ownerIdxForSlot(numPlayers, slotIdx){ return numPlayers===2 ? (slotIdx%2) : slotIdx; }
 
-/* ============ LOCAL (same-device) ============ */
+/* ============ LOCAL (same-device, also used for solo-vs-computer) ============ */
 let board=null;
-let players=[]; // {color,name,corner,piecesLeftIds,hasPlaced,lastPieceSize,humanLabel}
+let players=[]; // {color,name,corner,piecesLeftIds,hasPlaced,lastPieceSize,humanLabel,ownerIdx}
 let currentPlayerIdx=0;
 let selected=null; // {trayIdx, cells}
 let previewAnchor=null;
 let gameOver=false;
+let aiOwners=new Set(); // ownerIdx values controlled by the computer (empty = pure pass-and-play)
 
-function newLocalGame(numPlayers){
+function newLocalGame(numPlayers, aiOwnerIdxList){
   const order=activeColorsFor(numPlayers);
   board=emptyBoard();
+  aiOwners=new Set(aiOwnerIdxList||[]);
   const ownerGroups={};
   order.forEach((color,i)=>{ const oi=ownerIdxForSlot(numPlayers,i); (ownerGroups[oi]=ownerGroups[oi]||[]).push(color); });
   players=order.map((color,i)=>{
     const oi=ownerIdxForSlot(numPlayers,i);
     const owned=ownerGroups[oi];
-    const humanLabel = numPlayers===2 ? `플레이어 ${oi+1} (${owned.map(c=>COLOR_NAME[c]).join('·')})` : COLOR_NAME[color];
-    return { color, name:COLOR_NAME[color], corner:CORNERS[color], piecesLeftIds:ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0, humanLabel };
+    const isAi=aiOwners.has(oi);
+    const baseLabel = numPlayers===2 ? `플레이어 ${oi+1} (${owned.map(c=>COLOR_NAME[c]).join('·')})` : COLOR_NAME[color];
+    const humanLabel = isAi ? `${baseLabel} 🤖` : baseLabel;
+    return { color, name:COLOR_NAME[color], corner:CORNERS[color], piecesLeftIds:ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0, humanLabel, ownerIdx:oi };
   });
   currentPlayerIdx=0; selected=null; previewAnchor=null; gameOver=false;
   applyZoom();
   renderLocalAll();
   setMessage(`${players[0].humanLabel} 차례 (${players[0].name}) — 시작 모서리(★)를 덮는 조각을 놓아보세요`,'info');
+  maybeTriggerAiTurn();
 }
 function renderLocalAll(){ renderLocalScoreboard(); renderLocalBoard(); renderLocalTray(); renderLocalControls(); }
 function renderLocalScoreboard(){
@@ -508,10 +525,12 @@ function renderLocalTray(){
   });
 }
 function renderLocalControls(){
+  const aiTurn=aiOwners.has(players[currentPlayerIdx].ownerIdx);
   const hasSel=!!selected;
   document.getElementById('rotate-btn').disabled=!hasSel;
   document.getElementById('flip-btn').disabled=!hasSel;
   document.getElementById('cancel-btn').disabled=!hasSel;
+  document.getElementById('pass-btn').disabled=aiTurn||gameOver;
   let canPlace=false;
   if(hasSel && previewAnchor){
     const player=players[currentPlayerIdx];
@@ -521,6 +540,7 @@ function renderLocalControls(){
   document.getElementById('place-btn').disabled=!canPlace;
 }
 function selectLocalPiece(idx){
+  if(gameOver || aiOwners.has(players[currentPlayerIdx].ownerIdx)) return;
   const player=players[currentPlayerIdx];
   selected={ trayIdx:idx, cells: normalize(PIECE_BY_ID[player.piecesLeftIds[idx]].cells) };
   previewAnchor=null;
@@ -528,6 +548,7 @@ function selectLocalPiece(idx){
 }
 function onLocalCellClick(r,c){
   if(!selected || gameOver) return;
+  if(aiOwners.has(players[currentPlayerIdx].ownerIdx)) return;
   previewAnchor={r,c};
   renderLocalBoard(); renderLocalControls();
 }
@@ -540,6 +561,7 @@ function advanceLocalTurn(){
       currentPlayerIdx=idx;
       setMessage(skipped.length ? `${skipped.join(', ')} 패스 → ${p.humanLabel} 차례 (${p.name})` : `${p.humanLabel} 차례 (${p.name})`, 'info');
       renderLocalAll();
+      maybeTriggerAiTurn();
       return;
     }
     skipped.push(p.name);
@@ -556,23 +578,90 @@ function endLocalGame(){
   });
   showEndModal(scored);
 }
+
+/* ============ SIMPLE HEURISTIC AI (for solo-vs-computer mode) ============ */
+function countOpenCorners(tempBoard, abs){
+  const set=new Set();
+  for(const [r,c] of abs){
+    for(const [dr,dc] of DIAG_DIRS){
+      const nr=r+dr, nc=c+dc;
+      if(inBounds(nr,nc) && !cellAt(tempBoard,nr,nc)) set.add(nr+'_'+nc);
+    }
+  }
+  return set.size;
+}
+function scoreMove(boardArr, abs, pieceSize){
+  const temp=boardArr.slice();
+  abs.forEach(([r,c])=>setCellAt(temp,r,c,'x'));
+  const openCorners=countOpenCorners(temp, abs);
+  const centerBias=-abs.reduce((s,[r,c])=>s+Math.hypot(r-9.5,c-9.5),0)/abs.length;
+  return pieceSize*1000 + openCorners*8 + centerBias*2 + Math.random()*3;
+}
+function findBestMove(boardArr, piecesLeftIds, hasPlaced, color, corner){
+  const isFirst=!hasPlaced;
+  const candidates=[];
+  for(const pid of piecesLeftIds){
+    const pieceSize=PIECE_BY_ID[pid].cells.length;
+    const orientations=allOrientations(PIECE_BY_ID[pid].cells);
+    for(const cells of orientations){
+      const maxR=Math.max(...cells.map(c=>c[0])), maxC=Math.max(...cells.map(c=>c[1]));
+      let rStart=0, rEnd=BOARD_SIZE-1-maxR, cStart=0, cEnd=BOARD_SIZE-1-maxC;
+      if(isFirst){
+        rStart=Math.max(0, corner.r-maxR); rEnd=Math.min(BOARD_SIZE-1-maxR, corner.r);
+        cStart=Math.max(0, corner.c-maxC); cEnd=Math.min(BOARD_SIZE-1-maxC, corner.c);
+      }
+      for(let r=rStart;r<=rEnd;r++){
+        for(let c=cStart;c<=cEnd;c++){
+          const abs=cells.map(([dr,dc])=>[r+dr,c+dc]);
+          if(validatePlacement(boardArr, abs, color, isFirst, corner).valid){
+            candidates.push({ pid, cells, abs, score: scoreMove(boardArr, abs, pieceSize) });
+          }
+        }
+      }
+    }
+  }
+  if(candidates.length===0) return null;
+  candidates.sort((a,b)=>b.score-a.score);
+  const topN=candidates.slice(0, Math.min(5, candidates.length));
+  return topN[Math.floor(Math.random()*topN.length)];
+}
+function maybeTriggerAiTurn(){
+  if(gameOver) return;
+  const player=players[currentPlayerIdx];
+  if(!aiOwners.has(player.ownerIdx)) return;
+  setMessage(`${player.humanLabel} 생각 중...`,'info');
+  setTimeout(performAiTurn, 650);
+}
+function performAiTurn(){
+  if(gameOver) return;
+  const player=players[currentPlayerIdx];
+  if(!aiOwners.has(player.ownerIdx)) return; // safety: turn may have changed already
+  const move=findBestMove(board, player.piecesLeftIds, player.hasPlaced, player.color, player.corner);
+  if(!move){ advanceLocalTurn(); return; }
+  move.abs.forEach(([r,c])=>setCellAt(board,r,c,player.color));
+  player.hasPlaced=true;
+  player.lastPieceSize=move.cells.length;
+  player.piecesLeftIds.splice(player.piecesLeftIds.indexOf(move.pid),1);
+  renderLocalAll();
+  setTimeout(advanceLocalTurn, 300);
+}
 document.getElementById('rotate-btn').addEventListener('click',()=>{
-  if(currentMode==='local'){ if(!selected) return; selected.cells=rotate90(selected.cells); renderLocalBoard(); renderLocalControls(); }
+  if(currentMode!=='online'){ if(!selected) return; selected.cells=rotate90(selected.cells); renderLocalBoard(); renderLocalControls(); }
   else { if(!oSelected) return; oSelected.cells=rotate90(oSelected.cells); renderOnlineBoard(); renderOnlineControls(); }
 });
 document.getElementById('flip-btn').addEventListener('click',()=>{
-  if(currentMode==='local'){ if(!selected) return; selected.cells=flipH(selected.cells); renderLocalBoard(); renderLocalControls(); }
+  if(currentMode!=='online'){ if(!selected) return; selected.cells=flipH(selected.cells); renderLocalBoard(); renderLocalControls(); }
   else { if(!oSelected) return; oSelected.cells=flipH(oSelected.cells); renderOnlineBoard(); renderOnlineControls(); }
 });
 document.getElementById('cancel-btn').addEventListener('click',()=>{
-  if(currentMode==='local'){ selected=null; previewAnchor=null; renderLocalTray(); renderLocalBoard(); renderLocalControls(); }
+  if(currentMode!=='online'){ selected=null; previewAnchor=null; renderLocalTray(); renderLocalBoard(); renderLocalControls(); }
   else { oSelected=null; oPreviewAnchor=null; renderOnlineTray(); renderOnlineBoard(); renderOnlineControls(); }
 });
 document.getElementById('place-btn').addEventListener('click',()=>{
-  if(currentMode==='local') localConfirmPlace(); else onlineConfirmPlace();
+  if(currentMode!=='online') localConfirmPlace(); else onlineConfirmPlace();
 });
 document.getElementById('pass-btn').addEventListener('click',()=>{
-  if(currentMode==='local'){ if(gameOver) return; selected=null; previewAnchor=null; advanceLocalTurn(); }
+  if(currentMode!=='online'){ if(gameOver) return; if(aiOwners.has(players[currentPlayerIdx].ownerIdx)) return; selected=null; previewAnchor=null; advanceLocalTurn(); }
   else { onlinePass(); }
 });
 function localConfirmPlace(){
@@ -892,6 +981,7 @@ document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
     document.querySelectorAll('#mode-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
     currentMode=btn.dataset.mode;
+    document.getElementById('solo-panel').classList.toggle('hidden', currentMode!=='solo');
     document.getElementById('local-panel').classList.toggle('hidden', currentMode!=='local');
     document.getElementById('online-panel').classList.toggle('hidden', currentMode!=='online');
     document.getElementById('start-btn').classList.toggle('hidden', currentMode==='online');
@@ -920,6 +1010,38 @@ document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
   });
 });
 renderColorOrderPreview(chosenCount);
+
+let soloCount=3, soloHumanOwnerIdx=0;
+function renderSoloColorOptions(n){
+  const el=document.getElementById('solo-color-grid');
+  if(n===2){
+    el.innerHTML=`
+      <button class="opt-btn selected" data-owner="0">블루·레드 (플레이어 1)</button>
+      <button class="opt-btn" data-owner="1">옐로우·그린 (플레이어 2)</button>
+    `;
+  } else {
+    const order=COLOR_ORDER.slice(0,n);
+    el.innerHTML=order.map((c,i)=>`<button class="opt-btn ${i===0?'selected':''}" data-owner="${i}">${COLOR_NAME[c]}</button>`).join('');
+  }
+  soloHumanOwnerIdx=0;
+  el.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      soloHumanOwnerIdx=+btn.dataset.owner;
+    });
+  });
+}
+renderSoloColorOptions(soloCount);
+document.querySelectorAll('#solo-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#solo-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    soloCount=+btn.dataset.count;
+    renderSoloColorOptions(soloCount);
+  });
+});
+
 document.querySelectorAll('#online-count-grid .opt-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('#online-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
@@ -937,7 +1059,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 document.getElementById('start-btn').addEventListener('click',()=>{
   showScreen('game');
-  newLocalGame(chosenCount);
+  if(currentMode==='solo'){
+    const aiList=[...Array(soloCount).keys()].filter(o=>o!==soloHumanOwnerIdx);
+    newLocalGame(soloCount, aiList);
+  } else {
+    newLocalGame(chosenCount, []);
+  }
 });
 document.getElementById('create-room-btn').addEventListener('click',()=>{
   createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
