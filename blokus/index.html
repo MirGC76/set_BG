@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4, user-scalable=yes">
+<title>블로커스</title>
+<style>
+:root{
+  --bg-deep:#12181F;
+  --bg-mid:#1B2430;
+  --line:#2A3644;
+  --paper:#EDEAE0;
+  --paper-line:#D8D2BE;
+  --ink:#182030;
+  --text:#EAF0F5;
+  --muted:#8CA0B3;
+  --amber:#E0B93C;
+  --blue:#2E6DA4;
+  --yellow:#E0B93C;
+  --red:#C0392B;
+  --green:#1E8449;
+  --good:#2FA84F;
+  --bad:#D8483D;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  min-height:100vh;
+  background:linear-gradient(180deg,var(--bg-deep),var(--bg-mid));
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Pretendard",sans-serif;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.hidden{display:none !important;}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 12px 50px;}
+.back-link{align-self:flex-start;color:var(--muted);font-size:12.5px;text-decoration:none;margin-bottom:10px;}
+
+/* ---------- SETUP ---------- */
+#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:2vh;}
+.swatches{display:flex;gap:8px;margin-bottom:10px;}
+.swatch{width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);}
+h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margin:4px 0;}
+.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:22px;text-align:center;}
+.panel{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+.panel h2{font-size:12.5px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;text-transform:uppercase;}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.opt-btn{flex:1;min-width:90px;background:rgba(255,255,255,0.05);border:2px solid var(--line);color:var(--text);border-radius:10px;padding:13px 8px;font-weight:800;font-size:14px;cursor:pointer;}
+.opt-btn.selected,.opt-btn:hover{border-color:var(--amber);background:rgba(224,185,60,0.14);}
+.start-btn{margin-top:8px;background:linear-gradient(180deg,#F2CE6A,var(--amber));color:var(--ink);border:none;border-radius:10px;padding:15px 40px;font-weight:900;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #a8871f;}
+.start-btn:active{transform:translateY(3px);box-shadow:none;}
+.start-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.rules-box{font-size:12px;color:var(--muted);line-height:1.7;text-align:left;}
+.rules-box b{color:var(--text);}
+.color-order{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap;}
+.color-order .pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.color-order .dot{width:12px;height:12px;border-radius:50%;}
+.text-input{width:100%;padding:12px 14px;border-radius:8px;border:2px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;margin-bottom:10px;}
+.text-input::placeholder{color:var(--muted);}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tab-btn{flex:1;background:transparent;border:2px solid var(--line);color:var(--muted);border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;}
+.tab-btn.selected{border-color:var(--amber);color:var(--text);background:rgba(224,185,60,0.1);}
+.warn-note{font-size:11.5px;color:var(--amber);background:rgba(224,185,60,0.1);border-radius:8px;padding:8px 12px;margin-top:6px;line-height:1.6;}
+.field-msg{font-size:12.5px;color:var(--bad);min-height:16px;margin:-4px 0 8px;}
+
+/* ---------- LOBBY ---------- */
+#lobby{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;margin-top:5vh;}
+.room-code-box{background:rgba(255,255,255,0.06);border:2px dashed var(--amber);border-radius:14px;padding:20px 34px;text-align:center;margin-bottom:20px;}
+.room-code-box .lbl{font-size:12px;color:var(--muted);letter-spacing:2px;}
+.room-code-box .code{font-size:40px;font-weight:900;letter-spacing:8px;color:var(--amber);margin-top:4px;}
+.lobby-players{width:100%;background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px;}
+.lobby-player{display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:15px;border-bottom:1px solid var(--line);}
+.lobby-player:last-child{border-bottom:none;}
+.lobby-player .dot{width:14px;height:14px;border-radius:4px;}
+.host-badge{font-size:10px;background:var(--amber);color:var(--ink);border-radius:6px;padding:2px 6px;margin-left:6px;font-weight:800;}
+.waiting-msg{color:var(--muted);font-size:14px;text-align:center;margin-top:6px;}
+
+/* ---------- GAME ---------- */
+#game{width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:center;}
+.topbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;}
+.zoom-row{display:flex;align-items:center;gap:8px;}
+.zoom-btn{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--text);border-radius:8px;width:32px;height:32px;font-size:17px;font-weight:800;cursor:pointer;}
+.zoom-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.zoom-pct{font-size:12px;color:var(--muted);min-width:40px;text-align:center;}
+
+.scoreboard{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;margin:4px 0 12px;}
+.player-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:2px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700;}
+.player-chip .dot{width:14px;height:14px;border-radius:4px;}
+.player-chip.active{border-color:var(--amber);box-shadow:0 0 0 3px rgba(224,185,60,0.2);}
+.player-chip .score{color:var(--muted);font-weight:400;}
+
+.banner{min-height:18px;margin-bottom:12px;padding:8px 20px;border-radius:20px;font-weight:700;font-size:13.5px;letter-spacing:0.5px;text-align:center;}
+.banner.good{background:rgba(47,168,79,0.2);color:#8CE6A0;}
+.banner.bad{background:rgba(216,72,61,0.2);color:#FF9B8F;}
+.banner.info{background:rgba(255,255,255,0.07);color:var(--muted);}
+
+.board-wrap{width:100%;max-width:640px;overflow:auto;background:var(--paper);border:8px solid #3a4658;border-radius:10px;padding:10px;box-shadow:0 14px 30px rgba(0,0,0,0.45);}
+.board{display:grid;grid-template-columns:repeat(20, 22px);grid-template-rows:repeat(20, 22px);gap:1px;background:var(--paper-line);width:max-content;margin:0 auto;}
+.cell{background:var(--paper);position:relative;cursor:pointer;}
+.cell.filled-blue{background:var(--blue);}
+.cell.filled-yellow{background:var(--yellow);}
+.cell.filled-red{background:var(--red);}
+.cell.filled-green{background:var(--green);}
+.cell.corner-marker::after{content:"★";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;}
+.cell.corner-blue::after{color:var(--blue);}
+.cell.corner-yellow::after{color:var(--yellow);}
+.cell.corner-red::after{color:var(--red);}
+.cell.corner-green::after{color:var(--green);}
+.cell.preview-ok{box-shadow:inset 0 0 0 2px rgba(47,168,79,0.9);background:rgba(47,168,79,0.55);}
+.cell.preview-bad{box-shadow:inset 0 0 0 2px rgba(216,72,61,0.9);background:rgba(216,72,61,0.45);}
+
+.controls-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.ctrl-btn{background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.ctrl-btn.primary{background:linear-gradient(180deg,#F2CE6A,var(--amber));color:var(--ink);border:none;}
+.ctrl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.ctrl-btn.danger{border-color:var(--red);color:#FF9B8F;}
+
+.tray-title{font-size:12px;color:var(--muted);letter-spacing:1px;margin:6px 0 8px;text-transform:uppercase;}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:900px;margin-bottom:20px;}
+.piece-btn{background:rgba(255,255,255,0.05);border:2px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;}
+.piece-btn.selected{border-color:var(--amber);background:rgba(224,185,60,0.15);}
+.piece-btn:hover{border-color:var(--amber);}
+
+#end-overlay{position:fixed;inset:0;background:rgba(6,10,15,0.85);display:flex;align-items:center;justify-content:center;z-index:50;}
+#end-modal{background:var(--bg-mid);border:1px solid var(--line);border-radius:16px;padding:30px 28px;max-width:420px;width:90%;text-align:center;}
+#end-modal h2{font-size:22px;margin:0 0 6px;}
+#end-modal .win-name{color:var(--amber);font-weight:900;font-size:24px;margin:10px 0;}
+#end-modal .scores{margin:14px 0;font-size:14px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
+
+#config-error{position:fixed;inset:0;background:rgba(6,10,15,0.94);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center;}
+#config-error .box{max-width:520px;background:var(--bg-mid);border:1px solid var(--bad);border-radius:14px;padding:28px;}
+#config-error code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP -->
+  <div id="setup">
+    <a href="../" class="back-link">← 게임 허브로</a>
+    <div class="swatches">
+      <div class="swatch" style="background:#2E6DA4"></div>
+      <div class="swatch" style="background:#E0B93C"></div>
+      <div class="swatch" style="background:#C0392B"></div>
+      <div class="swatch" style="background:#1E8449"></div>
+    </div>
+    <h1 class="title">블 로 커 스</h1>
+    <div class="subtitle">20×20 보드에 21개의 조각을 채워나가는 진영 다툼 퍼즐게임</div>
+
+    <div class="panel">
+      <h2>진행 방식</h2>
+      <div class="row-btns" id="mode-grid">
+        <button class="opt-btn selected" data-mode="local">한 기기에서 함께</button>
+        <button class="opt-btn" data-mode="online">온라인으로 함께</button>
+      </div>
+    </div>
+
+    <div class="panel" id="local-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+      <div class="color-order" id="color-order-preview"></div>
+    </div>
+
+    <div class="panel hidden" id="online-panel">
+      <h2>온라인 대결</h2>
+      <div class="tabs">
+        <button class="tab-btn selected" data-tab="create">방 만들기</button>
+        <button class="tab-btn" data-tab="join">참가하기</button>
+      </div>
+      <div id="create-tab">
+        <input class="text-input" id="create-name" placeholder="내 이름" maxlength="10">
+        <div class="row-btns" id="online-count-grid">
+          <button class="opt-btn" data-count="2">2명</button>
+          <button class="opt-btn selected" data-count="3">3명</button>
+          <button class="opt-btn" data-count="4">4명</button>
+        </div>
+        <div class="field-msg" id="create-msg"></div>
+        <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
+      </div>
+      <div id="join-tab" class="hidden">
+        <input class="text-input" id="join-name" placeholder="내 이름" maxlength="10">
+        <input class="text-input" id="join-code" placeholder="방 코드 (예: 7QXM)" maxlength="4" style="text-transform:uppercase;">
+        <div class="field-msg" id="join-msg"></div>
+        <button class="start-btn" id="join-room-btn" style="width:100%;">참가하기</button>
+      </div>
+      <div class="warn-note">⚠️ 방 코드를 아는 사람은 누구나 참가할 수 있어요. 순서는 방에 들어온 순서대로 파랑→노랑→빨강→초록이 배정됩니다.</div>
+    </div>
+
+    <button class="start-btn" id="start-btn">게임 시작</button>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>규칙 요약</h2>
+      <div class="rules-box">
+        <b>① 시작</b> — 각자 자신의 시작 모서리 칸을 반드시 덮으며 첫 조각을 놓습니다.<br>
+        <b>② 이어 놓기</b> — 이후에는 자신의 조각과 <b>변(모서리 선)은 맞닿을 수 없고</b>, 반드시 <b>꼭짓점(대각선)</b>으로만 이어져야 합니다.<br>
+        <b>③ 다른 색</b> — 다른 사람의 조각과는 변이 맞닿아도 상관없습니다.<br>
+        <b>④ 회전·뒤집기</b> — 조각은 자유롭게 돌리고 뒤집어서 놓을 수 있습니다.<br>
+        <b>⑤ 종료·점수</b> — 더 이상 아무도 놓을 곳이 없으면 종료. 남은 칸 수만큼 감점, 21개를 모두 놓으면 +15점, 그 마지막 조각이 1칸짜리면 +5점 추가.<br>
+        더 놓을 곳이 없는 사람은 자동으로 건너뛰고 다음 사람 차례가 됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY (online only) -->
+  <div id="lobby" class="hidden">
+    <div class="room-code-box">
+      <div class="lbl">방 코드</div>
+      <div class="code" id="lobby-code">----</div>
+    </div>
+    <div class="lobby-players" id="lobby-players"></div>
+    <button class="start-btn hidden" id="lobby-start-btn">게임 시작</button>
+    <div class="waiting-msg" id="lobby-waiting"></div>
+    <button class="icon-btn" id="lobby-leave-btn" style="margin-top:16px;">방 나가기</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="quit-btn">← 처음으로</button>
+      <div class="zoom-row">
+        <span style="font-size:11.5px;color:var(--muted);">화면 크기</span>
+        <button class="zoom-btn" id="zoom-out-btn">－</button>
+        <span class="zoom-pct" id="zoom-pct">100%</span>
+        <button class="zoom-btn" id="zoom-in-btn">＋</button>
+      </div>
+    </div>
+
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="banner info" id="banner">게임을 시작합니다</div>
+
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+
+    <div class="controls-row">
+      <button class="ctrl-btn" id="rotate-btn" disabled>↻ 회전</button>
+      <button class="ctrl-btn" id="flip-btn" disabled>⇋ 뒤집기</button>
+      <button class="ctrl-btn primary" id="place-btn" disabled>여기에 놓기</button>
+      <button class="ctrl-btn" id="cancel-btn" disabled>선택 취소</button>
+      <button class="ctrl-btn danger" id="pass-btn">패스</button>
+    </div>
+
+    <div class="tray-title">내 조각함</div>
+    <div class="tray" id="tray"></div>
+  </div>
+
+</div>
+
+<div id="end-overlay" class="hidden">
+  <div id="end-modal">
+    <h2>게임 종료!</h2>
+    <div class="win-name" id="win-name"></div>
+    <div class="scores" id="final-scores"></div>
+    <div style="margin-top:16px;"><button class="start-btn" id="restart-btn">처음으로</button></div>
+  </div>
+</div>
+
+<div id="config-error" class="hidden">
+  <div class="box">
+    <h2 style="margin-top:0;">Firebase 설정이 필요해요</h2>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+      <code>firebase-config.js</code> 파일의 설정값이 채워지지 않았어요. 같이 배포한 README.md를 참고해주세요.
+      (한 기기에서 함께 모드는 설정 없이도 바로 사용할 수 있습니다.)
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "../firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, get, update, onValue, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ============ PIECE DEFINITIONS (21 pieces, 89 total squares) ============ */
+const PIECE_DEFS=[
+  {id:'mono1', cells:[[0,0]]},
+  {id:'domino2', cells:[[0,0],[0,1]]},
+  {id:'tri3_I', cells:[[0,0],[0,1],[0,2]]},
+  {id:'tri3_L', cells:[[0,0],[1,0],[1,1]]},
+  {id:'tet4_I', cells:[[0,0],[0,1],[0,2],[0,3]]},
+  {id:'tet4_O', cells:[[0,0],[0,1],[1,0],[1,1]]},
+  {id:'tet4_T', cells:[[0,0],[0,1],[0,2],[1,1]]},
+  {id:'tet4_S', cells:[[0,1],[0,2],[1,0],[1,1]]},
+  {id:'tet4_L', cells:[[0,0],[1,0],[2,0],[2,1]]},
+  {id:'pent5_F', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]]},
+  {id:'pent5_I', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]]},
+  {id:'pent5_L', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]]},
+  {id:'pent5_N', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]]},
+  {id:'pent5_P', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]]},
+  {id:'pent5_T', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]]},
+  {id:'pent5_U', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]]},
+  {id:'pent5_V', cells:[[0,0],[1,0],[2,0],[2,1],[2,2]]},
+  {id:'pent5_W', cells:[[0,0],[1,0],[1,1],[2,1],[2,2]]},
+  {id:'pent5_X', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]]},
+  {id:'pent5_Y', cells:[[0,1],[1,0],[1,1],[2,1],[3,1]]},
+  {id:'pent5_Z', cells:[[0,0],[0,1],[1,1],[2,1],[2,2]]},
+];
+const PIECE_BY_ID=Object.fromEntries(PIECE_DEFS.map(p=>[p.id,p]));
+const ALL_PIECE_IDS=PIECE_DEFS.map(p=>p.id);
+const BOARD_SIZE=20;
+const COLOR_HEX={blue:'#2E6DA4', yellow:'#E0B93C', red:'#C0392B', green:'#1E8449'};
+const COLOR_NAME={blue:'블루', yellow:'옐로우', red:'레드', green:'그린'};
+const CORNERS={
+  blue:{r:0,c:0}, yellow:{r:0,c:BOARD_SIZE-1}, red:{r:BOARD_SIZE-1,c:BOARD_SIZE-1}, green:{r:BOARD_SIZE-1,c:0}
+};
+const COLOR_ORDER=['blue','yellow','red','green'];
+const EDGE_DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+const DIAG_DIRS=[[1,1],[1,-1],[-1,1],[-1,-1]];
+
+function normalize(cells){
+  const minR=Math.min(...cells.map(c=>c[0])), minC=Math.min(...cells.map(c=>c[1]));
+  return cells.map(([r,c])=>[r-minR,c-minC]);
+}
+function rotate90(cells){ return normalize(cells.map(([r,c])=>[c,-r])); }
+function flipH(cells){ return normalize(cells.map(([r,c])=>[r,-c])); }
+function cellsKey(cells){ return cells.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(c=>c.join(',')).join(';'); }
+function allOrientations(baseCells){
+  const results=[]; const seen=new Set();
+  let cur=normalize(baseCells);
+  for(let f=0; f<2; f++){
+    let rc=cur;
+    for(let i=0;i<4;i++){
+      const key=cellsKey(rc);
+      if(!seen.has(key)){ seen.add(key); results.push(rc); }
+      rc=rotate90(rc);
+    }
+    cur=flipH(cur);
+  }
+  return results;
+}
+function miniPieceSVG(cells, colorHex, cellPx){
+  const maxR=Math.max(...cells.map(c=>c[0]))+1, maxC=Math.max(...cells.map(c=>c[1]))+1;
+  const w=maxC*cellPx, h=maxR*cellPx;
+  const rects=cells.map(([r,c])=>`<rect x="${c*cellPx}" y="${r*cellPx}" width="${cellPx-1}" height="${cellPx-1}" rx="1.5" fill="${colorHex}"/>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+}
+
+/* ============ SHARED ENGINE (works on a flat 400-cell board array; "" = empty) ============ */
+function emptyBoard(){ return Array(BOARD_SIZE*BOARD_SIZE).fill(""); }
+function inBounds(r,c){ return r>=0&&r<BOARD_SIZE&&c>=0&&c<BOARD_SIZE; }
+function cellAt(board,r,c){ return board[r*BOARD_SIZE+c] || null; }
+function setCellAt(board,r,c,color){ board[r*BOARD_SIZE+c]=color; }
+
+function validatePlacement(board, absCells, color, isFirst, corner){
+  for(const [r,c] of absCells){
+    if(!inBounds(r,c)) return {valid:false, reason:'보드를 벗어났어요'};
+    if(cellAt(board,r,c)) return {valid:false, reason:'이미 다른 조각이 있는 칸이에요'};
+  }
+  if(isFirst){
+    const coversCorner=absCells.some(([r,c])=>r===corner.r && c===corner.c);
+    if(!coversCorner) return {valid:false, reason:'첫 조각은 시작 모서리(★)를 덮어야 해요'};
+    return {valid:true};
+  }
+  for(const [r,c] of absCells){
+    for(const [dr,dc] of EDGE_DIRS){
+      const nr=r+dr, nc=c+dc;
+      if(inBounds(nr,nc) && cellAt(board,nr,nc)===color) return {valid:false, reason:'같은 색 조각과 변이 맞닿을 수 없어요'};
+    }
+  }
+  let hasCorner=false;
+  for(const [r,c] of absCells){
+    for(const [dr,dc] of DIAG_DIRS){
+      const nr=r+dr, nc=c+dc;
+      if(inBounds(nr,nc) && cellAt(board,nr,nc)===color) hasCorner=true;
+    }
+  }
+  if(!hasCorner) return {valid:false, reason:'같은 색 조각과 꼭짓점(대각선)으로 연결되어야 해요'};
+  return {valid:true};
+}
+function hasAnyLegalMove(board, piecesLeftIds, hasPlaced, color, corner){
+  const isFirst=!hasPlaced;
+  for(const pid of piecesLeftIds){
+    const orientations=allOrientations(PIECE_BY_ID[pid].cells);
+    for(const cells of orientations){
+      const maxR=Math.max(...cells.map(c=>c[0])), maxC=Math.max(...cells.map(c=>c[1]));
+      let rStart=0, rEnd=BOARD_SIZE-1-maxR, cStart=0, cEnd=BOARD_SIZE-1-maxC;
+      if(isFirst){
+        rStart=Math.max(0, corner.r-maxR); rEnd=Math.min(BOARD_SIZE-1-maxR, corner.r);
+        cStart=Math.max(0, corner.c-maxC); cEnd=Math.min(BOARD_SIZE-1-maxC, corner.c);
+      }
+      for(let r=rStart;r<=rEnd;r++){
+        for(let c=cStart;c<=cEnd;c++){
+          const abs=cells.map(([dr,dc])=>[r+dr,c+dc]);
+          if(validatePlacement(board, abs, color, isFirst, corner).valid) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+function computeScore(piecesLeftIds, lastPieceSize){
+  const usedAll=piecesLeftIds.length===0;
+  const remainingSquares=piecesLeftIds.reduce((s,pid)=>s+PIECE_BY_ID[pid].cells.length,0);
+  let score=-remainingSquares;
+  if(usedAll){ score+=15; if(lastPieceSize===1) score+=5; }
+  return score;
+}
+
+/* ============ SHARED UI HELPERS ============ */
+const SCREENS=['setup','lobby','game'];
+function showScreen(id){ SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
+function setMessage(text, kind){
+  const b=document.getElementById('banner');
+  b.textContent=text; b.className='banner '+kind;
+}
+
+/* ============ ZOOM (whole game screen) ============ */
+const UI_ZOOM_DEFAULT=1, UI_ZOOM_MIN=0.5, UI_ZOOM_MAX=1.8, UI_ZOOM_STEP=0.1;
+let uiZoom=UI_ZOOM_DEFAULT;
+function applyZoom(){
+  document.getElementById('game').style.zoom=uiZoom;
+  document.getElementById('zoom-pct').textContent=Math.round(uiZoom*100)+'%';
+  document.getElementById('zoom-out-btn').disabled=uiZoom<=UI_ZOOM_MIN+1e-9;
+  document.getElementById('zoom-in-btn').disabled=uiZoom>=UI_ZOOM_MAX-1e-9;
+}
+document.getElementById('zoom-out-btn').addEventListener('click',()=>{ uiZoom=Math.max(UI_ZOOM_MIN, +(uiZoom-UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Math.min(UI_ZOOM_MAX, +(uiZoom+UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+
+/* ============ MODE STATE ============ */
+let currentMode='local'; // 'local' | 'online'
+
+/* ============ LOCAL (same-device) ============ */
+let board=null;
+let players=[]; // {color,name,corner,piecesLeftIds,hasPlaced,lastPieceSize}
+let currentPlayerIdx=0;
+let selected=null; // {trayIdx, cells}
+let previewAnchor=null;
+let gameOver=false;
+
+function newLocalGame(numPlayers){
+  const order=COLOR_ORDER.slice(0,numPlayers);
+  board=emptyBoard();
+  players=order.map(color=>({
+    color, name:COLOR_NAME[color], corner:CORNERS[color],
+    piecesLeftIds: ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0
+  }));
+  currentPlayerIdx=0; selected=null; previewAnchor=null; gameOver=false;
+  applyZoom();
+  renderLocalAll();
+  setMessage(`${players[0].name} 차례 — 시작 모서리(★)를 덮는 조각을 놓아보세요`,'info');
+}
+function renderLocalAll(){ renderLocalScoreboard(); renderLocalBoard(); renderLocalTray(); renderLocalControls(); }
+function renderLocalScoreboard(){
+  const sb=document.getElementById('scoreboard');
+  sb.innerHTML=players.map((p,i)=>`
+    <div class="player-chip ${i===currentPlayerIdx?'active':''}">
+      <div class="dot" style="background:${COLOR_HEX[p.color]}"></div>
+      ${p.name} <span class="score">· ${p.piecesLeftIds.length}개 남음</span>
+    </div>`).join('');
+}
+function renderLocalBoard(){
+  const el=document.getElementById('board'); el.innerHTML='';
+  let previewSet=null, previewValid=false;
+  if(selected && previewAnchor){
+    const abs=selected.cells.map(([dr,dc])=>[previewAnchor.r+dr, previewAnchor.c+dc]);
+    const player=players[currentPlayerIdx];
+    const result=validatePlacement(board, abs, player.color, !player.hasPlaced, player.corner);
+    previewValid=result.valid;
+    previewSet=new Set(abs.filter(([r,c])=>inBounds(r,c)).map(([r,c])=>r+'_'+c));
+  }
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const div=document.createElement('div');
+      let cls='cell';
+      const val=cellAt(board,r,c);
+      if(val) cls+=' filled-'+val;
+      const cornerPlayer=players.find(p=>p.corner.r===r && p.corner.c===c);
+      if(cornerPlayer && !val) cls+=' corner-marker corner-'+cornerPlayer.color;
+      if(previewSet && previewSet.has(r+'_'+c)) cls += previewValid ? ' preview-ok' : ' preview-bad';
+      div.className=cls;
+      div.addEventListener('click',()=>onLocalCellClick(r,c));
+      el.appendChild(div);
+    }
+  }
+}
+function renderLocalTray(){
+  const tray=document.getElementById('tray');
+  const player=players[currentPlayerIdx];
+  tray.innerHTML='';
+  player.piecesLeftIds.forEach((pid, idx)=>{
+    const btn=document.createElement('button');
+    btn.className='piece-btn'+(selected && selected.trayIdx===idx ? ' selected':'');
+    btn.innerHTML=miniPieceSVG(PIECE_BY_ID[pid].cells, COLOR_HEX[player.color], 9);
+    btn.addEventListener('click',()=>selectLocalPiece(idx));
+    tray.appendChild(btn);
+  });
+}
+function renderLocalControls(){
+  const hasSel=!!selected;
+  document.getElementById('rotate-btn').disabled=!hasSel;
+  document.getElementById('flip-btn').disabled=!hasSel;
+  document.getElementById('cancel-btn').disabled=!hasSel;
+  let canPlace=false;
+  if(hasSel && previewAnchor){
+    const player=players[currentPlayerIdx];
+    const abs=selected.cells.map(([dr,dc])=>[previewAnchor.r+dr, previewAnchor.c+dc]);
+    canPlace=validatePlacement(board, abs, player.color, !player.hasPlaced, player.corner).valid;
+  }
+  document.getElementById('place-btn').disabled=!canPlace;
+}
+function selectLocalPiece(idx){
+  const player=players[currentPlayerIdx];
+  selected={ trayIdx:idx, cells: normalize(PIECE_BY_ID[player.piecesLeftIds[idx]].cells) };
+  previewAnchor=null;
+  renderLocalTray(); renderLocalBoard(); renderLocalControls();
+}
+function onLocalCellClick(r,c){
+  if(!selected || gameOver) return;
+  previewAnchor={r,c};
+  renderLocalBoard(); renderLocalControls();
+}
+function advanceLocalTurn(){
+  const skipped=[];
+  for(let i=1;i<=players.length;i++){
+    const idx=(currentPlayerIdx+i)%players.length;
+    const p=players[idx];
+    if(p.piecesLeftIds.length>0 && hasAnyLegalMove(board,p.piecesLeftIds,p.hasPlaced,p.color,p.corner)){
+      currentPlayerIdx=idx;
+      setMessage(skipped.length ? `${skipped.join(', ')} 패스 → ${p.name} 차례` : `${p.name} 차례`, 'info');
+      renderLocalAll();
+      return;
+    }
+    skipped.push(p.name);
+  }
+  endLocalGame();
+}
+function endLocalGame(){
+  gameOver=true;
+  const scored=players.map(p=>({name:p.name, color:p.color, score:computeScore(p.piecesLeftIds,p.lastPieceSize)}));
+  showEndModal(scored);
+}
+document.getElementById('rotate-btn').addEventListener('click',()=>{
+  if(currentMode==='local'){ if(!selected) return; selected.cells=rotate90(selected.cells); renderLocalBoard(); renderLocalControls(); }
+  else { if(!oSelected) return; oSelected.cells=rotate90(oSelected.cells); renderOnlineBoard(); renderOnlineControls(); }
+});
+document.getElementById('flip-btn').addEventListener('click',()=>{
+  if(currentMode==='local'){ if(!selected) return; selected.cells=flipH(selected.cells); renderLocalBoard(); renderLocalControls(); }
+  else { if(!oSelected) return; oSelected.cells=flipH(oSelected.cells); renderOnlineBoard(); renderOnlineControls(); }
+});
+document.getElementById('cancel-btn').addEventListener('click',()=>{
+  if(currentMode==='local'){ selected=null; previewAnchor=null; renderLocalTray(); renderLocalBoard(); renderLocalControls(); }
+  else { oSelected=null; oPreviewAnchor=null; renderOnlineTray(); renderOnlineBoard(); renderOnlineControls(); }
+});
+document.getElementById('place-btn').addEventListener('click',()=>{
+  if(currentMode==='local') localConfirmPlace(); else onlineConfirmPlace();
+});
+document.getElementById('pass-btn').addEventListener('click',()=>{
+  if(currentMode==='local'){ if(gameOver) return; selected=null; previewAnchor=null; advanceLocalTurn(); }
+  else { onlinePass(); }
+});
+function localConfirmPlace(){
+  if(!selected || !previewAnchor) return;
+  const player=players[currentPlayerIdx];
+  const abs=selected.cells.map(([dr,dc])=>[previewAnchor.r+dr, previewAnchor.c+dc]);
+  const result=validatePlacement(board, abs, player.color, !player.hasPlaced, player.corner);
+  if(!result.valid){ setMessage(result.reason,'bad'); return; }
+  abs.forEach(([r,c])=>setCellAt(board,r,c,player.color));
+  player.hasPlaced=true;
+  player.lastPieceSize=selected.cells.length;
+  player.piecesLeftIds.splice(selected.trayIdx,1);
+  selected=null; previewAnchor=null;
+  advanceLocalTurn();
+}
+
+/* ============ END MODAL (shared) ============ */
+function showEndModal(scored){
+  scored=scored.slice().sort((a,b)=>b.score-a.score);
+  const top=scored[0].score;
+  const winners=scored.filter(s=>s.score===top);
+  document.getElementById('win-name').textContent = winners.length>1
+    ? winners.map(w=>w.name).join(', ')+' 공동 우승!'
+    : winners[0].name+' 승리!';
+  document.getElementById('final-scores').innerHTML = scored.map(s=>
+    `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COLOR_HEX[s.color]};margin-right:6px;"></span>${s.name}: ${s.score}점`
+  ).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+}
+
+/* ============ ONLINE (Firebase Realtime Database) ============ */
+let app=null, db=null, firebaseReady=false;
+try{
+  if(firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_')){
+    app=initializeApp(firebaseConfig);
+    db=getDatabase(app);
+    firebaseReady=true;
+  }
+}catch(e){ console.error('Firebase init failed', e); }
+
+const myId='p_'+Math.random().toString(36).slice(2,9);
+let oroom=null, roomCode=null, isHost=false;
+let oSelected=null, oPreviewAnchor=null;
+let roomUnsub=null;
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function orderedPlayers(room){ return room.playerOrder.map(uid=>({ uid, ...room.players[uid] })); }
+function myPlayer(room){ return room.players && room.players[myId] ? { uid:myId, ...room.players[myId] } : null; }
+function currentTurnUid(room){ return room.playerOrder[room.currentIdx]; }
+
+async function createRoom(name, maxPlayers){
+  if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
+  let code, snap;
+  for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `blokusRooms/${code}`)); if(!snap.exists()) break; }
+  isHost=true; roomCode=code;
+  const room={
+    status:'lobby', hostId:myId, maxPlayers,
+    playerOrder:[myId],
+    players:{ [myId]: { name, color:COLOR_ORDER[0], piecesLeftIds:ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0 } },
+    board: emptyBoard(),
+    currentIdx:0, version:0, lastMove:null
+  };
+  await set(ref(db, `blokusRooms/${code}`), room);
+  enterOnlineFlow();
+}
+async function joinRoom(name, code){
+  if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
+  const roomRef=ref(db, `blokusRooms/${code}`);
+  const snap=await get(roomRef);
+  if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+  const room=snap.val();
+  if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+  if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+  const nextColor=COLOR_ORDER[room.playerOrder.length];
+  await update(ref(db, `blokusRooms/${code}`), {
+    playerOrder: [...room.playerOrder, myId],
+    [`players/${myId}`]: { name, color:nextColor, piecesLeftIds:ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0 }
+  });
+  isHost=false; roomCode=code;
+  enterOnlineFlow();
+}
+function enterOnlineFlow(){
+  currentMode='online';
+  showScreen('lobby');
+  if(roomUnsub) roomUnsub();
+  roomUnsub=onValue(ref(db, `blokusRooms/${roomCode}`), (snap)=>{
+    const room=snap.val();
+    if(!room) return;
+    onRoomUpdate(room);
+  });
+}
+function onRoomUpdate(room){
+  oroom=room;
+  if(room.status==='lobby'){
+    renderLobby();
+  } else if(room.status==='playing'){
+    if(document.getElementById('game').classList.contains('hidden')){
+      showScreen('game'); applyZoom();
+    }
+    if(currentTurnUid(room)!==myId){ oSelected=null; oPreviewAnchor=null; }
+    renderOnlineAll();
+  } else if(room.status==='ended'){
+    renderOnlineAll();
+    const scored=orderedPlayers(room).map(p=>({name:p.name, color:p.color, score:computeScore(p.piecesLeftIds,p.lastPieceSize)}));
+    showEndModal(scored);
+  }
+}
+function renderLobby(){
+  document.getElementById('lobby-code').textContent=roomCode;
+  const list=orderedPlayers(oroom);
+  document.getElementById('lobby-players').innerHTML=list.map(p=>`
+    <div class="lobby-player"><div class="dot" style="background:${COLOR_HEX[p.color]}"></div>
+      ${p.name}${p.uid===oroom.hostId?'<span class="host-badge">방장</span>':''}${p.uid===myId?' (나)':''}</div>
+  `).join('');
+  const startBtn=document.getElementById('lobby-start-btn');
+  const waiting=document.getElementById('lobby-waiting');
+  if(isHost){
+    startBtn.classList.remove('hidden');
+    startBtn.disabled=list.length<2;
+    waiting.textContent = list.length<2 ? '2명 이상 모이면 시작할 수 있어요' : (list.length<oroom.maxPlayers ? `${oroom.maxPlayers-list.length}자리 더 받을 수 있어요 (지금 시작해도 됩니다)` : '');
+  } else {
+    startBtn.classList.add('hidden');
+    waiting.textContent='방장이 게임을 시작하기를 기다리는 중...';
+  }
+}
+document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
+  await update(ref(db, `blokusRooms/${roomCode}`), { status:'playing', currentIdx:0, lastMove:null });
+});
+document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
+function leaveOnline(){
+  if(roomUnsub){ roomUnsub(); roomUnsub=null; }
+  roomCode=null; oroom=null; oSelected=null; oPreviewAnchor=null;
+}
+function renderOnlineAll(){ renderOnlineScoreboard(); renderOnlineBoard(); renderOnlineTray(); renderOnlineControls(); }
+function renderOnlineScoreboard(){
+  const sb=document.getElementById('scoreboard');
+  const list=orderedPlayers(oroom);
+  const turnUid=currentTurnUid(oroom);
+  sb.innerHTML=list.map(p=>`
+    <div class="player-chip ${p.uid===turnUid?'active':''}">
+      <div class="dot" style="background:${COLOR_HEX[p.color]}"></div>
+      ${p.name}${p.uid===myId?' (나)':''} <span class="score">· ${p.piecesLeftIds.length}개 남음</span>
+    </div>`).join('');
+}
+function renderOnlineBoard(){
+  const el=document.getElementById('board'); el.innerHTML='';
+  const board=oroom.board;
+  const list=orderedPlayers(oroom);
+  const isMyTurn=currentTurnUid(oroom)===myId;
+  let previewSet=null, previewValid=false;
+  if(isMyTurn && oSelected && oPreviewAnchor){
+    const me=myPlayer(oroom);
+    const abs=oSelected.cells.map(([dr,dc])=>[oPreviewAnchor.r+dr, oPreviewAnchor.c+dc]);
+    const result=validatePlacement(board, abs, me.color, !me.hasPlaced, CORNERS[me.color]);
+    previewValid=result.valid;
+    previewSet=new Set(abs.filter(([r,c])=>inBounds(r,c)).map(([r,c])=>r+'_'+c));
+  }
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const div=document.createElement('div');
+      let cls='cell';
+      const val=cellAt(board,r,c);
+      if(val) cls+=' filled-'+val;
+      const cornerPlayer=list.find(p=>CORNERS[p.color].r===r && CORNERS[p.color].c===c);
+      if(cornerPlayer && !val) cls+=' corner-marker corner-'+cornerPlayer.color;
+      if(previewSet && previewSet.has(r+'_'+c)) cls += previewValid ? ' preview-ok' : ' preview-bad';
+      div.className=cls;
+      if(isMyTurn) div.addEventListener('click',()=>onOnlineCellClick(r,c));
+      el.appendChild(div);
+    }
+  }
+}
+function renderOnlineTray(){
+  const tray=document.getElementById('tray');
+  const isMyTurn=currentTurnUid(oroom)===myId;
+  const me=myPlayer(oroom);
+  tray.innerHTML='';
+  if(!me) return;
+  me.piecesLeftIds.forEach((pid, idx)=>{
+    const btn=document.createElement('button');
+    btn.className='piece-btn'+(oSelected && oSelected.trayIdx===idx ? ' selected':'');
+    btn.innerHTML=miniPieceSVG(PIECE_BY_ID[pid].cells, COLOR_HEX[me.color], 9);
+    if(isMyTurn) btn.addEventListener('click',()=>selectOnlinePiece(idx));
+    else btn.style.opacity='0.5';
+    tray.appendChild(btn);
+  });
+}
+function renderOnlineControls(){
+  const isMyTurn=currentTurnUid(oroom)===myId;
+  const hasSel=isMyTurn && !!oSelected;
+  document.getElementById('rotate-btn').disabled=!hasSel;
+  document.getElementById('flip-btn').disabled=!hasSel;
+  document.getElementById('cancel-btn').disabled=!hasSel;
+  document.getElementById('pass-btn').disabled=!isMyTurn;
+  let canPlace=false;
+  if(hasSel && oPreviewAnchor){
+    const me=myPlayer(oroom);
+    const abs=oSelected.cells.map(([dr,dc])=>[oPreviewAnchor.r+dr, oPreviewAnchor.c+dc]);
+    canPlace=validatePlacement(oroom.board, abs, me.color, !me.hasPlaced, CORNERS[me.color]).valid;
+  }
+  document.getElementById('place-btn').disabled=!canPlace;
+}
+function selectOnlinePiece(idx){
+  const me=myPlayer(oroom);
+  oSelected={ trayIdx:idx, cells: normalize(PIECE_BY_ID[me.piecesLeftIds[idx]].cells) };
+  oPreviewAnchor=null;
+  renderOnlineTray(); renderOnlineBoard(); renderOnlineControls();
+}
+function onOnlineCellClick(r,c){
+  if(!oSelected) return;
+  oPreviewAnchor={r,c};
+  renderOnlineBoard(); renderOnlineControls();
+}
+async function onlineConfirmPlace(){
+  if(!oSelected || !oPreviewAnchor) return;
+  const abs=oSelected.cells.map(([dr,dc])=>[oPreviewAnchor.r+dr, oPreviewAnchor.c+dc]);
+  const roomRef=ref(db, `blokusRooms/${roomCode}`);
+  let localReason=null;
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(room.status!=='playing') return room;
+    const turnUid=room.playerOrder[room.currentIdx];
+    if(turnUid!==myId) return room;
+    const me=room.players[myId];
+    const result=validatePlacement(room.board, abs, me.color, !me.hasPlaced, CORNERS[me.color]);
+    if(!result.valid){ localReason=result.reason; return; }
+    abs.forEach(([r,c])=>setCellAt(room.board,r,c,me.color));
+    me.hasPlaced=true;
+    me.lastPieceSize=oSelected.cells.length;
+    me.piecesLeftIds.splice(oSelected.trayIdx,1);
+    advanceRoomTurn(room);
+    room.version=(room.version||0)+1;
+    room.lastMove={ name: me.name, kind:'place', pieceSize: me.lastPieceSize, ts: Date.now() };
+    return room;
+  });
+  if(localReason){ setMessage(localReason,'bad'); return; }
+  oSelected=null; oPreviewAnchor=null;
+}
+async function onlinePass(){
+  const roomRef=ref(db, `blokusRooms/${roomCode}`);
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(room.status!=='playing') return room;
+    const turnUid=room.playerOrder[room.currentIdx];
+    if(turnUid!==myId) return room;
+    const me=room.players[myId];
+    advanceRoomTurn(room);
+    room.version=(room.version||0)+1;
+    room.lastMove={ name: me.name, kind:'pass', pieceSize:0, ts: Date.now() };
+    return room;
+  });
+  oSelected=null; oPreviewAnchor=null;
+}
+function advanceRoomTurn(room){
+  for(let i=1;i<=room.playerOrder.length;i++){
+    const idx=(room.currentIdx+i)%room.playerOrder.length;
+    const uid=room.playerOrder[idx];
+    const p=room.players[uid];
+    if(p.piecesLeftIds.length>0 && hasAnyLegalMove(room.board, p.piecesLeftIds, p.hasPlaced, p.color, CORNERS[p.color])){
+      room.currentIdx=idx;
+      return;
+    }
+  }
+  room.status='ended';
+}
+
+/* ============ SETUP SCREEN WIRING ============ */
+let chosenCount=3, onlineChosenCount=3;
+document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mode-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentMode=btn.dataset.mode;
+    document.getElementById('local-panel').classList.toggle('hidden', currentMode!=='local');
+    document.getElementById('online-panel').classList.toggle('hidden', currentMode!=='online');
+    document.getElementById('start-btn').classList.toggle('hidden', currentMode==='online');
+  });
+});
+function renderColorOrderPreview(n){
+  const order=COLOR_ORDER.slice(0,n);
+  document.getElementById('color-order-preview').innerHTML=order.map(c=>`
+    <div class="pill"><div class="dot" style="background:${COLOR_HEX[c]}"></div>${COLOR_NAME[c]}</div>
+  `).join('');
+}
+document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    chosenCount=+btn.dataset.count;
+    renderColorOrderPreview(chosenCount);
+  });
+});
+renderColorOrderPreview(chosenCount);
+document.querySelectorAll('#online-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#online-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    onlineChosenCount=+btn.dataset.count;
+  });
+});
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('create-tab').classList.toggle('hidden', btn.dataset.tab!=='create');
+    document.getElementById('join-tab').classList.toggle('hidden', btn.dataset.tab!=='join');
+  });
+});
+document.getElementById('start-btn').addEventListener('click',()=>{
+  showScreen('game');
+  newLocalGame(chosenCount);
+});
+document.getElementById('create-room-btn').addEventListener('click',()=>{
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
+});
+document.getElementById('join-room-btn').addEventListener('click',()=>{
+  joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());
+});
+document.getElementById('quit-btn').addEventListener('click',()=>{
+  leaveOnline();
+  document.getElementById('end-overlay').classList.add('hidden');
+  showScreen('setup');
+});
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('end-overlay').classList.add('hidden');
+  leaveOnline();
+  showScreen('setup');
+});
+</script>
+</body>
+</html>
