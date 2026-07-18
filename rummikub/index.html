@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4, user-scalable=yes">
+<title>루미큐브</title>
+<style>
+:root{
+  --bg-deep:#241A12;
+  --bg-mid:#3B2A1C;
+  --line:#4A3A28;
+  --felt:#1F3D2E;
+  --felt-line:#2A5240;
+  --tile-bg:#F5EFE0;
+  --tile-bg-selected:#FFE9A8;
+  --ink:#2A2A2A;
+  --text:#F2ECDF;
+  --muted:#B8A98F;
+  --amber:#E0B93C;
+  --red:#C0392B;
+  --blue:#1F5FA8;
+  --black:#202020;
+  --yellow:#B9791E;
+  --good:#2FA84F;
+  --bad:#D8483D;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  min-height:100vh;
+  background:linear-gradient(180deg,var(--bg-deep),var(--bg-mid));
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Pretendard",sans-serif;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.hidden{display:none !important;}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 12px 50px;}
+.back-link{align-self:flex-start;color:var(--muted);font-size:12.5px;text-decoration:none;margin-bottom:10px;}
+
+/* ---------- SETUP ---------- */
+#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:4vh;}
+.swatches{display:flex;gap:8px;margin-bottom:10px;}
+.swatch{width:22px;height:30px;border-radius:5px;background:var(--tile-bg);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;}
+h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margin:4px 0;}
+.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:26px;text-align:center;}
+.panel{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+.panel h2{font-size:12.5px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;text-transform:uppercase;}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.opt-btn{flex:1;min-width:90px;background:rgba(255,255,255,0.05);border:2px solid var(--line);color:var(--text);border-radius:10px;padding:13px 8px;font-weight:800;font-size:14px;cursor:pointer;}
+.opt-btn.selected,.opt-btn:hover{border-color:var(--amber);background:rgba(224,185,60,0.14);}
+.start-btn{margin-top:8px;background:linear-gradient(180deg,#F2CE6A,var(--amber));color:var(--ink);border:none;border-radius:10px;padding:15px 40px;font-weight:900;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #a8871f;}
+.start-btn:active{transform:translateY(3px);box-shadow:none;}
+.rules-box{font-size:12px;color:var(--muted);line-height:1.7;text-align:left;}
+.rules-box b{color:var(--text);}
+
+/* ---------- GAME ---------- */
+#game{width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:center;}
+.topbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;}
+.zoom-row{display:flex;align-items:center;gap:8px;}
+.zoom-btn{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--text);border-radius:8px;width:32px;height:32px;font-size:17px;font-weight:800;cursor:pointer;}
+.zoom-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.zoom-pct{font-size:12px;color:var(--muted);min-width:40px;text-align:center;}
+.deck-chip{background:rgba(255,255,255,0.08);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;letter-spacing:0.5px;}
+
+.player-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;margin:4px 0 12px;}
+.player-chip{background:rgba(255,255,255,0.05);border:2px solid var(--line);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;}
+.player-chip.active{border-color:var(--amber);box-shadow:0 0 0 3px rgba(224,185,60,0.2);}
+.player-chip .cnt{color:var(--muted);font-weight:400;}
+
+.banner{min-height:18px;margin-bottom:12px;padding:8px 20px;border-radius:20px;font-weight:700;font-size:13.5px;letter-spacing:0.5px;text-align:center;max-width:640px;}
+.banner.good{background:rgba(47,168,79,0.2);color:#8CE6A0;}
+.banner.bad{background:rgba(216,72,61,0.2);color:#FF9B8F;}
+.banner.info{background:rgba(255,255,255,0.07);color:var(--muted);}
+
+.table-wrap{width:100%;max-width:900px;background:var(--felt);border:8px solid #3a2a1c;border-radius:14px;padding:16px;box-shadow:0 14px 30px rgba(0,0,0,0.45);min-height:160px;}
+.table-area{display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start;}
+.tile-set{display:flex;gap:4px;background:rgba(0,0,0,0.18);border:1px dashed var(--felt-line);border-radius:8px;padding:8px;min-width:50px;min-height:56px;align-items:center;}
+.new-set-btn{background:rgba(255,255,255,0.06);border:2px dashed var(--muted);color:var(--muted);border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;min-height:56px;}
+.new-set-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+.tile{
+  width:38px;height:52px;border-radius:6px;background:var(--tile-bg);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;
+  box-shadow:0 3px 0 rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,0,0,0.08);
+  cursor:pointer;border:3px solid transparent;flex:0 0 auto;
+}
+.tile.selected{border-color:var(--amber);background:var(--tile-bg-selected);transform:translateY(-4px);}
+.tile.joker{background:linear-gradient(160deg,#F5EFE0,#E8D9A8);font-size:20px;}
+.tile.color-red{color:var(--red);}
+.tile.color-blue{color:var(--blue);}
+.tile.color-black{color:var(--black);}
+.tile.color-yellow{color:var(--yellow);}
+
+.hand-title{font-size:12px;color:var(--muted);letter-spacing:1px;margin:16px 0 8px;text-transform:uppercase;}
+.hand-area{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%;max-width:900px;margin-bottom:16px;}
+
+.controls-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.ctrl-btn{background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.ctrl-btn.primary{background:linear-gradient(180deg,#F2CE6A,var(--amber));color:var(--ink);border:none;}
+.ctrl-btn.danger{border-color:var(--red);color:#FF9B8F;}
+.ctrl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+#end-overlay{position:fixed;inset:0;background:rgba(6,10,15,0.85);display:flex;align-items:center;justify-content:center;z-index:50;}
+#end-modal{background:var(--bg-mid);border:1px solid var(--line);border-radius:16px;padding:30px 28px;max-width:420px;width:90%;text-align:center;}
+#end-modal h2{font-size:22px;margin:0 0 6px;}
+#end-modal .win-name{color:var(--amber);font-weight:900;font-size:24px;margin:10px 0;}
+#end-modal .scores{margin:14px 0;font-size:14px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP -->
+  <div id="setup">
+    <a href="../" class="back-link">← 게임 허브로</a>
+    <div class="swatches">
+      <div class="swatch" style="color:#C0392B">7</div>
+      <div class="swatch" style="color:#1F5FA8">4</div>
+      <div class="swatch" style="color:#202020">11</div>
+      <div class="swatch" style="color:#B9791E">2</div>
+    </div>
+    <h1 class="title">루 미 큐 브</h1>
+    <div class="subtitle">숫자와 색깔 타일로 조합을 만들어 손에 든 타일을 가장 먼저 없애는 게임</div>
+
+    <div class="panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start-btn">게임 시작</button>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>규칙 요약</h2>
+      <div class="rules-box">
+        <b>① 타일</b> — 1~13 숫자, 빨강·파랑·검정·노랑 4색이 각 2장씩(총 104장) + 조커 2장 = 106장. 시작할 때 14장씩 받습니다.<br>
+        <b>② 조합</b> — <b>그룹</b>: 같은 숫자, 서로 다른 색 3~4장 / <b>런</b>: 같은 색, 연속된 숫자 3장 이상. 조커는 어떤 타일도 대신할 수 있어요.<br>
+        <b>③ 첫 조합</b> — 처음 낼 때는 이번 턴에 낸 타일의 합이 <b>30점 이상</b>이어야 합니다.<br>
+        <b>④ 재배치</b> — 자신의 턴에는 보드 위 타일도 자유롭게 옮겨 다른 조합으로 재구성할 수 있어요. 단, 턴이 끝날 때 보드의 모든 조합은 유효해야 합니다.<br>
+        <b>⑤ 종료</b> — 손에 든 타일을 가장 먼저 모두 낸 사람이 승리! 낼 수 없으면 [타일 뽑기]로 풀에서 한 장 뽑고 턴을 넘깁니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="quit-btn">← 처음으로</button>
+      <div class="zoom-row">
+        <span style="font-size:11.5px;color:var(--muted);">화면 크기</span>
+        <button class="zoom-btn" id="zoom-out-btn">－</button>
+        <span class="zoom-pct" id="zoom-pct">100%</span>
+        <button class="zoom-btn" id="zoom-in-btn">＋</button>
+      </div>
+      <div class="deck-chip" id="deck-chip">뽑을 타일 0장</div>
+    </div>
+
+    <div class="player-row" id="player-row"></div>
+    <div class="banner info" id="banner">게임을 시작합니다</div>
+
+    <div class="table-wrap"><div class="table-area" id="table-area"></div></div>
+
+    <div class="controls-row">
+      <button class="ctrl-btn primary" id="end-turn-btn">턴 종료 (내기)</button>
+      <button class="ctrl-btn" id="draw-btn">타일 뽑기</button>
+      <button class="ctrl-btn" id="revert-btn">되돌리기</button>
+      <button class="ctrl-btn danger" id="force-end-btn">게임 종료(정산)</button>
+    </div>
+
+    <div class="hand-title">내 타일</div>
+    <div class="hand-area" id="hand-area"></div>
+  </div>
+
+</div>
+
+<div id="end-overlay" class="hidden">
+  <div id="end-modal">
+    <h2>게임 종료!</h2>
+    <div class="win-name" id="win-name"></div>
+    <div class="scores" id="final-scores"></div>
+    <div style="margin-top:16px;"><button class="start-btn" id="restart-btn">처음으로</button></div>
+  </div>
+</div>
+
+<script>
+/* ============ TILE MODEL ============ */
+const COLORS=['red','blue','black','yellow'];
+function buildDeck(){
+  const deck=[]; let id=0;
+  for(let copy=0;copy<2;copy++){
+    for(const color of COLORS){
+      for(let n=1;n<=13;n++) deck.push({id:'t'+(id++), color, number:n, isJoker:false});
+    }
+  }
+  deck.push({id:'j'+(id++), isJoker:true});
+  deck.push({id:'j'+(id++), isJoker:true});
+  return deck; // 106 tiles
+}
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ SET VALIDATION ============ */
+function isValidSet(tiles){
+  if(tiles.length<3) return {valid:false};
+  const jokers=tiles.filter(t=>t.isJoker);
+  const real=tiles.filter(t=>!t.isJoker);
+  if(real.length===0) return {valid:false};
+
+  // GROUP: same number, all different colors, max 4 tiles
+  const sameNumber=real.every(t=>t.number===real[0].number);
+  const colorSet=new Set(real.map(t=>t.color));
+  if(sameNumber && colorSet.size===real.length && tiles.length<=4){
+    return {valid:true, kind:'group', number:real[0].number};
+  }
+
+  // RUN: same color, consecutive numbers (jokers fill gaps/ends), 3..13 tiles, within 1..13
+  const sameColor=real.every(t=>t.color===real[0].color);
+  if(sameColor){
+    const nums=real.map(t=>t.number);
+    if(new Set(nums).size===nums.length){
+      const minN=Math.min(...nums), maxN=Math.max(...nums);
+      const span=maxN-minN+1;
+      const neededFillers=span-real.length;
+      if(neededFillers>=0 && neededFillers<=jokers.length && tiles.length<=13){
+        const extra=jokers.length-neededFillers;
+        const roomBefore=minN-1, roomAfter=13-maxN;
+        if(extra<=roomBefore+roomAfter){
+          const extraAfter=Math.min(extra, roomAfter);
+          const extraBefore=extra-extraAfter;
+          const startNum=minN-extraBefore, endNum=maxN+extraAfter;
+          const numberToTileId={};
+          real.forEach(t=>{ numberToTileId[t.number]=t.id; });
+          const sequence=[];
+          for(let n=startNum;n<=endNum;n++) sequence.push({ number:n, tileId: numberToTileId[n]||null });
+          return {valid:true, kind:'run', color:real[0].color, sequence};
+        }
+      }
+    }
+  }
+  return {valid:false};
+}
+function sumEffectiveValues(set, info, filterIds){
+  let sum=0;
+  if(info.kind==='group'){
+    for(const t of set){
+      if(filterIds && !filterIds.has(t.id)) continue;
+      sum += t.isJoker ? info.number : t.number;
+    }
+  } else if(info.kind==='run'){
+    const nullSlots=info.sequence.filter(s=>s.tileId===null).map(s=>s.number);
+    let jokerIdx=0;
+    for(const t of set){
+      let val;
+      if(!t.isJoker){ val=t.number; } else { val=nullSlots[jokerIdx]; jokerIdx++; }
+      if(!filterIds || filterIds.has(t.id)) sum += val;
+    }
+  }
+  return sum;
+}
+
+/* ============ SHARED UI HELPERS ============ */
+const SCREENS=['setup','game'];
+function showScreen(id){ SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
+function setMessage(text, kind){
+  const b=document.getElementById('banner');
+  b.textContent=text; b.className='banner '+kind;
+}
+
+/* ============ ZOOM ============ */
+const UI_ZOOM_DEFAULT=1, UI_ZOOM_MIN=0.5, UI_ZOOM_MAX=1.8, UI_ZOOM_STEP=0.1;
+let uiZoom=UI_ZOOM_DEFAULT;
+function applyZoom(){
+  document.getElementById('game').style.zoom=uiZoom;
+  document.getElementById('zoom-pct').textContent=Math.round(uiZoom*100)+'%';
+  document.getElementById('zoom-out-btn').disabled=uiZoom<=UI_ZOOM_MIN+1e-9;
+  document.getElementById('zoom-in-btn').disabled=uiZoom>=UI_ZOOM_MAX-1e-9;
+}
+document.getElementById('zoom-out-btn').addEventListener('click',()=>{ uiZoom=Math.max(UI_ZOOM_MIN, +(uiZoom-UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Math.min(UI_ZOOM_MAX, +(uiZoom+UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+
+/* ============ GAME STATE ============ */
+let deck=[];
+let players=[]; // {name, hand:[tiles], hasMelded}
+let table=[]; // array of sets (array of tiles)
+let currentPlayerIdx=0;
+let turnSnapshot=null;
+let selected=null; // {source:'hand'|'table', idx | setIdx&tileIdx}
+let gameOver=false;
+
+function sortHand(player){
+  const order={red:0,blue:1,black:2,yellow:3};
+  player.hand.sort((a,b)=>{
+    if(a.isJoker && b.isJoker) return 0;
+    if(a.isJoker) return 1;
+    if(b.isJoker) return -1;
+    if(order[a.color]!==order[b.color]) return order[a.color]-order[b.color];
+    return a.number-b.number;
+  });
+}
+function newGame(numPlayers){
+  deck=shuffle(buildDeck());
+  players=Array.from({length:numPlayers},(_,i)=>({name:`플레이어 ${i+1}`, hand:[], hasMelded:false}));
+  for(let i=0;i<14;i++) players.forEach(p=>p.hand.push(deck.pop()));
+  players.forEach(sortHand);
+  table=[];
+  currentPlayerIdx=0; selected=null; gameOver=false;
+  snapshotTurn();
+  applyZoom();
+  renderAll();
+  setMessage(`${players[0].name} 차례 — 조합을 만들어 타일을 내보세요 (첫 조합은 30점 이상!)`,'info');
+}
+function snapshotTurn(){
+  turnSnapshot={
+    table: table.map(s=>s.map(t=>({...t}))),
+    hand: players[currentPlayerIdx].hand.map(t=>({...t}))
+  };
+}
+function revertTurn(showMsg){
+  table=turnSnapshot.table.map(s=>s.map(t=>({...t})));
+  players[currentPlayerIdx].hand=turnSnapshot.hand.map(t=>({...t}));
+  selected=null;
+  renderAll();
+  if(showMsg) setMessage('이번 턴에 옮긴 내용을 되돌렸어요','info');
+}
+
+/* ============ RENDER ============ */
+function renderAll(){ renderTopbar(); renderPlayerRow(); renderTable(); renderHand(); renderControlsState(); }
+function renderTopbar(){ document.getElementById('deck-chip').textContent=`뽑을 타일 ${deck.length}장`; }
+function renderPlayerRow(){
+  const el=document.getElementById('player-row');
+  el.innerHTML=players.map((p,i)=>`
+    <div class="player-chip ${i===currentPlayerIdx?'active':''}">${p.name} <span class="cnt">· ${p.hand.length}장</span></div>
+  `).join('');
+}
+function tileNode(tile, selectedNow, onClick){
+  const btn=document.createElement('button');
+  btn.className='tile'+(tile.isJoker?' joker':' color-'+tile.color)+(selectedNow?' selected':'');
+  btn.textContent = tile.isJoker ? '★' : tile.number;
+  btn.addEventListener('click',(e)=>{ e.stopPropagation(); onClick(); });
+  return btn;
+}
+function isSel(source, a, b){
+  if(!selected || selected.source!==source) return false;
+  if(source==='hand') return selected.idx===a;
+  return selected.setIdx===a && selected.tileIdx===b;
+}
+function renderTable(){
+  const el=document.getElementById('table-area'); el.innerHTML='';
+  table.forEach((set,setIdx)=>{
+    const box=document.createElement('div');
+    box.className='tile-set';
+    box.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(setIdx); });
+    set.forEach((tile,tileIdx)=>{
+      box.appendChild(tileNode(tile, isSel('table',setIdx,tileIdx), ()=>selectTableTile(setIdx,tileIdx)));
+    });
+    el.appendChild(box);
+  });
+  const newBtn=document.createElement('button');
+  newBtn.className='new-set-btn';
+  newBtn.textContent='+ 새 세트';
+  newBtn.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(-1); });
+  el.appendChild(newBtn);
+}
+function renderHand(){
+  const el=document.getElementById('hand-area'); el.innerHTML='';
+  const hand=players[currentPlayerIdx].hand;
+  hand.forEach((tile,idx)=>{
+    el.appendChild(tileNode(tile, isSel('hand',idx), ()=>selectHandTile(idx)));
+  });
+}
+function renderControlsState(){
+  document.getElementById('draw-btn').disabled=gameOver;
+  document.getElementById('end-turn-btn').disabled=gameOver;
+  document.getElementById('revert-btn').disabled=gameOver;
+}
+
+/* ============ SELECTION / PLACEMENT ============ */
+function selectHandTile(idx){
+  if(gameOver) return;
+  if(selected && selected.source==='hand' && selected.idx===idx){ selected=null; renderAll(); return; }
+  selected={source:'hand', idx};
+  renderAll();
+}
+function selectTableTile(setIdx, tileIdx){
+  if(gameOver) return;
+  if(selected && selected.source==='table' && selected.setIdx===setIdx && selected.tileIdx===tileIdx){ selected=null; renderAll(); return; }
+  selected={source:'table', setIdx, tileIdx};
+  renderAll();
+}
+function placeSelectedIntoSet(targetSetIdx){
+  if(!selected || gameOver) return;
+  let tile;
+  if(selected.source==='hand'){
+    tile=players[currentPlayerIdx].hand.splice(selected.idx,1)[0];
+  } else {
+    const {setIdx,tileIdx}=selected;
+    tile=table[setIdx].splice(tileIdx,1)[0];
+    if(table[setIdx].length===0){
+      table.splice(setIdx,1);
+      if(targetSetIdx>setIdx) targetSetIdx--;
+    }
+  }
+  if(targetSetIdx===-1 || targetSetIdx>=table.length) table.push([tile]);
+  else table[targetSetIdx].push(tile);
+  selected=null;
+  renderAll();
+}
+
+/* ============ TURN ACTIONS ============ */
+document.getElementById('end-turn-btn').addEventListener('click', ()=>{
+  for(const set of table){
+    if(!isValidSet(set).valid){
+      setMessage('보드에 아직 유효하지 않은 조합이 있어요. 다시 확인해주세요.','bad');
+      return;
+    }
+  }
+  const player=players[currentPlayerIdx];
+  const playedCount=turnSnapshot.hand.length-player.hand.length;
+  if(playedCount<=0){
+    setMessage('최소 한 장 이상의 타일을 내야 턴을 종료할 수 있어요. 낼 수 없다면 [타일 뽑기]를 눌러주세요.','bad');
+    return;
+  }
+  if(!player.hasMelded){
+    const snapshotIds=new Set(turnSnapshot.hand.map(t=>t.id));
+    const currentIds=new Set(player.hand.map(t=>t.id));
+    const playedIds=new Set([...snapshotIds].filter(id=>!currentIds.has(id)));
+    let sum=0;
+    for(const set of table){
+      const info=isValidSet(set);
+      sum+=sumEffectiveValues(set, info, playedIds);
+    }
+    if(sum<30){
+      setMessage(`첫 조합은 30점 이상이어야 해요 (지금 ${sum}점). 다시 확인해주세요.`,'bad');
+      return;
+    }
+    player.hasMelded=true;
+  }
+  if(player.hand.length===0){ endGame(player); return; }
+  advanceTurn(`${player.name} 턴 종료`);
+});
+document.getElementById('draw-btn').addEventListener('click', ()=>{
+  if(gameOver) return;
+  revertTurn(false);
+  const player=players[currentPlayerIdx];
+  if(deck.length===0){
+    setMessage('더 이상 뽑을 타일이 없어요. 턴을 넘깁니다.','info');
+  } else {
+    player.hand.push(deck.pop());
+    sortHand(player);
+    setMessage(`${player.name}님이 타일을 뽑았습니다`,'info');
+  }
+  advanceTurn(null);
+});
+document.getElementById('revert-btn').addEventListener('click', ()=>revertTurn(true));
+document.getElementById('force-end-btn').addEventListener('click', ()=>{
+  if(gameOver) return;
+  endGame(null);
+});
+function advanceTurn(msg){
+  currentPlayerIdx=(currentPlayerIdx+1)%players.length;
+  snapshotTurn();
+  selected=null;
+  renderAll();
+  const p=players[currentPlayerIdx];
+  setMessage(`${p.name} 차례${p.hasMelded ? '' : ' (첫 조합은 30점 이상!)'}`,'info');
+}
+
+/* ============ END GAME ============ */
+function endGame(winner){
+  gameOver=true;
+  const scores=players.map(p=>({
+    name:p.name,
+    remaining: p.hand.reduce((s,t)=>s+(t.isJoker?30:t.number),0),
+    tileCount:p.hand.length
+  }));
+  scores.sort((a,b)=>a.remaining-b.remaining);
+  document.getElementById('win-name').textContent = winner ? `${winner.name} 승리! 🎉` : `${scores[0].name} 승리 (남은 점수 최소)`;
+  document.getElementById('final-scores').innerHTML = scores.map(s=>`${s.name}: 남은 타일 ${s.tileCount}장 (${s.remaining}점)`).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+  renderControlsState();
+}
+
+/* ============ SETUP WIRING ============ */
+let chosenCount=3;
+document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    chosenCount=+btn.dataset.count;
+  });
+});
+document.getElementById('start-btn').addEventListener('click',()=>{
+  showScreen('game');
+  newGame(chosenCount);
+});
+document.getElementById('quit-btn').addEventListener('click',()=>{
+  document.getElementById('end-overlay').classList.add('hidden');
+  showScreen('setup');
+});
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('end-overlay').classList.add('hidden');
+  showScreen('setup');
+});
+</script>
+</body>
+</html>
