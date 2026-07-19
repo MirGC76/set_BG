@@ -528,7 +528,9 @@ function sortHand(hand){
   });
 }
 function activeHand(){
-  return mode==='online' ? onlineMyHand : players[currentPlayerIdx].hand;
+  if(mode==='online') return onlineMyHand;
+  if(mode==='solo') return players[soloHumanSeat].hand;
+  return players[currentPlayerIdx].hand;
 }
 function canIActNow(){
   if(mode==='online') return onlineRoom && currentTurnUid(onlineRoom)===myId;
@@ -978,6 +980,7 @@ async function onRoomUpdate(room){
     if(document.getElementById('game').classList.contains('hidden')){
       await refreshMyHandFromFirebase();
       table=(room.table||[]).map(s=>s.slice());
+      snapshotTurn();
       applyZoom();
       showScreen('game');
     } else if(versionChanged){
