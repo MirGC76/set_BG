@@ -714,8 +714,10 @@ function genCode(){
   let c=''; for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
   return c;
 }
-/* which human (playerOrder index/uid) owns a given slot in colorOrder */
-function ownerUidForColorIdx(room, idx){ return room.maxPlayers===2 ? room.playerOrder[idx%2] : room.playerOrder[idx]; }
+/* which human (playerOrder index/uid) owns a given slot in colorOrder.
+   Uses activePlayerCount (how many actually joined when the host started the game),
+   not maxPlayers (which is just the lobby capacity target). */
+function ownerUidForColorIdx(room, idx){ return room.activePlayerCount===2 ? room.playerOrder[idx%2] : room.playerOrder[idx]; }
 function currentColorName(room){ return room.colorOrder[room.currentIdx]; }
 function currentColorSlot(room){ return room.colors[currentColorName(room)]; }
 function currentTurnUid(room){
@@ -735,12 +737,10 @@ async function createRoom(name, maxPlayers){
     let code, snap;
     for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `blokusRooms/${code}`)); if(!snap.exists()) break; }
     isHost=true; roomCode=code;
-    const colorOrder=activeColorsFor(maxPlayers);
     const room={
       status:'lobby', hostId:myId, maxPlayers,
       playerOrder:[myId],
       players:{ [myId]: { name } },
-      colorOrder,
       board: emptyBoard(),
       currentIdx:0, version:0, lastMove:null
     };
@@ -818,8 +818,13 @@ function onRoomUpdate(room){
 }
 function renderLobby(){
   document.getElementById('lobby-code').textContent=roomCode;
-  const rows=oroom.colorOrder.map((color,idx)=>{
-    const uid=ownerUidForColorIdx(oroom, idx);
+  const joined=oroom.playerOrder.length;
+  const previewCount=Math.max(joined,2); // preview at least a 2-player layout even solo in an empty room
+  const previewColorOrder=activeColorsFor(previewCount);
+  const previewOwnerIdx=(idx)=> previewCount===2 ? idx%2 : idx;
+  const rows=previewColorOrder.map((color,idx)=>{
+    const ownerSlot=previewOwnerIdx(idx);
+    const uid=oroom.playerOrder[ownerSlot];
     const player=uid ? oroom.players[uid] : null;
     const label=player ? `${player.name}${uid===oroom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}` : '참가 대기 중...';
     return `<div class="lobby-player"><div class="dot" style="background:${COLOR_HEX[color]}"></div>${COLOR_NAME[color]} — ${label}</div>`;
@@ -827,11 +832,10 @@ function renderLobby(){
   document.getElementById('lobby-players').innerHTML=rows;
   const startBtn=document.getElementById('lobby-start-btn');
   const waiting=document.getElementById('lobby-waiting');
-  const joined=oroom.playerOrder.length;
   if(isHost){
     startBtn.classList.remove('hidden');
     startBtn.disabled=joined<2;
-    waiting.textContent = joined<2 ? '2명 이상 모이면 시작할 수 있어요' : (joined<oroom.maxPlayers ? `${oroom.maxPlayers-joined}자리 더 받을 수 있어요 (지금 시작해도 됩니다)` : '');
+    waiting.textContent = joined<2 ? '2명 이상 모이면 시작할 수 있어요' : (joined<oroom.maxPlayers ? `${oroom.maxPlayers-joined}자리 더 받을 수 있어요 (지금 시작하면 ${joined}인 게임으로 진행됩니다)` : '');
   } else {
     startBtn.classList.add('hidden');
     waiting.textContent='방장이 게임을 시작하기를 기다리는 중...';
@@ -840,11 +844,13 @@ function renderLobby(){
 document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
   const snap=await get(ref(db, `blokusRooms/${roomCode}`));
   const room=snap.val();
+  const activePlayerCount=room.playerOrder.length;
+  const colorOrder=activeColorsFor(activePlayerCount);
   const colors={};
-  room.colorOrder.forEach(color=>{
+  colorOrder.forEach(color=>{
     colors[color]={ piecesLeftIds:ALL_PIECE_IDS.slice(), hasPlaced:false, lastPieceSize:0 };
   });
-  await update(ref(db, `blokusRooms/${roomCode}`), { status:'playing', colors, board:emptyBoard(), currentIdx:0, lastMove:null });
+  await update(ref(db, `blokusRooms/${roomCode}`), { status:'playing', activePlayerCount, colorOrder, colors, board:emptyBoard(), currentIdx:0, lastMove:null });
 });
 document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
 function leaveOnline(){
