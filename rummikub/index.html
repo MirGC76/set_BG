@@ -153,13 +153,12 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
     <div class="panel">
       <h2>진행 방식</h2>
       <div class="row-btns" id="mode-grid">
-        <button class="opt-btn" data-mode="solo">혼자 (컴퓨터 대전)</button>
-        <button class="opt-btn selected" data-mode="local">한 기기에서 함께</button>
+        <button class="opt-btn selected" data-mode="solo">혼자 (컴퓨터 대전)</button>
         <button class="opt-btn" data-mode="online">온라인으로 함께</button>
       </div>
     </div>
 
-    <div class="panel hidden" id="solo-panel">
+    <div class="panel" id="solo-panel">
       <h2>인원 수</h2>
       <div class="row-btns" id="solo-count-grid">
         <button class="opt-btn" data-count="2">2명</button>
@@ -168,15 +167,6 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
       </div>
       <h2 style="margin-top:18px;">내 순서</h2>
       <div class="row-btns" id="solo-order-grid"></div>
-    </div>
-
-    <div class="panel" id="local-panel">
-      <h2>인원 수</h2>
-      <div class="row-btns" id="count-grid">
-        <button class="opt-btn" data-count="2">2명</button>
-        <button class="opt-btn selected" data-count="3">3명</button>
-        <button class="opt-btn" data-count="4">4명</button>
-      </div>
     </div>
 
     <div class="panel hidden" id="online-panel">
@@ -277,7 +267,7 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
     <h2 style="margin-top:0;">Firebase 설정이 필요해요</h2>
     <p style="color:var(--muted);font-size:14px;line-height:1.7;">
       <code>firebase-config.js</code> 파일의 설정값이 채워지지 않았어요. 같이 배포한 README.md를 참고해주세요.
-      (혼자·한 기기에서 함께 모드는 설정 없이도 바로 사용할 수 있습니다.)
+      (혼자(컴퓨터 대전) 모드는 설정 없이도 바로 사용할 수 있습니다.)
     </p>
   </div>
 </div>
@@ -1085,15 +1075,6 @@ function renderOnlineEndModal(room){
 }
 
 /* ============ SETUP SCREEN WIRING ============ */
-let chosenCount=3;
-document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
-    btn.classList.add('selected');
-    chosenCount=+btn.dataset.count;
-  });
-});
-
 let soloCount=3, soloHumanSeat=0;
 function renderSoloOrderOptions(n){
   const el=document.getElementById('solo-order-grid');
@@ -1140,22 +1121,16 @@ document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
     btn.classList.add('selected');
     const m=btn.dataset.mode;
     document.getElementById('solo-panel').classList.toggle('hidden', m!=='solo');
-    document.getElementById('local-panel').classList.toggle('hidden', m!=='local');
     document.getElementById('online-panel').classList.toggle('hidden', m!=='online');
     document.getElementById('start-btn').classList.toggle('hidden', m==='online');
     document.getElementById('start-btn').dataset.mode=m;
   });
 });
-document.getElementById('start-btn').dataset.mode='local';
+document.getElementById('start-btn').dataset.mode='solo';
 document.getElementById('start-btn').addEventListener('click',()=>{
-  const m=document.getElementById('start-btn').dataset.mode;
   showScreen('game');
-  if(m==='solo'){
-    const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeat);
-    newLocalGame(soloCount, aiList);
-  } else {
-    newLocalGame(chosenCount, []);
-  }
+  const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeat);
+  newLocalGame(soloCount, aiList);
 });
 document.getElementById('create-room-btn').addEventListener('click',()=>{
   createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
