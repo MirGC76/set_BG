@@ -730,37 +730,48 @@ function ownedColorsOf(room, uid){
 async function createRoom(name, maxPlayers){
   if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
   if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
-  let code, snap;
-  for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `blokusRooms/${code}`)); if(!snap.exists()) break; }
-  isHost=true; roomCode=code;
-  const colorOrder=activeColorsFor(maxPlayers);
-  const room={
-    status:'lobby', hostId:myId, maxPlayers,
-    playerOrder:[myId],
-    players:{ [myId]: { name } },
-    colorOrder,
-    colors:{},
-    board: emptyBoard(),
-    currentIdx:0, version:0, lastMove:null
-  };
-  await set(ref(db, `blokusRooms/${code}`), room);
-  enterOnlineFlow();
+  document.getElementById('create-msg').textContent='';
+  try{
+    let code, snap;
+    for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `blokusRooms/${code}`)); if(!snap.exists()) break; }
+    isHost=true; roomCode=code;
+    const colorOrder=activeColorsFor(maxPlayers);
+    const room={
+      status:'lobby', hostId:myId, maxPlayers,
+      playerOrder:[myId],
+      players:{ [myId]: { name } },
+      colorOrder,
+      board: emptyBoard(),
+      currentIdx:0, version:0, lastMove:null
+    };
+    await set(ref(db, `blokusRooms/${code}`), room);
+    enterOnlineFlow();
+  }catch(e){
+    console.error('createRoom failed', e);
+    document.getElementById('create-msg').textContent='방을 만들지 못했어요. Firebase 설정과 보안 규칙(firebase.rules.json)이 최신 상태인지 확인해주세요. ('+(e && e.code || e)+')';
+  }
 }
 async function joinRoom(name, code){
   if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
   if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
-  const roomRef=ref(db, `blokusRooms/${code}`);
-  const snap=await get(roomRef);
-  if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
-  const room=snap.val();
-  if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
-  if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
-  await update(ref(db, `blokusRooms/${code}`), {
-    playerOrder: [...room.playerOrder, myId],
-    [`players/${myId}`]: { name }
-  });
-  isHost=false; roomCode=code;
-  enterOnlineFlow();
+  document.getElementById('join-msg').textContent='';
+  try{
+    const roomRef=ref(db, `blokusRooms/${code}`);
+    const snap=await get(roomRef);
+    if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+    const room=snap.val();
+    if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+    if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+    await update(ref(db, `blokusRooms/${code}`), {
+      playerOrder: [...room.playerOrder, myId],
+      [`players/${myId}`]: { name }
+    });
+    isHost=false; roomCode=code;
+    enterOnlineFlow();
+  }catch(e){
+    console.error('joinRoom failed', e);
+    document.getElementById('join-msg').textContent='참가하지 못했어요. Firebase 설정과 보안 규칙(firebase.rules.json)이 최신 상태인지 확인해주세요. ('+(e && e.code || e)+')';
+  }
 }
 function enterOnlineFlow(){
   currentMode='online';

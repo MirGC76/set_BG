@@ -943,11 +943,26 @@ function enterOnlineFlow(){
   mode='online';
   showScreen('lobby');
   lastSeenVersion=-1; myInitialDealAttempted=false;
+  onRoomUpdateBusy=false; onRoomUpdatePending=null;
   if(roomUnsub) roomUnsub();
   roomUnsub=onValue(ref(db, `rummikubRooms/${roomCode}`), (snap)=>{
     const room=snap.val();
     if(!room) return;
-    onRoomUpdate(room);
+    queueRoomUpdate(room);
+  });
+}
+let onRoomUpdateBusy=false;
+let onRoomUpdatePending=null;
+function queueRoomUpdate(room){
+  if(onRoomUpdateBusy){ onRoomUpdatePending=room; return; }
+  onRoomUpdateBusy=true;
+  onRoomUpdate(room).catch(e=>console.error('onRoomUpdate error', e)).finally(()=>{
+    onRoomUpdateBusy=false;
+    if(onRoomUpdatePending){
+      const next=onRoomUpdatePending;
+      onRoomUpdatePending=null;
+      queueRoomUpdate(next);
+    }
   });
 }
 async function onRoomUpdate(room){
