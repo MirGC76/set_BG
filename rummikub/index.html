@@ -204,7 +204,8 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
         <b>③ 첫 조합</b> — 처음 낼 때는 이번 턴에 낸 타일의 합이 <b>30점 이상</b>이어야 합니다.<br>
         <b>④ 재배치</b> — 자신의 턴에는 보드 위 타일도 자유롭게 옮겨 다른 조합으로 재구성할 수 있어요.<br>
         <b>⑤ 조커 되찾기</b> — 보드 위 조커가 대신하고 있는 실제 타일을 손에 들고 있다면, 그 타일과 조커를 맞바꿀 수 있어요. 단, 되찾은 조커는 이번 턴이 끝나기 전에 다른 조합에 반드시 사용해야 합니다.<br>
-        <b>⑥ 종료</b> — 손에 든 타일을 가장 먼저 모두 낸 사람이 승리! 낼 수 없으면 [타일 뽑기]로 풀에서 한 장 뽑고 턴을 넘깁니다.
+        <b>⑥ 종료</b> — 손에 든 타일을 가장 먼저 모두 낸 사람이 승리! 낼 수 없으면 [타일 뽑기]로 풀에서 한 장 뽑고 턴을 넘깁니다.<br>
+        <b>⑦ 점수</b> — 이긴 사람은 나머지 사람들이 손에 남긴 타일 점수를 모두 합한 만큼 더하고, 진 사람들은 각자 남은 타일 점수만큼 뺍니다 (조커는 30점).
       </div>
     </div>
   </div>
@@ -732,11 +733,31 @@ function localAdvanceTurn(){
   setMessage(`${p.name}${aiSeats.has(currentPlayerIdx)?' 🤖':''} 차례${p.hasMelded?'':' (첫 조합은 30점 이상!)'}`,'info');
   maybeTriggerAiTurn();
 }
+/* Official Rummikub scoring: the player who goes out gains the SUM of every
+   opponent's remaining tile value; each opponent loses their own remaining value.
+   If nobody actually went out (forced end / blocked game), everyone just loses
+   their own remaining value (no bonus transfer, since no one truly "won" it). */
+function tileValue(t){ return t.isJoker ? 30 : t.number; }
+function handPenalty(hand){ return hand.reduce((s,t)=>s+tileValue(t),0); }
+function computeRoundScores(entries, winnerIdx){
+  // entries: array of {name, hand, tileCount}
+  const penalties = entries.map(e=>handPenalty(e.hand));
+  if(winnerIdx!==null && winnerIdx!==undefined){
+    const totalOthers = penalties.reduce((s,v,i)=> i===winnerIdx ? s : s+v, 0);
+    return entries.map((e,i)=> i===winnerIdx
+      ? { name:e.name, score: totalOthers, tileCount:e.tileCount }
+      : { name:e.name, score: -penalties[i], tileCount:e.tileCount });
+  }
+  return entries.map((e,i)=>({ name:e.name, score: -penalties[i], tileCount:e.tileCount }));
+}
 function localEndGame(winner){
   gameOver=true;
-  const scores=players.map(p=>({ name:p.name, remaining:p.hand.reduce((s,t)=>s+(t.isJoker?30:t.number),0), tileCount:p.hand.length }));
-  scores.sort((a,b)=>a.remaining-b.remaining);
-  showEndModal(winner?winner.name+' 승리! 🎉':`${scores[0].name} 승리 (남은 점수 최소)`, scores.map(s=>`${s.name}: 남은 타일 ${s.tileCount}장 (${s.remaining}점)`));
+  const winnerIdx = winner ? players.indexOf(winner) : null;
+  const entries = players.map(p=>({ name:p.name, hand:p.hand, tileCount:p.hand.length }));
+  const scored = computeRoundScores(entries, winnerIdx);
+  const sorted = scored.slice().sort((a,b)=>b.score-a.score);
+  const winnerText = winner ? `${winner.name} 승리! 🎉` : `${sorted[0].name} 승리 (점수 최고)`;
+  showEndModal(winnerText, sorted.map(s=>`${s.name}: ${s.score>0?'+':''}${s.score}점 (남은 타일 ${s.tileCount}장)`));
 }
 
 /* AI turn */
@@ -1074,7 +1095,7 @@ async function onlineCommitEndTurn(isFirstMeldNow){
     [`rummikubRooms/${roomCode}/status`]: finished ? 'ended' : 'playing'
   };
   if(isFirstMeldNow) updates[`rummikubRooms/${roomCode}/melded/${myId}`]=true;
-  if(finished) updates[`rummikubRooms/${roomCode}/winnerName`]=myName;
+  if(finished) { updates[`rummikubRooms/${roomCode}/winnerName`]=myName; updates[`rummikubRooms/${roomCode}/winnerUid`]=myId; }
   await update(ref(db), updates);
 }
 async function onlineCommitDraw(){
@@ -1103,16 +1124,34 @@ async function onlineCommitDraw(){
 }
 async function reportMyFinalScoreIfNeeded(room){
   if(room.finalScores && room.finalScores[myId]!==undefined) return;
-  const remaining=onlineMyHand.reduce((s,t)=>s+(t.isJoker?30:t.number),0);
+  const remaining=handPenalty(onlineMyHand);
   await update(ref(db), { [`rummikubRooms/${roomCode}/finalScores/${myId}`]: remaining });
 }
 function renderOnlineEndModal(room){
-  const scores=room.finalScores||{};
-  const allIn=room.playerOrder.every(uid=>scores[uid]!==undefined);
-  const lines=room.playerOrder.map(uid=>{
-    const nm=room.players[uid].name;
-    return scores[uid]!==undefined ? `${nm}: 남은 점수 ${scores[uid]}점` : `${nm}: 집계 중...`;
-  });
+  const penalties=room.finalScores||{};
+  const allIn=room.playerOrder.every(uid=>penalties[uid]!==undefined);
+  let lines;
+  if(!allIn){
+    lines=room.playerOrder.map(uid=>{
+      const nm=room.players[uid].name;
+      return penalties[uid]!==undefined ? `${nm}: 집계 완료, 다른 사람 기다리는 중...` : `${nm}: 집계 중...`;
+    });
+  } else {
+    const winnerUid=room.winnerUid;
+    const scored=room.playerOrder.map(uid=>{
+      const nm=room.players[uid].name;
+      let score;
+      if(winnerUid && uid===winnerUid){
+        const totalOthers=room.playerOrder.filter(u=>u!==winnerUid).reduce((s,u)=>s+(penalties[u]||0),0);
+        score=totalOthers;
+      } else {
+        score=-(penalties[uid]||0);
+      }
+      return { name:nm, score };
+    });
+    scored.sort((a,b)=>b.score-a.score);
+    lines=scored.map(s=>`${s.name}: ${s.score>0?'+':''}${s.score}점`);
+  }
   const winnerText = room.winnerName ? `${room.winnerName} 승리! 🎉` : (allIn ? '점수 집계 완료' : '점수 집계 중...');
   document.getElementById('win-name').textContent=winnerText;
   document.getElementById('final-scores').innerHTML=lines.join('<br>');
