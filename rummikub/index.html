@@ -962,11 +962,11 @@ async function onRoomUpdate(room){
   if(room.status==='playing'){
     if(document.getElementById('game').classList.contains('hidden')){
       await refreshMyHandFromFirebase();
-      table=room.table.map(s=>s.slice());
+      table=(room.table||[]).map(s=>s.slice());
       applyZoom();
       showScreen('game');
     } else if(versionChanged){
-      table=room.table.map(s=>s.slice());
+      table=(room.table||[]).map(s=>s.slice());
       if(currentTurnUid(room)===myId){
         await refreshMyHandFromFirebase();
         snapshotTurn();
@@ -982,7 +982,7 @@ async function onRoomUpdate(room){
       setMessage(turnUid===myId ? '내 차례예요' : `${turnName} 차례를 기다리는 중...`, 'info');
     }
   } else if(room.status==='ended'){
-    table=room.table.map(s=>s.slice());
+    table=(room.table||[]).map(s=>s.slice());
     renderAll();
     await reportMyFinalScoreIfNeeded(room);
     renderOnlineEndModal(room);
@@ -995,7 +995,7 @@ async function performInitialDrawIfNeeded(){
     if(!r) return r;
     if(r.status!=='dealing') return r;
     if((r.dealtUids||[]).includes(myId)) return r;
-    const hand=r.deck.splice(0,14);
+    const hand=(r.deck||[]).splice(0,14);
     myNewHand=hand;
     r.dealtUids=[...(r.dealtUids||[]), myId];
     r.handCounts=r.handCounts||{};
