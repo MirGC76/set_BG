@@ -871,46 +871,73 @@ function genCode(){
 function currentTurnUid(room){ return room.playerOrder[room.currentIdx]; }
 
 async function ensureSignedIn(){
-  if(!firebaseReady) return false;
-  if(myId) return true;
-  const cred=await signInAnonymously(auth);
-  myId=cred.user.uid;
-  return true;
+  if(!firebaseReady) return { ok:false, reason:'firebase-not-configured' };
+  if(myId) return { ok:true };
+  try{
+    const cred=await signInAnonymously(auth);
+    myId=cred.user.uid;
+    return { ok:true };
+  }catch(e){
+    console.error('signInAnonymously failed', e);
+    return { ok:false, reason:'auth-failed', error:e };
+  }
 }
 async function createRoom(name, maxPlayers){
-  if(!(await ensureSignedIn())){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  document.getElementById('create-msg').textContent='';
+  const signIn=await ensureSignedIn();
+  if(!signIn.ok){
+    if(signIn.reason==='firebase-not-configured'){ document.getElementById('config-error').classList.remove('hidden'); return; }
+    document.getElementById('create-msg').textContent='로그인에 실패했어요. Firebase 콘솔에서 Authentication > 익명 로그인이 켜져 있는지 확인해주세요. ('+(signIn.error && signIn.error.code || '')+')';
+    return;
+  }
   if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
-  let code, snap;
-  for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `rummikubRooms/${code}`)); if(!snap.exists()) break; }
-  isHost=true; roomCode=code;
-  const room={
-    status:'lobby', hostId:myId, maxPlayers,
-    playerOrder:[myId],
-    players:{ [myId]:{name} },
-    handCounts:{ [myId]:0 },
-    melded:{},
-    table:[], deck:[], deckCount:0,
-    currentIdx:0, version:0, lastMove:null
-  };
-  await set(ref(db, `rummikubRooms/${code}`), room);
-  enterOnlineFlow();
+  try{
+    let code, snap;
+    for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `rummikubRooms/${code}`)); if(!snap.exists()) break; }
+    isHost=true; roomCode=code;
+    const room={
+      status:'lobby', hostId:myId, maxPlayers,
+      playerOrder:[myId],
+      players:{ [myId]:{name} },
+      handCounts:{ [myId]:0 },
+      melded:{},
+      table:[], deck:[], deckCount:0,
+      currentIdx:0, version:0, lastMove:null
+    };
+    await set(ref(db, `rummikubRooms/${code}`), room);
+    enterOnlineFlow();
+  }catch(e){
+    console.error('createRoom failed', e);
+    document.getElementById('create-msg').textContent='방을 만들지 못했어요. Firebase 보안 규칙이 최신 firebase.rules.json으로 게시되어 있는지 확인해주세요. ('+(e && e.code || e)+')';
+  }
 }
 async function joinRoom(name, code){
-  if(!(await ensureSignedIn())){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  document.getElementById('join-msg').textContent='';
+  const signIn=await ensureSignedIn();
+  if(!signIn.ok){
+    if(signIn.reason==='firebase-not-configured'){ document.getElementById('config-error').classList.remove('hidden'); return; }
+    document.getElementById('join-msg').textContent='로그인에 실패했어요. Firebase 콘솔에서 Authentication > 익명 로그인이 켜져 있는지 확인해주세요. ('+(signIn.error && signIn.error.code || '')+')';
+    return;
+  }
   if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
-  const roomRef=ref(db, `rummikubRooms/${code}`);
-  const snap=await get(roomRef);
-  if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
-  const room=snap.val();
-  if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
-  if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
-  await update(ref(db, `rummikubRooms/${code}`), {
-    playerOrder:[...room.playerOrder, myId],
-    [`players/${myId}`]:{name},
-    [`handCounts/${myId}`]:0
-  });
-  isHost=false; roomCode=code;
-  enterOnlineFlow();
+  try{
+    const roomRef=ref(db, `rummikubRooms/${code}`);
+    const snap=await get(roomRef);
+    if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+    const room=snap.val();
+    if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+    if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+    await update(ref(db, `rummikubRooms/${code}`), {
+      playerOrder:[...room.playerOrder, myId],
+      [`players/${myId}`]:{name},
+      [`handCounts/${myId}`]:0
+    });
+    isHost=false; roomCode=code;
+    enterOnlineFlow();
+  }catch(e){
+    console.error('joinRoom failed', e);
+    document.getElementById('join-msg').textContent='참가하지 못했어요. Firebase 보안 규칙이 최신 firebase.rules.json으로 게시되어 있는지 확인해주세요. ('+(e && e.code || e)+')';
+  }
 }
 function enterOnlineFlow(){
   mode='online';
@@ -979,11 +1006,11 @@ async function performInitialDrawIfNeeded(){
   });
   if(myNewHand){
     sortHand(myNewHand);
-    await set(ref(db, `rummikubRooms/${roomCode}/hands/${myId}`), myNewHand);
+    await set(ref(db, `rummikubHands/${roomCode}/${myId}`), myNewHand);
   }
 }
 async function refreshMyHandFromFirebase(){
-  const snap=await get(ref(db, `rummikubRooms/${roomCode}/hands/${myId}`));
+  const snap=await get(ref(db, `rummikubHands/${roomCode}/${myId}`));
   onlineMyHand=snap.exists() ? snap.val() : [];
 }
 function renderLobby(){
@@ -1024,7 +1051,7 @@ async function onlineCommitEndTurn(isFirstMeldNow){
     [`rummikubRooms/${roomCode}/currentIdx`]: nextIdx,
     [`rummikubRooms/${roomCode}/version`]: (onlineRoom.version||0)+1,
     [`rummikubRooms/${roomCode}/lastMove`]: { name:myName, kind:'play', ts:Date.now() },
-    [`rummikubRooms/${roomCode}/hands/${myId}`]: onlineMyHand,
+    [`rummikubHands/${roomCode}/${myId}`]: onlineMyHand,
     [`rummikubRooms/${roomCode}/handCounts/${myId}`]: onlineMyHand.length,
     [`rummikubRooms/${roomCode}/status`]: finished ? 'ended' : 'playing'
   };
@@ -1051,7 +1078,7 @@ async function onlineCommitDraw(){
     [`rummikubRooms/${roomCode}/currentIdx`]: nextIdx,
     [`rummikubRooms/${roomCode}/version`]: (onlineRoom.version||0)+1,
     [`rummikubRooms/${roomCode}/lastMove`]: { name:myName, kind:'pass', ts:Date.now() },
-    [`rummikubRooms/${roomCode}/hands/${myId}`]: onlineMyHand,
+    [`rummikubHands/${roomCode}/${myId}`]: onlineMyHand,
     [`rummikubRooms/${roomCode}/handCounts/${myId}`]: onlineMyHand.length,
     [`rummikubRooms/${roomCode}/deckCount`]: Math.max(0,(onlineRoom.deckCount||0)-(drawn?1:0))
   });
