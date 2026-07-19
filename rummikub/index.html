@@ -39,11 +39,11 @@ body{
 .back-link{align-self:flex-start;color:var(--muted);font-size:12.5px;text-decoration:none;margin-bottom:10px;}
 
 /* ---------- SETUP ---------- */
-#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:4vh;}
+#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:2vh;}
 .swatches{display:flex;gap:8px;margin-bottom:10px;}
 .swatch{width:22px;height:30px;border-radius:5px;background:var(--tile-bg);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;}
 h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margin:4px 0;}
-.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:26px;text-align:center;}
+.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:22px;text-align:center;}
 .panel{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
 .panel h2{font-size:12.5px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;text-transform:uppercase;}
 .row-btns{display:flex;gap:10px;flex-wrap:wrap;}
@@ -51,8 +51,27 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
 .opt-btn.selected,.opt-btn:hover{border-color:var(--amber);background:rgba(224,185,60,0.14);}
 .start-btn{margin-top:8px;background:linear-gradient(180deg,#F2CE6A,var(--amber));color:var(--ink);border:none;border-radius:10px;padding:15px 40px;font-weight:900;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #a8871f;}
 .start-btn:active{transform:translateY(3px);box-shadow:none;}
+.start-btn:disabled{opacity:0.45;cursor:not-allowed;}
 .rules-box{font-size:12px;color:var(--muted);line-height:1.7;text-align:left;}
 .rules-box b{color:var(--text);}
+.text-input{width:100%;padding:12px 14px;border-radius:8px;border:2px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;margin-bottom:10px;}
+.text-input::placeholder{color:var(--muted);}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tab-btn{flex:1;background:transparent;border:2px solid var(--line);color:var(--muted);border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;}
+.tab-btn.selected{border-color:var(--amber);color:var(--text);background:rgba(224,185,60,0.1);}
+.warn-note{font-size:11.5px;color:var(--amber);background:rgba(224,185,60,0.1);border-radius:8px;padding:8px 12px;margin-top:6px;line-height:1.6;}
+.field-msg{font-size:12.5px;color:var(--bad);min-height:16px;margin:-4px 0 8px;}
+
+/* ---------- LOBBY ---------- */
+#lobby{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;margin-top:5vh;}
+.room-code-box{background:rgba(255,255,255,0.06);border:2px dashed var(--amber);border-radius:14px;padding:20px 34px;text-align:center;margin-bottom:20px;}
+.room-code-box .lbl{font-size:12px;color:var(--muted);letter-spacing:2px;}
+.room-code-box .code{font-size:40px;font-weight:900;letter-spacing:8px;color:var(--amber);margin-top:4px;}
+.lobby-players{width:100%;background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px;}
+.lobby-player{display:flex;justify-content:space-between;padding:8px 4px;font-size:15px;border-bottom:1px solid var(--line);}
+.lobby-player:last-child{border-bottom:none;}
+.host-badge{font-size:10px;background:var(--amber);color:var(--ink);border-radius:6px;padding:2px 6px;margin-left:8px;font-weight:800;}
+.waiting-msg{color:var(--muted);font-size:14px;text-align:center;margin-top:6px;}
 
 /* ---------- GAME ---------- */
 #game{width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:center;}
@@ -76,8 +95,10 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
 
 .table-wrap{width:100%;max-width:900px;background:var(--felt);border:8px solid #3a2a1c;border-radius:14px;padding:16px;box-shadow:0 14px 30px rgba(0,0,0,0.45);min-height:160px;}
 .table-area{display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start;}
-.tile-set{display:flex;gap:4px;background:rgba(0,0,0,0.18);border:1px dashed var(--felt-line);border-radius:8px;padding:8px;min-width:50px;min-height:56px;align-items:center;}
-.new-set-btn{background:rgba(255,255,255,0.06);border:2px dashed var(--muted);color:var(--muted);border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;min-height:56px;}
+.tile-set{display:flex;gap:4px;background:rgba(0,0,0,0.18);border:1px dashed var(--felt-line);border-radius:8px;padding:8px;min-width:50px;min-height:56px;align-items:center;transition:border-color .15s, box-shadow .15s, background .15s;}
+.tile-set.droppable{border-color:var(--amber);border-style:solid;border-width:2px;background:rgba(224,185,60,0.10);box-shadow:0 0 0 3px rgba(224,185,60,0.22);cursor:pointer;}
+.new-set-btn{background:rgba(255,255,255,0.06);border:2px dashed var(--muted);color:var(--muted);border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;min-height:56px;transition:border-color .15s, color .15s, box-shadow .15s;}
+.new-set-btn.droppable{border-color:var(--amber);border-style:solid;color:var(--amber);box-shadow:0 0 0 3px rgba(224,185,60,0.22);}
 .new-set-btn:hover{border-color:var(--amber);color:var(--amber);}
 
 .tile{
@@ -88,6 +109,7 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
 }
 .tile.selected{border-color:var(--amber);background:var(--tile-bg-selected);transform:translateY(-4px);}
 .tile.joker{background:linear-gradient(160deg,#F5EFE0,#E8D9A8);font-size:20px;}
+.tile.joker.pending{box-shadow:0 3px 0 rgba(0,0,0,0.35), inset 0 0 0 2px var(--bad);}
 .tile.color-red{color:var(--red);}
 .tile.color-blue{color:var(--blue);}
 .tile.color-black{color:var(--black);}
@@ -107,6 +129,10 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
 #end-modal h2{font-size:22px;margin:0 0 6px;}
 #end-modal .win-name{color:var(--amber);font-weight:900;font-size:24px;margin:10px 0;}
 #end-modal .scores{margin:14px 0;font-size:14px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
+
+#config-error{position:fixed;inset:0;background:rgba(6,10,15,0.94);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center;}
+#config-error .box{max-width:520px;background:var(--bg-mid);border:1px solid var(--bad);border-radius:14px;padding:28px;}
+#config-error code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
 </style>
 </head>
 <body>
@@ -125,12 +151,57 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
     <div class="subtitle">숫자와 색깔 타일로 조합을 만들어 손에 든 타일을 가장 먼저 없애는 게임</div>
 
     <div class="panel">
+      <h2>진행 방식</h2>
+      <div class="row-btns" id="mode-grid">
+        <button class="opt-btn" data-mode="solo">혼자 (컴퓨터 대전)</button>
+        <button class="opt-btn selected" data-mode="local">한 기기에서 함께</button>
+        <button class="opt-btn" data-mode="online">온라인으로 함께</button>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="solo-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="solo-count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+      <h2 style="margin-top:18px;">내 순서</h2>
+      <div class="row-btns" id="solo-order-grid"></div>
+    </div>
+
+    <div class="panel" id="local-panel">
       <h2>인원 수</h2>
       <div class="row-btns" id="count-grid">
         <button class="opt-btn" data-count="2">2명</button>
         <button class="opt-btn selected" data-count="3">3명</button>
         <button class="opt-btn" data-count="4">4명</button>
       </div>
+    </div>
+
+    <div class="panel hidden" id="online-panel">
+      <h2>온라인 대결</h2>
+      <div class="tabs">
+        <button class="tab-btn selected" data-tab="create">방 만들기</button>
+        <button class="tab-btn" data-tab="join">참가하기</button>
+      </div>
+      <div id="create-tab">
+        <input class="text-input" id="create-name" placeholder="내 이름" maxlength="10">
+        <div class="row-btns" id="online-count-grid">
+          <button class="opt-btn" data-count="2">2명</button>
+          <button class="opt-btn selected" data-count="3">3명</button>
+          <button class="opt-btn" data-count="4">4명</button>
+        </div>
+        <div class="field-msg" id="create-msg"></div>
+        <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
+      </div>
+      <div id="join-tab" class="hidden">
+        <input class="text-input" id="join-name" placeholder="내 이름" maxlength="10">
+        <input class="text-input" id="join-code" placeholder="방 코드 (예: 7QXM)" maxlength="4" style="text-transform:uppercase;">
+        <div class="field-msg" id="join-msg"></div>
+        <button class="start-btn" id="join-room-btn" style="width:100%;">참가하기</button>
+      </div>
+      <div class="warn-note">⚠️ 방 코드를 아는 사람은 누구나 참가할 수 있어요. 내 손 타일은 나만 볼 수 있고, 다른 사람에게는 남은 타일 개수만 보여요.</div>
     </div>
 
     <button class="start-btn" id="start-btn">게임 시작</button>
@@ -141,10 +212,23 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
         <b>① 타일</b> — 1~13 숫자, 빨강·파랑·검정·노랑 4색이 각 2장씩(총 104장) + 조커 2장 = 106장. 시작할 때 14장씩 받습니다.<br>
         <b>② 조합</b> — <b>그룹</b>: 같은 숫자, 서로 다른 색 3~4장 / <b>런</b>: 같은 색, 연속된 숫자 3장 이상. 조커는 어떤 타일도 대신할 수 있어요.<br>
         <b>③ 첫 조합</b> — 처음 낼 때는 이번 턴에 낸 타일의 합이 <b>30점 이상</b>이어야 합니다.<br>
-        <b>④ 재배치</b> — 자신의 턴에는 보드 위 타일도 자유롭게 옮겨 다른 조합으로 재구성할 수 있어요. 단, 턴이 끝날 때 보드의 모든 조합은 유효해야 합니다.<br>
-        <b>⑤ 종료</b> — 손에 든 타일을 가장 먼저 모두 낸 사람이 승리! 낼 수 없으면 [타일 뽑기]로 풀에서 한 장 뽑고 턴을 넘깁니다.
+        <b>④ 재배치</b> — 자신의 턴에는 보드 위 타일도 자유롭게 옮겨 다른 조합으로 재구성할 수 있어요.<br>
+        <b>⑤ 조커 되찾기</b> — 보드 위 조커가 대신하고 있는 실제 타일을 손에 들고 있다면, 그 타일과 조커를 맞바꿀 수 있어요. 단, 되찾은 조커는 이번 턴이 끝나기 전에 다른 조합에 반드시 사용해야 합니다.<br>
+        <b>⑥ 종료</b> — 손에 든 타일을 가장 먼저 모두 낸 사람이 승리! 낼 수 없으면 [타일 뽑기]로 풀에서 한 장 뽑고 턴을 넘깁니다.
       </div>
     </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="lobby" class="hidden">
+    <div class="room-code-box">
+      <div class="lbl">방 코드</div>
+      <div class="code" id="lobby-code">----</div>
+    </div>
+    <div class="lobby-players" id="lobby-players"></div>
+    <button class="start-btn hidden" id="lobby-start-btn">게임 시작</button>
+    <div class="waiting-msg" id="lobby-waiting"></div>
+    <button class="icon-btn" id="lobby-leave-btn" style="margin-top:16px;">방 나가기</button>
   </div>
 
   <!-- GAME -->
@@ -168,6 +252,7 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
     <div class="controls-row">
       <button class="ctrl-btn primary" id="end-turn-btn">턴 종료 (내기)</button>
       <button class="ctrl-btn" id="draw-btn">타일 뽑기</button>
+      <button class="ctrl-btn" id="joker-swap-btn">조커 되찾기</button>
       <button class="ctrl-btn" id="revert-btn">되돌리기</button>
       <button class="ctrl-btn danger" id="force-end-btn">게임 종료(정산)</button>
     </div>
@@ -187,7 +272,26 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
   </div>
 </div>
 
-<script>
+<div id="config-error" class="hidden">
+  <div class="box">
+    <h2 style="margin-top:0;">Firebase 설정이 필요해요</h2>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+      <code>firebase-config.js</code> 파일의 설정값이 채워지지 않았어요. 같이 배포한 README.md를 참고해주세요.
+      (혼자·한 기기에서 함께 모드는 설정 없이도 바로 사용할 수 있습니다.)
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "../firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, get, update, onValue, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {
+  getAuth, signInAnonymously
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 /* ============ TILE MODEL ============ */
 const COLORS=['red','blue','black','yellow'];
 function buildDeck(){
@@ -203,21 +307,18 @@ function buildDeck(){
 }
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-/* ============ SET VALIDATION ============ */
+/* ============ SET VALIDATION (pure, reused by local/solo/online/AI) ============ */
 function isValidSet(tiles){
   if(tiles.length<3) return {valid:false};
   const jokers=tiles.filter(t=>t.isJoker);
   const real=tiles.filter(t=>!t.isJoker);
   if(real.length===0) return {valid:false};
 
-  // GROUP: same number, all different colors, max 4 tiles
   const sameNumber=real.every(t=>t.number===real[0].number);
   const colorSet=new Set(real.map(t=>t.color));
   if(sameNumber && colorSet.size===real.length && tiles.length<=4){
     return {valid:true, kind:'group', number:real[0].number};
   }
-
-  // RUN: same color, consecutive numbers (jokers fill gaps/ends), 3..13 tiles, within 1..13
   const sameColor=real.every(t=>t.color===real[0].color);
   if(sameColor){
     const nums=real.map(t=>t.number);
@@ -246,24 +347,156 @@ function isValidSet(tiles){
 function sumEffectiveValues(set, info, filterIds){
   let sum=0;
   if(info.kind==='group'){
-    for(const t of set){
-      if(filterIds && !filterIds.has(t.id)) continue;
-      sum += t.isJoker ? info.number : t.number;
-    }
+    for(const t of set){ if(filterIds && !filterIds.has(t.id)) continue; sum += t.isJoker ? info.number : t.number; }
   } else if(info.kind==='run'){
     const nullSlots=info.sequence.filter(s=>s.tileId===null).map(s=>s.number);
     let jokerIdx=0;
     for(const t of set){
-      let val;
-      if(!t.isJoker){ val=t.number; } else { val=nullSlots[jokerIdx]; jokerIdx++; }
+      let val; if(!t.isJoker){ val=t.number; } else { val=nullSlots[jokerIdx]; jokerIdx++; }
       if(!filterIds || filterIds.has(t.id)) sum += val;
     }
   }
   return sum;
 }
+function jokerRetrievalInfo(tableArr, setIdx, tileIdx){
+  const set=tableArr[setIdx];
+  const tile=set[tileIdx];
+  if(!tile.isJoker) return null;
+  const info=isValidSet(set);
+  if(!info.valid) return null;
+  if(info.kind==='group'){
+    const usedColors=new Set(set.filter(t=>!t.isJoker).map(t=>t.color));
+    return { kind:'group', number: info.number, forbiddenColors: usedColors };
+  } else {
+    let jokerCount=0;
+    for(let i=0;i<set.length;i++){
+      if(set[i].isJoker){
+        if(i===tileIdx){
+          const nullSlots=info.sequence.filter(s=>s.tileId===null);
+          return { kind:'run', color: info.color, number: nullSlots[jokerCount].number };
+        }
+        jokerCount++;
+      }
+    }
+  }
+  return null;
+}
+function handTileMatchesRequirement(tile, req){
+  if(tile.isJoker) return false;
+  if(req.kind==='group') return tile.number===req.number && !req.forbiddenColors.has(tile.color);
+  return tile.color===req.color && tile.number===req.number;
+}
+function sortSetForDisplay(set){
+  const info=isValidSet(set);
+  if(info.valid && info.kind==='run'){
+    const tileById={};
+    set.filter(t=>!t.isJoker).forEach(t=>{ tileById[t.id]=t; });
+    const jokers=set.filter(t=>t.isJoker).slice();
+    const ordered=[];
+    for(const slot of info.sequence){
+      ordered.push(slot.tileId!==null ? tileById[slot.tileId] : jokers.shift());
+    }
+    return ordered;
+  }
+  if(info.valid && info.kind==='group'){
+    const colorOrder={red:0,blue:1,black:2,yellow:3};
+    const real=set.filter(t=>!t.isJoker).slice().sort((a,b)=>colorOrder[a.color]-colorOrder[b.color]);
+    const jokers=set.filter(t=>t.isJoker);
+    return [...real, ...jokers];
+  }
+  // not a valid set yet (still being built) -- best-effort ascending sort, jokers last
+  return set.slice().sort((a,b)=>{
+    if(a.isJoker && b.isJoker) return 0;
+    if(a.isJoker) return 1;
+    if(b.isJoker) return -1;
+    return a.number-b.number;
+  });
+}
+
+/* ============ AI HEURISTIC (candidate sets from a hand) ============ */
+function candidateGroups(hand){
+  const jokers=hand.filter(t=>t.isJoker);
+  const byNumber={};
+  hand.filter(t=>!t.isJoker).forEach(t=>{ (byNumber[t.number]=byNumber[t.number]||[]).push(t); });
+  const candidates=[];
+  for(const num in byNumber){
+    const tiles=byNumber[num];
+    const byColor={};
+    tiles.forEach(t=>{ if(!byColor[t.color]) byColor[t.color]=t; });
+    const distinct=Object.values(byColor);
+    if(distinct.length>=3) candidates.push(distinct.slice(0,4));
+    else if(distinct.length===2 && jokers.length>=1) candidates.push([...distinct, jokers[0]]);
+  }
+  return candidates;
+}
+function candidateRuns(hand){
+  const jokers=hand.filter(t=>t.isJoker);
+  const byColor={};
+  hand.filter(t=>!t.isJoker).forEach(t=>{ (byColor[t.color]=byColor[t.color]||[]).push(t); });
+  const candidates=[];
+  for(const color in byColor){
+    const tiles=byColor[color].slice().sort((a,b)=>a.number-b.number);
+    const seen=new Set(); const uniq=[];
+    tiles.forEach(t=>{ if(!seen.has(t.number)){ seen.add(t.number); uniq.push(t); } });
+    let i=0;
+    while(i<uniq.length){
+      let jcount=0, k=i;
+      while(k+1<uniq.length){
+        const gap=uniq[k+1].number-uniq[k].number-1;
+        if(gap===0){ k++; continue; }
+        if(gap>0 && jcount+gap<=jokers.length){ jcount+=gap; k++; continue; }
+        break;
+      }
+      const runLen=(k-i+1)+jcount;
+      if(runLen>=3) candidates.push([...uniq.slice(i,k+1), ...jokers.slice(0,jcount)]);
+      i = k+1>i ? k+1 : i+1;
+    }
+  }
+  return candidates;
+}
+function aiTryFirstMeld(hand){
+  const candidates=[...candidateGroups(hand), ...candidateRuns(hand)];
+  const scored=candidates.map(cset=>{
+    const info=isValidSet(cset);
+    return { tiles:cset, value: info.valid?sumEffectiveValues(cset,info,null):0, valid:info.valid };
+  }).filter(c=>c.valid);
+  scored.sort((a,b)=>b.value-a.value);
+  const usedIds=new Set(); const chosen=[]; let sum=0;
+  for(const c of scored){
+    if(c.tiles.some(t=>usedIds.has(t.id))) continue;
+    chosen.push(c.tiles);
+    c.tiles.forEach(t=>usedIds.add(t.id));
+    sum+=c.value;
+  }
+  return sum>=30 ? chosen : null;
+}
+function aiExtendTable(hand, tableArr){
+  const workingHand=hand.slice();
+  const workingTable=tableArr.map(s=>s.slice());
+  const usedTileIds=[];
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(let i=0;i<workingHand.length;i++){
+      const tile=workingHand[i];
+      for(let s=0;s<workingTable.length;s++){
+        const trial=[...workingTable[s], tile];
+        if(isValidSet(trial).valid){
+          workingTable[s]=sortSetForDisplay(trial);
+          usedTileIds.push(tile.id);
+          workingHand.splice(i,1);
+          changed=true;
+          break;
+        }
+      }
+      if(changed) break;
+    }
+  }
+  return { table:workingTable, usedTileIds };
+}
 
 /* ============ SHARED UI HELPERS ============ */
-const SCREENS=['setup','game'];
+const SCREENS=['setup','lobby','game'];
 function showScreen(id){ SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
 function setMessage(text, kind){
   const b=document.getElementById('banner');
@@ -282,18 +515,21 @@ function applyZoom(){
 document.getElementById('zoom-out-btn').addEventListener('click',()=>{ uiZoom=Math.max(UI_ZOOM_MIN, +(uiZoom-UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
 document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Math.min(UI_ZOOM_MAX, +(uiZoom+UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
 
-/* ============ GAME STATE ============ */
-let deck=[];
-let players=[]; // {name, hand:[tiles], hasMelded}
-let table=[]; // array of sets (array of tiles)
+/* ============ SHARED GAME STATE ============ */
+let mode='local'; // 'local' | 'solo' | 'online'
+let table=[];      // array of sets (array of tiles) -- the shared table, same variable for all modes
+let players=[];    // local/solo: {name, hand:[tiles], hasMelded}
 let currentPlayerIdx=0;
-let turnSnapshot=null;
 let selected=null; // {source:'hand'|'table', idx | setIdx&tileIdx}
+let jokerSwapArmed=null; // {location:{setIdx,tileIdx}, requirement}
 let gameOver=false;
+let deck=[]; // local/solo only; online keeps deck in Firebase
+let turnSnapshot=null; // local/solo/online revert support
+let aiSeats=new Set(); // solo mode: player indices controlled by computer
 
-function sortHand(player){
+function sortHand(hand){
   const order={red:0,blue:1,black:2,yellow:3};
-  player.hand.sort((a,b)=>{
+  hand.sort((a,b)=>{
     if(a.isJoker && b.isJoker) return 0;
     if(a.isJoker) return 1;
     if(b.isJoker) return -1;
@@ -301,101 +537,50 @@ function sortHand(player){
     return a.number-b.number;
   });
 }
-function newGame(numPlayers){
-  deck=shuffle(buildDeck());
-  players=Array.from({length:numPlayers},(_,i)=>({name:`플레이어 ${i+1}`, hand:[], hasMelded:false}));
-  for(let i=0;i<14;i++) players.forEach(p=>p.hand.push(deck.pop()));
-  players.forEach(sortHand);
-  table=[];
-  currentPlayerIdx=0; selected=null; gameOver=false;
-  snapshotTurn();
-  applyZoom();
-  renderAll();
-  setMessage(`${players[0].name} 차례 — 조합을 만들어 타일을 내보세요 (첫 조합은 30점 이상!)`,'info');
+function activeHand(){
+  return mode==='online' ? onlineMyHand : players[currentPlayerIdx].hand;
 }
-function snapshotTurn(){
-  turnSnapshot={
-    table: table.map(s=>s.map(t=>({...t}))),
-    hand: players[currentPlayerIdx].hand.map(t=>({...t}))
-  };
-}
-function revertTurn(showMsg){
-  table=turnSnapshot.table.map(s=>s.map(t=>({...t})));
-  players[currentPlayerIdx].hand=turnSnapshot.hand.map(t=>({...t}));
-  selected=null;
-  renderAll();
-  if(showMsg) setMessage('이번 턴에 옮긴 내용을 되돌렸어요','info');
+function canIActNow(){
+  if(mode==='online') return onlineRoom && currentTurnUid(onlineRoom)===myId;
+  if(mode==='solo') return !aiSeats.has(currentPlayerIdx);
+  return !gameOver;
 }
 
-/* ============ RENDER ============ */
-function renderAll(){ renderTopbar(); renderPlayerRow(); renderTable(); renderHand(); renderControlsState(); }
-function renderTopbar(){ document.getElementById('deck-chip').textContent=`뽑을 타일 ${deck.length}장`; }
-function renderPlayerRow(){
-  const el=document.getElementById('player-row');
-  el.innerHTML=players.map((p,i)=>`
-    <div class="player-chip ${i===currentPlayerIdx?'active':''}">${p.name} <span class="cnt">· ${p.hand.length}장</span></div>
-  `).join('');
-}
-function tileNode(tile, selectedNow, onClick){
-  const btn=document.createElement('button');
-  btn.className='tile'+(tile.isJoker?' joker':' color-'+tile.color)+(selectedNow?' selected':'');
-  btn.textContent = tile.isJoker ? '★' : tile.number;
-  btn.addEventListener('click',(e)=>{ e.stopPropagation(); onClick(); });
-  return btn;
-}
-function isSel(source, a, b){
+/* ============ SELECTION / PLACEMENT (shared across all modes) ============ */
+function isSel(source,a,b){
   if(!selected || selected.source!==source) return false;
   if(source==='hand') return selected.idx===a;
   return selected.setIdx===a && selected.tileIdx===b;
 }
-function renderTable(){
-  const el=document.getElementById('table-area'); el.innerHTML='';
-  table.forEach((set,setIdx)=>{
-    const box=document.createElement('div');
-    box.className='tile-set';
-    box.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(setIdx); });
-    set.forEach((tile,tileIdx)=>{
-      box.appendChild(tileNode(tile, isSel('table',setIdx,tileIdx), ()=>selectTableTile(setIdx,tileIdx)));
-    });
-    el.appendChild(box);
-  });
-  const newBtn=document.createElement('button');
-  newBtn.className='new-set-btn';
-  newBtn.textContent='+ 새 세트';
-  newBtn.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(-1); });
-  el.appendChild(newBtn);
-}
-function renderHand(){
-  const el=document.getElementById('hand-area'); el.innerHTML='';
-  const hand=players[currentPlayerIdx].hand;
-  hand.forEach((tile,idx)=>{
-    el.appendChild(tileNode(tile, isSel('hand',idx), ()=>selectHandTile(idx)));
-  });
-}
-function renderControlsState(){
-  document.getElementById('draw-btn').disabled=gameOver;
-  document.getElementById('end-turn-btn').disabled=gameOver;
-  document.getElementById('revert-btn').disabled=gameOver;
-}
-
-/* ============ SELECTION / PLACEMENT ============ */
 function selectHandTile(idx){
-  if(gameOver) return;
+  if(gameOver || !canIActNow()) return;
+  const hand=activeHand();
+  if(jokerSwapArmed){
+    const tile=hand[idx];
+    if(handTileMatchesRequirement(tile, jokerSwapArmed.requirement)){
+      performJokerSwap(idx);
+    } else {
+      setMessage('이 타일로는 조커를 되찾을 수 없어요. 요구되는 타일을 다시 확인해주세요.','bad');
+    }
+    return;
+  }
   if(selected && selected.source==='hand' && selected.idx===idx){ selected=null; renderAll(); return; }
   selected={source:'hand', idx};
   renderAll();
 }
 function selectTableTile(setIdx, tileIdx){
-  if(gameOver) return;
+  if(gameOver || !canIActNow()) return;
+  jokerSwapArmed=null;
   if(selected && selected.source==='table' && selected.setIdx===setIdx && selected.tileIdx===tileIdx){ selected=null; renderAll(); return; }
   selected={source:'table', setIdx, tileIdx};
   renderAll();
 }
 function placeSelectedIntoSet(targetSetIdx){
-  if(!selected || gameOver) return;
+  if(!selected || gameOver || !canIActNow()) return;
+  const hand=activeHand();
   let tile;
   if(selected.source==='hand'){
-    tile=players[currentPlayerIdx].hand.splice(selected.idx,1)[0];
+    tile=hand.splice(selected.idx,1)[0];
   } else {
     const {setIdx,tileIdx}=selected;
     tile=table[setIdx].splice(tileIdx,1)[0];
@@ -404,87 +589,502 @@ function placeSelectedIntoSet(targetSetIdx){
       if(targetSetIdx>setIdx) targetSetIdx--;
     }
   }
-  if(targetSetIdx===-1 || targetSetIdx>=table.length) table.push([tile]);
-  else table[targetSetIdx].push(tile);
+  if(targetSetIdx===-1 || targetSetIdx>=table.length){
+    table.push([tile]);
+  } else {
+    table[targetSetIdx].push(tile);
+    table[targetSetIdx]=sortSetForDisplay(table[targetSetIdx]);
+  }
   selected=null;
   renderAll();
 }
+function performJokerSwap(handIdx){
+  const hand=activeHand();
+  const {setIdx,tileIdx}=jokerSwapArmed.location;
+  const realTile=hand.splice(handIdx,1)[0];
+  const joker=table[setIdx][tileIdx];
+  table[setIdx][tileIdx]=realTile;
+  table[setIdx]=sortSetForDisplay(table[setIdx]);
+  hand.push({...joker, pendingJoker:true});
+  jokerSwapArmed=null; selected=null;
+  renderAll();
+  setMessage('조커를 되찾았어요! 이번 턴이 끝나기 전에 다른 조합에 사용해야 해요.','good');
+}
 
-/* ============ TURN ACTIONS ============ */
-document.getElementById('end-turn-btn').addEventListener('click', ()=>{
-  for(const set of table){
-    if(!isValidSet(set).valid){
-      setMessage('보드에 아직 유효하지 않은 조합이 있어요. 다시 확인해주세요.','bad');
-      return;
-    }
-  }
-  const player=players[currentPlayerIdx];
-  const playedCount=turnSnapshot.hand.length-player.hand.length;
-  if(playedCount<=0){
-    setMessage('최소 한 장 이상의 타일을 내야 턴을 종료할 수 있어요. 낼 수 없다면 [타일 뽑기]를 눌러주세요.','bad');
-    return;
-  }
-  if(!player.hasMelded){
-    const snapshotIds=new Set(turnSnapshot.hand.map(t=>t.id));
-    const currentIds=new Set(player.hand.map(t=>t.id));
-    const playedIds=new Set([...snapshotIds].filter(id=>!currentIds.has(id)));
-    let sum=0;
-    for(const set of table){
-      const info=isValidSet(set);
-      sum+=sumEffectiveValues(set, info, playedIds);
-    }
-    if(sum<30){
-      setMessage(`첫 조합은 30점 이상이어야 해요 (지금 ${sum}점). 다시 확인해주세요.`,'bad');
-      return;
-    }
-    player.hasMelded=true;
-  }
-  if(player.hand.length===0){ endGame(player); return; }
-  advanceTurn(`${player.name} 턴 종료`);
-});
-document.getElementById('draw-btn').addEventListener('click', ()=>{
-  if(gameOver) return;
-  revertTurn(false);
-  const player=players[currentPlayerIdx];
-  if(deck.length===0){
-    setMessage('더 이상 뽑을 타일이 없어요. 턴을 넘깁니다.','info');
+/* ============ RENDER (shared) ============ */
+function tileNode(tile, selectedNow, onClick){
+  const btn=document.createElement('button');
+  btn.className='tile'+(tile.isJoker?' joker':' color-'+tile.color)+(selectedNow?' selected':'')+(tile.pendingJoker?' pending':'');
+  btn.textContent = tile.isJoker ? '★' : tile.number;
+  btn.addEventListener('click',(e)=>{ e.stopPropagation(); onClick(); });
+  return btn;
+}
+function renderAll(){ renderTopbar(); renderPlayerRow(); renderTable(); renderHand(); renderControlsState(); }
+function renderTopbar(){
+  const count = mode==='online' ? (onlineRoom ? onlineRoom.deckCount : 0) : deck.length;
+  document.getElementById('deck-chip').textContent=`뽑을 타일 ${count}장`;
+}
+function renderPlayerRow(){
+  const el=document.getElementById('player-row');
+  if(mode==='online' && onlineRoom){
+    const turnUid=currentTurnUid(onlineRoom);
+    el.innerHTML=onlineRoom.playerOrder.map(uid=>{
+      const p=onlineRoom.players[uid];
+      const cnt=(onlineRoom.handCounts && onlineRoom.handCounts[uid]) || 0;
+      return `<div class="player-chip ${uid===turnUid?'active':''}">${p.name}${uid===myId?' (나)':''} <span class="cnt">· ${cnt}장</span></div>`;
+    }).join('');
   } else {
-    player.hand.push(deck.pop());
-    sortHand(player);
-    setMessage(`${player.name}님이 타일을 뽑았습니다`,'info');
+    el.innerHTML=players.map((p,i)=>`
+      <div class="player-chip ${i===currentPlayerIdx?'active':''}">${p.name}${aiSeats.has(i)?' 🤖':''} <span class="cnt">· ${p.hand.length}장</span></div>
+    `).join('');
   }
-  advanceTurn(null);
+}
+function renderTable(){
+  const el=document.getElementById('table-area'); el.innerHTML='';
+  const droppable=!!selected;
+  table.forEach((set,setIdx)=>{
+    const box=document.createElement('div');
+    box.className='tile-set'+(droppable?' droppable':'');
+    box.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(setIdx); });
+    set.forEach((tile,tileIdx)=>{
+      box.appendChild(tileNode(tile, isSel('table',setIdx,tileIdx), ()=>selectTableTile(setIdx,tileIdx)));
+    });
+    el.appendChild(box);
+  });
+  const newBtn=document.createElement('button');
+  newBtn.className='new-set-btn'+(droppable?' droppable':'');
+  newBtn.textContent='+ 새 세트';
+  newBtn.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(-1); });
+  el.appendChild(newBtn);
+}
+function renderHand(){
+  const el=document.getElementById('hand-area'); el.innerHTML='';
+  const hand=activeHand();
+  hand.forEach((tile,idx)=>{
+    el.appendChild(tileNode(tile, isSel('hand',idx), ()=>selectHandTile(idx)));
+  });
+}
+function renderControlsState(){
+  const canAct=canIActNow() && !gameOver;
+  document.getElementById('draw-btn').disabled=!canAct;
+  document.getElementById('end-turn-btn').disabled=!canAct;
+  document.getElementById('revert-btn').disabled=!canAct;
+  document.getElementById('force-end-btn').disabled = mode==='online' ? true : gameOver;
+  document.getElementById('force-end-btn').classList.toggle('hidden', mode==='online');
+
+  let showSwap=false;
+  if(canAct && selected && selected.source==='table'){
+    const req=jokerRetrievalInfo(table, selected.setIdx, selected.tileIdx);
+    if(req){
+      const hasMatch=activeHand().some(t=>handTileMatchesRequirement(t,req));
+      if(hasMatch) showSwap=true;
+    }
+  }
+  const swapBtn=document.getElementById('joker-swap-btn');
+  swapBtn.classList.toggle('hidden', !showSwap && !jokerSwapArmed);
+  swapBtn.textContent = jokerSwapArmed ? '조커 되찾기 취소' : '조커 되찾기';
+  swapBtn.disabled=!canAct;
+}
+document.getElementById('joker-swap-btn').addEventListener('click',()=>{
+  if(jokerSwapArmed){ jokerSwapArmed=null; renderAll(); return; }
+  if(!selected || selected.source!=='table') return;
+  const req=jokerRetrievalInfo(table, selected.setIdx, selected.tileIdx);
+  if(!req) return;
+  jokerSwapArmed={ location:{setIdx:selected.setIdx, tileIdx:selected.tileIdx}, requirement:req };
+  selected=null;
+  setMessage('손에서 교체할 타일을 선택하세요.','info');
+  renderAll();
 });
-document.getElementById('revert-btn').addEventListener('click', ()=>revertTurn(true));
-document.getElementById('force-end-btn').addEventListener('click', ()=>{
-  if(gameOver) return;
-  endGame(null);
-});
-function advanceTurn(msg){
+
+/* ============ TURN VALIDATION (shared) ============ */
+function validateTableForCommit(){
+  for(const set of table){
+    if(!isValidSet(set).valid) return { ok:false, reason:'보드에 아직 유효하지 않은 조합이 있어요. 다시 확인해주세요.' };
+  }
+  return { ok:true };
+}
+function hasStrandedJoker(hand){ return hand.some(t=>t.pendingJoker); }
+
+/* ============ LOCAL / SOLO ============ */
+function newLocalGame(numPlayers, aiSeatIndices){
+  mode = (aiSeatIndices && aiSeatIndices.length>0) ? 'solo' : 'local';
+  deck=shuffle(buildDeck());
+  players=Array.from({length:numPlayers},(_,i)=>({name:`플레이어 ${i+1}`, hand:[], hasMelded:false}));
+  for(let i=0;i<14;i++) players.forEach(p=>p.hand.push(deck.pop()));
+  players.forEach(p=>sortHand(p.hand));
+  aiSeats=new Set(aiSeatIndices||[]);
+  table=[]; currentPlayerIdx=0; selected=null; jokerSwapArmed=null; gameOver=false;
+  snapshotTurn();
+  applyZoom();
+  renderAll();
+  setMessage(`${players[0].name}${aiSeats.has(0)?' 🤖':''} 차례 — 조합을 만들어 타일을 내보세요 (첫 조합은 30점 이상!)`,'info');
+  maybeTriggerAiTurn();
+}
+function snapshotTurn(){
+  turnSnapshot={ table: table.map(s=>s.map(t=>({...t}))), hand: activeHand().map(t=>({...t})) };
+}
+function revertTurn(showMsg){
+  table=turnSnapshot.table.map(s=>s.map(t=>({...t})));
+  const hand=turnSnapshot.hand.map(t=>({...t}));
+  if(mode==='online'){ onlineMyHand=hand; } else { players[currentPlayerIdx].hand=hand; }
+  selected=null; jokerSwapArmed=null;
+  renderAll();
+  if(showMsg) setMessage('이번 턴에 옮긴 내용을 되돌렸어요','info');
+}
+function localAdvanceTurn(){
   currentPlayerIdx=(currentPlayerIdx+1)%players.length;
   snapshotTurn();
-  selected=null;
+  selected=null; jokerSwapArmed=null;
   renderAll();
   const p=players[currentPlayerIdx];
-  setMessage(`${p.name} 차례${p.hasMelded ? '' : ' (첫 조합은 30점 이상!)'}`,'info');
+  setMessage(`${p.name}${aiSeats.has(currentPlayerIdx)?' 🤖':''} 차례${p.hasMelded?'':' (첫 조합은 30점 이상!)'}`,'info');
+  maybeTriggerAiTurn();
+}
+function localEndGame(winner){
+  gameOver=true;
+  const scores=players.map(p=>({ name:p.name, remaining:p.hand.reduce((s,t)=>s+(t.isJoker?30:t.number),0), tileCount:p.hand.length }));
+  scores.sort((a,b)=>a.remaining-b.remaining);
+  showEndModal(winner?winner.name+' 승리! 🎉':`${scores[0].name} 승리 (남은 점수 최소)`, scores.map(s=>`${s.name}: 남은 타일 ${s.tileCount}장 (${s.remaining}점)`));
 }
 
-/* ============ END GAME ============ */
-function endGame(winner){
-  gameOver=true;
-  const scores=players.map(p=>({
-    name:p.name,
-    remaining: p.hand.reduce((s,t)=>s+(t.isJoker?30:t.number),0),
-    tileCount:p.hand.length
-  }));
-  scores.sort((a,b)=>a.remaining-b.remaining);
-  document.getElementById('win-name').textContent = winner ? `${winner.name} 승리! 🎉` : `${scores[0].name} 승리 (남은 점수 최소)`;
-  document.getElementById('final-scores').innerHTML = scores.map(s=>`${s.name}: 남은 타일 ${s.tileCount}장 (${s.remaining}점)`).join('<br>');
+/* AI turn */
+function maybeTriggerAiTurn(){
+  if(gameOver || mode!=='solo') return;
+  if(!aiSeats.has(currentPlayerIdx)) return;
+  setMessage(`${players[currentPlayerIdx].name} 생각 중...`,'info');
+  setTimeout(performAiTurn, 650);
+}
+function performAiTurn(){
+  if(gameOver) return;
+  const player=players[currentPlayerIdx];
+  if(!aiSeats.has(currentPlayerIdx)) return;
+  if(!player.hasMelded){
+    const meld=aiTryFirstMeld(player.hand);
+    if(meld){
+      meld.forEach(setTiles=>{
+        setTiles.forEach(t=>{ const idx=player.hand.findIndex(h=>h.id===t.id); player.hand.splice(idx,1); });
+        table.push(sortSetForDisplay(setTiles));
+      });
+      player.hasMelded=true;
+      renderAll();
+      if(player.hand.length===0){ setTimeout(()=>localEndGame(player),300); return; }
+      setTimeout(localAdvanceTurn, 400);
+      return;
+    }
+    aiDrawAndAdvance(player);
+    return;
+  }
+  const {table:newTable, usedTileIds}=aiExtendTable(player.hand, table);
+  if(usedTileIds.length>0){
+    table=newTable;
+    usedTileIds.forEach(id=>{ const idx=player.hand.findIndex(h=>h.id===id); player.hand.splice(idx,1); });
+    renderAll();
+    if(player.hand.length===0){ setTimeout(()=>localEndGame(player),300); return; }
+    setTimeout(localAdvanceTurn, 400);
+    return;
+  }
+  const fresh=[...candidateGroups(player.hand), ...candidateRuns(player.hand)]
+    .map(cset=>({tiles:cset, info:isValidSet(cset)})).filter(c=>c.info.valid)
+    .sort((a,b)=>b.tiles.length-a.tiles.length);
+  if(fresh.length>0){
+    const best=fresh[0];
+    best.tiles.forEach(t=>{ const idx=player.hand.findIndex(h=>h.id===t.id); player.hand.splice(idx,1); });
+    table.push(sortSetForDisplay(best.tiles));
+    renderAll();
+    if(player.hand.length===0){ setTimeout(()=>localEndGame(player),300); return; }
+    setTimeout(localAdvanceTurn, 400);
+    return;
+  }
+  aiDrawAndAdvance(player);
+}
+function aiDrawAndAdvance(player){
+  if(deck.length>0){ player.hand.push(deck.pop()); sortHand(player.hand); }
+  renderAll();
+  setTimeout(localAdvanceTurn, 400);
+}
+
+/* ============ CONTROL BUTTON HANDLERS (branch by mode) ============ */
+document.getElementById('end-turn-btn').addEventListener('click', ()=>{
+  if(!canIActNow()) return;
+  const check=validateTableForCommit();
+  if(!check.ok){ setMessage(check.reason,'bad'); return; }
+  const hand=activeHand();
+  if(hasStrandedJoker(hand)){ setMessage('되찾은 조커를 아직 사용하지 않았어요. 다른 조합에 놓아주세요.','bad'); return; }
+  const playedCount=turnSnapshot.hand.length-hand.length;
+  if(playedCount<=0){ setMessage('최소 한 장 이상의 타일을 내야 턴을 종료할 수 있어요. 낼 수 없다면 [타일 뽑기]를 눌러주세요.','bad'); return; }
+
+  const hasMeldedAlready = mode==='online' ? (onlineRoom.melded && onlineRoom.melded[myId]) : players[currentPlayerIdx].hasMelded;
+  if(!hasMeldedAlready){
+    const snapshotIds=new Set(turnSnapshot.hand.map(t=>t.id));
+    const currentIds=new Set(hand.map(t=>t.id));
+    const playedIds=new Set([...snapshotIds].filter(id=>!currentIds.has(id)));
+    let sum=0;
+    for(const set of table){ const info=isValidSet(set); sum+=sumEffectiveValues(set, info, playedIds); }
+    if(sum<30){ setMessage(`첫 조합은 30점 이상이어야 해요 (지금 ${sum}점). 다시 확인해주세요.`,'bad'); return; }
+  }
+
+  if(mode==='online') onlineCommitEndTurn(!hasMeldedAlready);
+  else {
+    if(!hasMeldedAlready) players[currentPlayerIdx].hasMelded=true;
+    if(hand.length===0){ localEndGame(players[currentPlayerIdx]); return; }
+    localAdvanceTurn();
+  }
+});
+document.getElementById('draw-btn').addEventListener('click', ()=>{
+  if(!canIActNow()) return;
+  if(mode==='online'){ onlineCommitDraw(); return; }
+  revertTurn(false);
+  const player=players[currentPlayerIdx];
+  if(deck.length===0) setMessage('더 이상 뽑을 타일이 없어요. 턴을 넘깁니다.','info');
+  else { player.hand.push(deck.pop()); sortHand(player.hand); setMessage(`${player.name}님이 타일을 뽑았습니다`,'info'); }
+  localAdvanceTurn();
+});
+document.getElementById('revert-btn').addEventListener('click', ()=>{
+  if(!canIActNow()) return;
+  revertTurn(true);
+});
+document.getElementById('force-end-btn').addEventListener('click', ()=>{
+  if(gameOver || mode==='online') return;
+  localEndGame(null);
+});
+
+function showEndModal(winnerText, lines){
+  document.getElementById('win-name').textContent=winnerText;
+  document.getElementById('final-scores').innerHTML=lines.join('<br>');
   document.getElementById('end-overlay').classList.remove('hidden');
   renderControlsState();
 }
 
-/* ============ SETUP WIRING ============ */
+/* ============ ONLINE (Firebase Realtime Database + Anonymous Auth for private hands) ============ */
+let app=null, db=null, auth=null, firebaseReady=false;
+try{
+  if(firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_')){
+    app=initializeApp(firebaseConfig);
+    db=getDatabase(app);
+    auth=getAuth(app);
+    firebaseReady=true;
+  }
+}catch(e){ console.error('Firebase init failed', e); }
+
+let myId=null;
+let onlineRoom=null, roomCode=null, isHost=false;
+let onlineMyHand=[];
+let roomUnsub=null;
+let lastSeenVersion=-1;
+let myInitialDealAttempted=false;
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function currentTurnUid(room){ return room.playerOrder[room.currentIdx]; }
+
+async function ensureSignedIn(){
+  if(!firebaseReady) return false;
+  if(myId) return true;
+  const cred=await signInAnonymously(auth);
+  myId=cred.user.uid;
+  return true;
+}
+async function createRoom(name, maxPlayers){
+  if(!(await ensureSignedIn())){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
+  let code, snap;
+  for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `rummikubRooms/${code}`)); if(!snap.exists()) break; }
+  isHost=true; roomCode=code;
+  const room={
+    status:'lobby', hostId:myId, maxPlayers,
+    playerOrder:[myId],
+    players:{ [myId]:{name} },
+    handCounts:{ [myId]:0 },
+    melded:{},
+    table:[], deck:[], deckCount:0,
+    currentIdx:0, version:0, lastMove:null
+  };
+  await set(ref(db, `rummikubRooms/${code}`), room);
+  enterOnlineFlow();
+}
+async function joinRoom(name, code){
+  if(!(await ensureSignedIn())){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
+  const roomRef=ref(db, `rummikubRooms/${code}`);
+  const snap=await get(roomRef);
+  if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+  const room=snap.val();
+  if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+  if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+  await update(ref(db, `rummikubRooms/${code}`), {
+    playerOrder:[...room.playerOrder, myId],
+    [`players/${myId}`]:{name},
+    [`handCounts/${myId}`]:0
+  });
+  isHost=false; roomCode=code;
+  enterOnlineFlow();
+}
+function enterOnlineFlow(){
+  mode='online';
+  showScreen('lobby');
+  lastSeenVersion=-1; myInitialDealAttempted=false;
+  if(roomUnsub) roomUnsub();
+  roomUnsub=onValue(ref(db, `rummikubRooms/${roomCode}`), (snap)=>{
+    const room=snap.val();
+    if(!room) return;
+    onRoomUpdate(room);
+  });
+}
+async function onRoomUpdate(room){
+  const versionChanged = room.version!==lastSeenVersion;
+  lastSeenVersion=room.version;
+  onlineRoom=room;
+  if(room.status==='lobby'){ renderLobby(); return; }
+  if(room.status==='dealing'){
+    if(!myInitialDealAttempted){ myInitialDealAttempted=true; await performInitialDrawIfNeeded(); }
+    return;
+  }
+  if(room.status==='playing'){
+    if(document.getElementById('game').classList.contains('hidden')){
+      await refreshMyHandFromFirebase();
+      table=room.table.map(s=>s.slice());
+      applyZoom();
+      showScreen('game');
+    } else if(versionChanged){
+      table=room.table.map(s=>s.slice());
+      if(currentTurnUid(room)===myId){
+        await refreshMyHandFromFirebase();
+        snapshotTurn();
+      }
+    }
+    renderAll();
+    if(versionChanged && room.lastMove){
+      const mv=room.lastMove;
+      setMessage(mv.kind==='pass' ? `${mv.name} 패스` : `${mv.name} 타일을 냄`, 'info');
+    } else {
+      const turnUid=currentTurnUid(room);
+      const turnName=room.players[turnUid] ? room.players[turnUid].name : '';
+      setMessage(turnUid===myId ? '내 차례예요' : `${turnName} 차례를 기다리는 중...`, 'info');
+    }
+  } else if(room.status==='ended'){
+    table=room.table.map(s=>s.slice());
+    renderAll();
+    await reportMyFinalScoreIfNeeded(room);
+    renderOnlineEndModal(room);
+  }
+}
+async function performInitialDrawIfNeeded(){
+  const roomRef=ref(db, `rummikubRooms/${roomCode}`);
+  let myNewHand=null;
+  await runTransaction(roomRef, (r)=>{
+    if(!r) return r;
+    if(r.status!=='dealing') return r;
+    if((r.dealtUids||[]).includes(myId)) return r;
+    const hand=r.deck.splice(0,14);
+    myNewHand=hand;
+    r.dealtUids=[...(r.dealtUids||[]), myId];
+    r.handCounts=r.handCounts||{};
+    r.handCounts[myId]=hand.length;
+    r.deckCount=r.deck.length;
+    if(r.dealtUids.length===r.playerOrder.length) r.status='playing';
+    return r;
+  });
+  if(myNewHand){
+    sortHand(myNewHand);
+    await set(ref(db, `rummikubRooms/${roomCode}/hands/${myId}`), myNewHand);
+  }
+}
+async function refreshMyHandFromFirebase(){
+  const snap=await get(ref(db, `rummikubRooms/${roomCode}/hands/${myId}`));
+  onlineMyHand=snap.exists() ? snap.val() : [];
+}
+function renderLobby(){
+  document.getElementById('lobby-code').textContent=roomCode;
+  document.getElementById('lobby-players').innerHTML=onlineRoom.playerOrder.map(uid=>{
+    const p=onlineRoom.players[uid];
+    return `<div class="lobby-player"><span>${p.name}${uid===onlineRoom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}</span></div>`;
+  }).join('');
+  const startBtn=document.getElementById('lobby-start-btn');
+  const waiting=document.getElementById('lobby-waiting');
+  const joined=onlineRoom.playerOrder.length;
+  if(isHost){
+    startBtn.classList.remove('hidden');
+    startBtn.disabled=joined<2;
+    waiting.textContent = joined<2 ? '2명 이상 모이면 시작할 수 있어요' : (joined<onlineRoom.maxPlayers ? `${onlineRoom.maxPlayers-joined}자리 더 받을 수 있어요 (지금 시작해도 됩니다)` : '');
+  } else {
+    startBtn.classList.add('hidden');
+    waiting.textContent='방장이 게임을 시작하기를 기다리는 중...';
+  }
+}
+document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
+  const freshDeck=shuffle(buildDeck());
+  await update(ref(db, `rummikubRooms/${roomCode}`), {
+    status:'dealing', deck:freshDeck, deckCount:freshDeck.length, table:[], currentIdx:0, lastMove:null, dealtUids:[], melded:{}
+  });
+});
+document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
+function leaveOnline(){
+  if(roomUnsub){ roomUnsub(); roomUnsub=null; }
+  roomCode=null; onlineRoom=null; selected=null; jokerSwapArmed=null;
+}
+async function onlineCommitEndTurn(isFirstMeldNow){
+  const nextIdx=(onlineRoom.currentIdx+1)%onlineRoom.playerOrder.length;
+  const myName=onlineRoom.players[myId].name;
+  const finished = onlineMyHand.length===0;
+  const updates={
+    [`rummikubRooms/${roomCode}/table`]: table,
+    [`rummikubRooms/${roomCode}/currentIdx`]: nextIdx,
+    [`rummikubRooms/${roomCode}/version`]: (onlineRoom.version||0)+1,
+    [`rummikubRooms/${roomCode}/lastMove`]: { name:myName, kind:'play', ts:Date.now() },
+    [`rummikubRooms/${roomCode}/hands/${myId}`]: onlineMyHand,
+    [`rummikubRooms/${roomCode}/handCounts/${myId}`]: onlineMyHand.length,
+    [`rummikubRooms/${roomCode}/status`]: finished ? 'ended' : 'playing'
+  };
+  if(isFirstMeldNow) updates[`rummikubRooms/${roomCode}/melded/${myId}`]=true;
+  if(finished) updates[`rummikubRooms/${roomCode}/winnerName`]=myName;
+  await update(ref(db), updates);
+}
+async function onlineCommitDraw(){
+  revertTurn(false);
+  const deckRef=ref(db, `rummikubRooms/${roomCode}/deck`);
+  let drawn=null;
+  await runTransaction(deckRef, (d)=>{
+    if(!d || d.length===0) return d;
+    drawn=d[d.length-1];
+    return d.slice(0,-1);
+  });
+  if(drawn){
+    onlineMyHand.push(drawn);
+    sortHand(onlineMyHand);
+  }
+  const nextIdx=(onlineRoom.currentIdx+1)%onlineRoom.playerOrder.length;
+  const myName=onlineRoom.players[myId].name;
+  await update(ref(db), {
+    [`rummikubRooms/${roomCode}/currentIdx`]: nextIdx,
+    [`rummikubRooms/${roomCode}/version`]: (onlineRoom.version||0)+1,
+    [`rummikubRooms/${roomCode}/lastMove`]: { name:myName, kind:'pass', ts:Date.now() },
+    [`rummikubRooms/${roomCode}/hands/${myId}`]: onlineMyHand,
+    [`rummikubRooms/${roomCode}/handCounts/${myId}`]: onlineMyHand.length,
+    [`rummikubRooms/${roomCode}/deckCount`]: Math.max(0,(onlineRoom.deckCount||0)-(drawn?1:0))
+  });
+}
+async function reportMyFinalScoreIfNeeded(room){
+  if(room.finalScores && room.finalScores[myId]!==undefined) return;
+  const remaining=onlineMyHand.reduce((s,t)=>s+(t.isJoker?30:t.number),0);
+  await update(ref(db), { [`rummikubRooms/${roomCode}/finalScores/${myId}`]: remaining });
+}
+function renderOnlineEndModal(room){
+  const scores=room.finalScores||{};
+  const allIn=room.playerOrder.every(uid=>scores[uid]!==undefined);
+  const lines=room.playerOrder.map(uid=>{
+    const nm=room.players[uid].name;
+    return scores[uid]!==undefined ? `${nm}: 남은 점수 ${scores[uid]}점` : `${nm}: 집계 중...`;
+  });
+  const winnerText = room.winnerName ? `${room.winnerName} 승리! 🎉` : (allIn ? '점수 집계 완료' : '점수 집계 중...');
+  document.getElementById('win-name').textContent=winnerText;
+  document.getElementById('final-scores').innerHTML=lines.join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+}
+
+/* ============ SETUP SCREEN WIRING ============ */
 let chosenCount=3;
 document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -493,16 +1093,84 @@ document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
     chosenCount=+btn.dataset.count;
   });
 });
+
+let soloCount=3, soloHumanSeat=0;
+function renderSoloOrderOptions(n){
+  const el=document.getElementById('solo-order-grid');
+  el.innerHTML=Array.from({length:n},(_,i)=>`<button class="opt-btn ${i===0?'selected':''}" data-seat="${i}">${i+1}번째</button>`).join('');
+  soloHumanSeat=0;
+  el.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      soloHumanSeat=+btn.dataset.seat;
+    });
+  });
+}
+renderSoloOrderOptions(soloCount);
+document.querySelectorAll('#solo-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#solo-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    soloCount=+btn.dataset.count;
+    renderSoloOrderOptions(soloCount);
+  });
+});
+
+let onlineChosenCount=3;
+document.querySelectorAll('#online-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#online-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    onlineChosenCount=+btn.dataset.count;
+  });
+});
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('create-tab').classList.toggle('hidden', btn.dataset.tab!=='create');
+    document.getElementById('join-tab').classList.toggle('hidden', btn.dataset.tab!=='join');
+  });
+});
+
+document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mode-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const m=btn.dataset.mode;
+    document.getElementById('solo-panel').classList.toggle('hidden', m!=='solo');
+    document.getElementById('local-panel').classList.toggle('hidden', m!=='local');
+    document.getElementById('online-panel').classList.toggle('hidden', m!=='online');
+    document.getElementById('start-btn').classList.toggle('hidden', m==='online');
+    document.getElementById('start-btn').dataset.mode=m;
+  });
+});
+document.getElementById('start-btn').dataset.mode='local';
 document.getElementById('start-btn').addEventListener('click',()=>{
+  const m=document.getElementById('start-btn').dataset.mode;
   showScreen('game');
-  newGame(chosenCount);
+  if(m==='solo'){
+    const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeat);
+    newLocalGame(soloCount, aiList);
+  } else {
+    newLocalGame(chosenCount, []);
+  }
+});
+document.getElementById('create-room-btn').addEventListener('click',()=>{
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
+});
+document.getElementById('join-room-btn').addEventListener('click',()=>{
+  joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());
 });
 document.getElementById('quit-btn').addEventListener('click',()=>{
+  leaveOnline();
   document.getElementById('end-overlay').classList.add('hidden');
   showScreen('setup');
 });
 document.getElementById('restart-btn').addEventListener('click',()=>{
   document.getElementById('end-overlay').classList.add('hidden');
+  leaveOnline();
   showScreen('setup');
 });
 </script>
