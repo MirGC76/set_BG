@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4, user-scalable=yes">
+<title>스플렌더</title>
+<style>
+:root{
+  --bg-deep:#14110E;
+  --bg-mid:#231D17;
+  --line:#463A2D;
+  --panel:#2A2319;
+  --text:#F2E9D8;
+  --muted:#B3A48C;
+  --gold:#D4AF37;
+  --white-gem:#F2ECDD;
+  --blue-gem:#2E6DA4;
+  --green-gem:#1E8449;
+  --red-gem:#B03A2E;
+  --black-gem:#3B3B3B;
+  --good:#2FA84F;
+  --bad:#D8483D;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  min-height:100vh;
+  background:radial-gradient(ellipse at top, var(--bg-mid), var(--bg-deep));
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Pretendard",sans-serif;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.hidden{display:none !important;}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 12px 50px;}
+.back-link{align-self:flex-start;color:var(--muted);font-size:12.5px;text-decoration:none;margin-bottom:10px;}
+
+/* ---------- SETUP ---------- */
+#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:2vh;}
+.swatches{display:flex;gap:8px;margin-bottom:10px;}
+.swatch{width:26px;height:26px;border-radius:50%;box-shadow:0 2px 0 rgba(0,0,0,0.35);}
+h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:4px;margin:4px 0;color:var(--gold);}
+.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:24px;text-align:center;}
+.panel{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+.panel h2{font-size:12.5px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;text-transform:uppercase;}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.opt-btn{flex:1;min-width:90px;background:rgba(255,255,255,0.05);border:2px solid var(--line);color:var(--text);border-radius:10px;padding:13px 8px;font-weight:800;font-size:14px;cursor:pointer;}
+.opt-btn.selected,.opt-btn:hover{border-color:var(--gold);background:rgba(212,175,55,0.12);}
+.start-btn{margin-top:8px;background:linear-gradient(180deg,#EAD98A,var(--gold));color:#241D06;border:none;border-radius:10px;padding:15px 40px;font-weight:900;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #8f7420;}
+.start-btn:active{transform:translateY(3px);box-shadow:none;}
+.start-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.rules-box{font-size:12px;color:var(--muted);line-height:1.75;text-align:left;}
+.rules-box b{color:var(--text);}
+.text-input{width:100%;padding:12px 14px;border-radius:8px;border:2px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;margin-bottom:10px;}
+.text-input::placeholder{color:var(--muted);}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tab-btn{flex:1;background:transparent;border:2px solid var(--line);color:var(--muted);border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;}
+.tab-btn.selected{border-color:var(--gold);color:var(--text);background:rgba(212,175,55,0.1);}
+.warn-note{font-size:11.5px;color:var(--gold);background:rgba(212,175,55,0.1);border-radius:8px;padding:8px 12px;margin-top:6px;line-height:1.6;}
+.field-msg{font-size:12.5px;color:var(--bad);min-height:16px;margin:-4px 0 8px;}
+
+/* ---------- LOBBY ---------- */
+#lobby{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;margin-top:5vh;}
+.room-code-box{background:rgba(255,255,255,0.06);border:2px dashed var(--gold);border-radius:14px;padding:20px 34px;text-align:center;margin-bottom:20px;}
+.room-code-box .lbl{font-size:12px;color:var(--muted);letter-spacing:2px;}
+.room-code-box .code{font-size:40px;font-weight:900;letter-spacing:8px;color:var(--gold);margin-top:4px;}
+.lobby-players{width:100%;background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px;}
+.lobby-player{display:flex;justify-content:space-between;padding:8px 4px;font-size:15px;border-bottom:1px solid var(--line);}
+.lobby-player:last-child{border-bottom:none;}
+.host-badge{font-size:10px;background:var(--gold);color:#241D06;border-radius:6px;padding:2px 6px;margin-left:8px;font-weight:800;}
+.waiting-msg{color:var(--muted);font-size:14px;text-align:center;margin-top:6px;}
+
+/* ---------- GAME ---------- */
+#game{width:100%;max-width:1320px;display:flex;flex-direction:column;align-items:center;}
+.topbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;}
+.zoom-row{display:flex;align-items:center;gap:8px;}
+.zoom-btn{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--text);border-radius:8px;width:32px;height:32px;font-size:17px;font-weight:800;cursor:pointer;}
+.zoom-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.zoom-pct{font-size:12px;color:var(--muted);min-width:40px;text-align:center;}
+
+.banner{min-height:18px;margin-bottom:10px;padding:8px 20px;border-radius:20px;font-weight:700;font-size:13px;letter-spacing:0.3px;text-align:center;max-width:700px;}
+.banner.good{background:rgba(47,168,79,0.2);color:#8CE6A0;}
+.banner.bad{background:rgba(216,72,61,0.2);color:#FF9B8F;}
+.banner.info{background:rgba(255,255,255,0.06);color:var(--muted);}
+
+.table-layout{display:flex;gap:14px;width:100%;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
+.side-col{display:flex;flex-direction:column;gap:10px;width:190px;flex:0 0 auto;}
+.center-col{flex:1 1 640px;min-width:320px;max-width:820px;display:flex;flex-direction:column;align-items:center;}
+
+.side-player-card{background:rgba(255,255,255,0.04);border:2px solid var(--line);border-radius:12px;padding:10px;}
+.side-player-card.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,0.18);}
+.sp-name{font-size:13px;font-weight:800;display:flex;justify-content:space-between;align-items:center;}
+.sp-name .pts{color:var(--gold);font-weight:900;}
+.sp-gems-row,.sp-bonus-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+.sp-chip{display:flex;align-items:center;gap:2px;background:rgba(0,0,0,0.25);border-radius:6px;padding:2px 5px;}
+.sp-chip .dot{width:11px;height:11px;border-radius:50%;}
+.sp-chip span{font-size:10.5px;font-weight:800;}
+.sp-meta{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+
+.nobles-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+.noble-tile{
+  width:66px;height:66px;border-radius:10px;background:linear-gradient(160deg,#3a3020,#241d12);
+  border:2px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  position:relative;flex:0 0 auto;
+}
+.noble-pts{position:absolute;top:3px;left:5px;font-size:12px;font-weight:900;color:var(--gold);}
+.noble-reqs{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
+.noble-req{display:flex;align-items:center;gap:1px;font-size:10px;font-weight:800;color:#fff;}
+.noble-req .dot{width:11px;height:11px;border-radius:50%;}
+
+.bank-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+.gem-pile{
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 9px;border-radius:12px;
+  background:rgba(255,255,255,0.04);border:2px solid var(--line);cursor:pointer;min-width:52px;
+}
+.gem-pile.pending{border-color:var(--gold);background:rgba(212,175,55,0.15);}
+.gem-dot{width:28px;height:28px;border-radius:50%;box-shadow:inset 0 -4px 6px rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4);}
+.gem-dot.white{background:var(--white-gem);}
+.gem-dot.blue{background:var(--blue-gem);}
+.gem-dot.green{background:var(--green-gem);}
+.gem-dot.red{background:var(--red-gem);}
+.gem-dot.black{background:var(--black-gem);border:1px solid #666;}
+.gem-dot.gold{background:linear-gradient(160deg,#F5E08A,var(--gold));}
+.gem-count{font-size:13px;font-weight:800;}
+.gem-pending-badge{font-size:11px;color:var(--gold);font-weight:900;min-height:14px;}
+
+.tier-row{display:flex;gap:9px;align-items:center;margin-bottom:9px;width:100%;justify-content:center;flex-wrap:wrap;}
+.tier-label{width:56px;text-align:center;font-size:10.5px;color:var(--muted);font-weight:800;letter-spacing:0.5px;}
+.deck-back{
+  width:78px;height:104px;border-radius:8px;background:repeating-linear-gradient(135deg,#3a2f1e,#3a2f1e 6px,#332818 6px,#332818 12px);
+  border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-weight:800;flex:0 0 auto;text-align:center;white-space:pre-line;
+}
+.card{
+  width:78px;height:104px;border-radius:8px;background:linear-gradient(160deg,#2b2418,#1c170f);
+  border:2px solid var(--line);position:relative;flex:0 0 auto;cursor:pointer;padding:6px;
+  display:flex;flex-direction:column;justify-content:space-between;transition:border-color .12s, transform .12s;
+}
+.card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.card.selected{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,0.3);}
+.card.unaffordable{opacity:0.55;}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.card-points{font-size:15px;font-weight:900;color:var(--gold);}
+.card-bonus{width:17px;height:17px;border-radius:50%;}
+.card-costs{display:flex;flex-wrap:wrap;gap:2px;}
+.cost-chip{display:flex;align-items:center;gap:2px;background:rgba(0,0,0,0.35);border-radius:6px;padding:1px 4px;}
+.cost-chip .dot{width:9px;height:9px;border-radius:50%;}
+.cost-chip span{font-size:9.5px;font-weight:800;color:#fff;}
+
+.card-actions{display:flex;gap:6px;justify-content:center;margin:6px 0 12px;flex-wrap:wrap;}
+.card-actions button{background:rgba(255,255,255,0.08);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 14px;font-weight:700;font-size:12.5px;cursor:pointer;}
+.card-actions button.buy{background:linear-gradient(180deg,#EAD98A,var(--gold));color:#241D06;border:none;}
+.card-actions button:disabled{opacity:0.35;cursor:not-allowed;}
+
+.player-panel{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:8px;}
+.panel-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+.mini-label{font-size:10.5px;color:var(--muted);letter-spacing:0.5px;margin-bottom:6px;text-transform:uppercase;}
+.hand-gems{display:flex;gap:6px;flex-wrap:wrap;}
+.hand-gem{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.hand-gem .gem-dot{width:24px;height:24px;}
+.hand-gem .n{font-size:11px;font-weight:800;}
+.reserved-row{display:flex;gap:8px;flex-wrap:wrap;}
+.purchased-summary{display:flex;gap:8px;flex-wrap:wrap;}
+.bonus-chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.05);border-radius:8px;padding:4px 8px;}
+.bonus-chip .gem-dot{width:16px;height:16px;}
+.bonus-chip span{font-size:12px;font-weight:800;}
+
+.controls-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0;}
+.ctrl-btn{background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.ctrl-btn.primary{background:linear-gradient(180deg,#EAD98A,var(--gold));color:#241D06;border:none;}
+.ctrl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.ctrl-btn.buy{background:linear-gradient(180deg,#EAD98A,var(--gold));color:#241D06;border:none;}
+
+#end-overlay,#noble-overlay,#discard-overlay,#config-error{position:fixed;inset:0;background:rgba(6,5,3,0.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+#end-modal,#noble-modal,#discard-modal{background:var(--bg-mid);border:1px solid var(--line);border-radius:16px;padding:30px 28px;max-width:420px;width:90%;text-align:center;}
+#end-modal h2{font-size:24px;margin:0 0 10px;color:var(--gold);}
+#end-modal .scores{margin:14px 0;font-size:14px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
+.noble-choice{display:flex;gap:12px;justify-content:center;margin:16px 0;flex-wrap:wrap;}
+.noble-choice .noble-tile{cursor:pointer;}
+.noble-choice .noble-tile:hover{border-color:#fff;}
+.discard-gems{display:flex;gap:10px;justify-content:center;margin:16px 0;flex-wrap:wrap;}
+#config-error .box{max-width:520px;background:var(--bg-mid);border:1px solid var(--bad);border-radius:14px;padding:28px;text-align:center;}
+#config-error code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP -->
+  <div id="setup">
+    <a href="../" class="back-link">← 게임 허브로</a>
+    <div class="swatches">
+      <div class="swatch" style="background:var(--white-gem)"></div>
+      <div class="swatch" style="background:var(--blue-gem)"></div>
+      <div class="swatch" style="background:var(--green-gem)"></div>
+      <div class="swatch" style="background:var(--red-gem)"></div>
+      <div class="swatch" style="background:var(--black-gem)"></div>
+    </div>
+    <h1 class="title">스 플 렌 더</h1>
+    <div class="subtitle">보석 토큰을 모아 카드를 사고, 귀족의 방문을 받아 가장 먼저 15점을 모으는 게임</div>
+
+    <div class="panel">
+      <h2>진행 방식</h2>
+      <div class="row-btns" id="mode-grid">
+        <button class="opt-btn selected" data-mode="solo">혼자 (컴퓨터 대전)</button>
+        <button class="opt-btn" data-mode="local">한 기기에서 함께</button>
+        <button class="opt-btn" data-mode="online">온라인으로 함께</button>
+      </div>
+    </div>
+
+    <div class="panel" id="solo-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="solo-count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+      <h2 style="margin-top:18px;">내 순서</h2>
+      <div class="row-btns" id="solo-order-grid"></div>
+    </div>
+
+    <div class="panel hidden" id="local-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="count-grid">
+        <button class="opt-btn" data-count="2">2명</button>
+        <button class="opt-btn selected" data-count="3">3명</button>
+        <button class="opt-btn" data-count="4">4명</button>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="online-panel">
+      <h2>온라인 대결</h2>
+      <div class="tabs">
+        <button class="tab-btn selected" data-tab="create">방 만들기</button>
+        <button class="tab-btn" data-tab="join">참가하기</button>
+      </div>
+      <div id="create-tab">
+        <input class="text-input" id="create-name" placeholder="내 이름" maxlength="10">
+        <div class="row-btns" id="online-count-grid">
+          <button class="opt-btn" data-count="2">2명</button>
+          <button class="opt-btn selected" data-count="3">3명</button>
+          <button class="opt-btn" data-count="4">4명</button>
+        </div>
+        <div class="field-msg" id="create-msg"></div>
+        <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
+      </div>
+      <div id="join-tab" class="hidden">
+        <input class="text-input" id="join-name" placeholder="내 이름" maxlength="10">
+        <input class="text-input" id="join-code" placeholder="방 코드 (예: 7QXM)" maxlength="4" style="text-transform:uppercase;">
+        <div class="field-msg" id="join-msg"></div>
+        <button class="start-btn" id="join-room-btn" style="width:100%;">참가하기</button>
+      </div>
+      <div class="warn-note">⚠️ 방 코드를 아는 사람은 누구나 참가할 수 있어요. 내가 예약한 카드는 나만 볼 수 있고, 다른 사람에게는 예약한 개수만 보여요.</div>
+    </div>
+
+    <button class="start-btn" id="start-btn">게임 시작</button>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>규칙 요약</h2>
+      <div class="rules-box">
+        <b>① 목표</b> — 카드와 귀족을 모아 가장 먼저 15점 이상을 달성하세요 (그 라운드가 끝나면 최종 결정).<br>
+        <b>② 카드</b> — 1~3단계 카드가 있고, 각 카드는 보석 비용을 지불하면 살 수 있으며 영구적인 보너스 보석 색과 승점을 줍니다.<br>
+        <b>③ 턴에 할 수 있는 행동 (한 가지만)</b><br>
+        &nbsp;&nbsp;· 서로 다른 색 보석 최대 3개 가져오기<br>
+        &nbsp;&nbsp;· 같은 색 보석 2개 가져오기 (그 색이 은행에 4개 이상 남아있을 때만)<br>
+        &nbsp;&nbsp;· 카드 1장 예약하기 (황금 보석 1개 획득, 최대 3장까지 예약 가능)<br>
+        &nbsp;&nbsp;· 카드 1장 구매하기 (공개된 카드 또는 내가 예약한 카드)<br>
+        <b>④ 보너스</b> — 구매한 카드는 그 색 보석 비용을 영구히 1씩 깎아줍니다 (같은 색 카드를 여러 장 사면 계속 누적).<br>
+        <b>⑤ 황금 보석</b> — 어떤 색으로도 대신 낼 수 있는 조커 보석입니다.<br>
+        <b>⑥ 귀족</b> — 특정 보너스 조합을 만족하면 자동으로 방문해서 3점을 추가로 줍니다.<br>
+        <b>⑦ 보석 한도</b> — 턴이 끝날 때 보석을 10개 넘게 들고 있으면 10개가 될 때까지 반납해야 합니다.<br>
+        <b>⑧ 예약한 카드</b> — 실제 보드게임처럼, 예약한 카드는 나만 볼 수 있어요 (다른 사람에게는 개수만 보임).
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="lobby" class="hidden">
+    <div class="room-code-box">
+      <div class="lbl">방 코드</div>
+      <div class="code" id="lobby-code">----</div>
+    </div>
+    <div class="lobby-players" id="lobby-players"></div>
+    <button class="start-btn hidden" id="lobby-start-btn">게임 시작</button>
+    <div class="waiting-msg" id="lobby-waiting"></div>
+    <button class="icon-btn" id="lobby-leave-btn" style="margin-top:16px;">방 나가기</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="quit-btn">← 처음으로</button>
+      <div class="zoom-row">
+        <span style="font-size:11.5px;color:var(--muted);">화면 크기</span>
+        <button class="zoom-btn" id="zoom-out-btn">－</button>
+        <span class="zoom-pct" id="zoom-pct">100%</span>
+        <button class="zoom-btn" id="zoom-in-btn">＋</button>
+      </div>
+    </div>
+
+    <div class="banner info" id="banner">게임을 시작합니다</div>
+
+    <div class="table-layout">
+      <div class="side-col" id="side-col-left"></div>
+      <div class="center-col">
+        <div class="nobles-row" id="nobles-row"></div>
+        <div class="bank-row" id="bank-row"></div>
+        <div id="tiers-area" style="width:100%;"></div>
+        <div class="controls-row">
+          <button class="ctrl-btn primary" id="confirm-tokens-btn" disabled>토큰 가져오기 확정</button>
+          <button class="ctrl-btn" id="cancel-tokens-btn">선택 취소</button>
+        </div>
+        <div class="player-panel" id="player-panel"></div>
+      </div>
+      <div class="side-col" id="side-col-right"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="end-overlay" class="hidden">
+  <div id="end-modal">
+    <h2>게임 종료! 🏆</h2>
+    <div id="end-winner" style="font-size:20px;font-weight:900;margin-bottom:8px;"></div>
+    <div class="scores" id="final-scores"></div>
+    <div style="margin-top:16px;"><button class="start-btn" id="restart-btn">처음으로</button></div>
+  </div>
+</div>
+
+<div id="noble-overlay" class="hidden">
+  <div id="noble-modal">
+    <h2 style="margin-top:0;">어느 귀족을 맞이할까요?</h2>
+    <div class="noble-choice" id="noble-choice-row"></div>
+  </div>
+</div>
+
+<div id="discard-overlay" class="hidden">
+  <div id="discard-modal">
+    <h2 style="margin-top:0;">보석이 10개를 초과했어요</h2>
+    <div style="color:var(--muted);font-size:13px;" id="discard-msg"></div>
+    <div class="discard-gems" id="discard-gems-row"></div>
+    <button class="ctrl-btn primary" id="discard-confirm-btn" style="margin-top:10px;" disabled>확인</button>
+  </div>
+</div>
+
+<div id="config-error" class="hidden">
+  <div class="box">
+    <h2 style="margin-top:0;">Firebase 설정이 필요해요</h2>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+      <code>firebase-config.js</code> 파일의 설정값이 채워지지 않았어요. 같이 배포한 README.md를 참고해주세요.
+      (혼자·한 기기에서 함께 모드는 설정 없이도 바로 사용할 수 있습니다.)
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "../firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, get, update, onValue, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {
+  getAuth, signInAnonymously
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ============ DATA ============ */
+const COLORS=['white','blue','green','red','black'];
+const GEM_LABEL={white:'다이아몬드',blue:'사파이어',green:'에메랄드',red:'루비',black:'오닉스',gold:'황금'};
+const CARDS = [{"id":"t1-1","tier":1,"bonus":"white","points":0,"cost":{"blue":3}},{"id":"t1-2","tier":1,"bonus":"white","points":0,"cost":{"blue":2,"green":1}},{"id":"t1-3","tier":1,"bonus":"white","points":0,"cost":{"blue":1,"green":1,"red":1}},{"id":"t1-4","tier":1,"bonus":"white","points":0,"cost":{"blue":2,"green":2}},{"id":"t1-5","tier":1,"bonus":"white","points":0,"cost":{"blue":1,"green":1,"red":1,"black":1}},{"id":"t1-6","tier":1,"bonus":"white","points":0,"cost":{"blue":2,"green":1,"red":1}},{"id":"t1-7","tier":1,"bonus":"white","points":1,"cost":{"blue":4}},{"id":"t1-8","tier":1,"bonus":"white","points":1,"cost":{"blue":3,"green":1}},{"id":"t1-9","tier":1,"bonus":"blue","points":0,"cost":{"green":3}},{"id":"t1-10","tier":1,"bonus":"blue","points":0,"cost":{"green":2,"red":1}},{"id":"t1-11","tier":1,"bonus":"blue","points":0,"cost":{"green":1,"red":1,"black":1}},{"id":"t1-12","tier":1,"bonus":"blue","points":0,"cost":{"green":2,"red":2}},{"id":"t1-13","tier":1,"bonus":"blue","points":0,"cost":{"green":1,"red":1,"black":1,"white":1}},{"id":"t1-14","tier":1,"bonus":"blue","points":0,"cost":{"green":2,"red":1,"black":1}},{"id":"t1-15","tier":1,"bonus":"blue","points":1,"cost":{"green":4}},{"id":"t1-16","tier":1,"bonus":"blue","points":1,"cost":{"green":3,"red":1}},{"id":"t1-17","tier":1,"bonus":"green","points":0,"cost":{"red":3}},{"id":"t1-18","tier":1,"bonus":"green","points":0,"cost":{"red":2,"black":1}},{"id":"t1-19","tier":1,"bonus":"green","points":0,"cost":{"red":1,"black":1,"white":1}},{"id":"t1-20","tier":1,"bonus":"green","points":0,"cost":{"red":2,"black":2}},{"id":"t1-21","tier":1,"bonus":"green","points":0,"cost":{"red":1,"black":1,"white":1,"blue":1}},{"id":"t1-22","tier":1,"bonus":"green","points":0,"cost":{"red":2,"black":1,"white":1}},{"id":"t1-23","tier":1,"bonus":"green","points":1,"cost":{"red":4}},{"id":"t1-24","tier":1,"bonus":"green","points":1,"cost":{"red":3,"black":1}},{"id":"t1-25","tier":1,"bonus":"red","points":0,"cost":{"black":3}},{"id":"t1-26","tier":1,"bonus":"red","points":0,"cost":{"black":2,"white":1}},{"id":"t1-27","tier":1,"bonus":"red","points":0,"cost":{"black":1,"white":1,"blue":1}},{"id":"t1-28","tier":1,"bonus":"red","points":0,"cost":{"black":2,"white":2}},{"id":"t1-29","tier":1,"bonus":"red","points":0,"cost":{"black":1,"white":1,"blue":1,"green":1}},{"id":"t1-30","tier":1,"bonus":"red","points":0,"cost":{"black":2,"white":1,"blue":1}},{"id":"t1-31","tier":1,"bonus":"red","points":1,"cost":{"black":4}},{"id":"t1-32","tier":1,"bonus":"red","points":1,"cost":{"black":3,"white":1}},{"id":"t1-33","tier":1,"bonus":"black","points":0,"cost":{"white":3}},{"id":"t1-34","tier":1,"bonus":"black","points":0,"cost":{"white":2,"blue":1}},{"id":"t1-35","tier":1,"bonus":"black","points":0,"cost":{"white":1,"blue":1,"green":1}},{"id":"t1-36","tier":1,"bonus":"black","points":0,"cost":{"white":2,"blue":2}},{"id":"t1-37","tier":1,"bonus":"black","points":0,"cost":{"white":1,"blue":1,"green":1,"red":1}},{"id":"t1-38","tier":1,"bonus":"black","points":0,"cost":{"white":2,"blue":1,"green":1}},{"id":"t1-39","tier":1,"bonus":"black","points":1,"cost":{"white":4}},{"id":"t1-40","tier":1,"bonus":"black","points":1,"cost":{"white":3,"blue":1}},{"id":"t2-1","tier":2,"bonus":"white","points":1,"cost":{"blue":3,"green":2}},{"id":"t2-2","tier":2,"bonus":"white","points":1,"cost":{"blue":2,"green":2,"red":2}},{"id":"t2-3","tier":2,"bonus":"white","points":2,"cost":{"blue":5}},{"id":"t2-4","tier":2,"bonus":"white","points":2,"cost":{"blue":4,"green":1}},{"id":"t2-5","tier":2,"bonus":"white","points":2,"cost":{"blue":3,"green":3}},{"id":"t2-6","tier":2,"bonus":"white","points":3,"cost":{"blue":3,"green":2,"red":2}},{"id":"t2-7","tier":2,"bonus":"blue","points":1,"cost":{"green":3,"red":2}},{"id":"t2-8","tier":2,"bonus":"blue","points":1,"cost":{"green":2,"red":2,"black":2}},{"id":"t2-9","tier":2,"bonus":"blue","points":2,"cost":{"green":5}},{"id":"t2-10","tier":2,"bonus":"blue","points":2,"cost":{"green":4,"red":1}},{"id":"t2-11","tier":2,"bonus":"blue","points":2,"cost":{"green":3,"red":3}},{"id":"t2-12","tier":2,"bonus":"blue","points":3,"cost":{"green":3,"red":2,"black":2}},{"id":"t2-13","tier":2,"bonus":"green","points":1,"cost":{"red":3,"black":2}},{"id":"t2-14","tier":2,"bonus":"green","points":1,"cost":{"red":2,"black":2,"white":2}},{"id":"t2-15","tier":2,"bonus":"green","points":2,"cost":{"red":5}},{"id":"t2-16","tier":2,"bonus":"green","points":2,"cost":{"red":4,"black":1}},{"id":"t2-17","tier":2,"bonus":"green","points":2,"cost":{"red":3,"black":3}},{"id":"t2-18","tier":2,"bonus":"green","points":3,"cost":{"red":3,"black":2,"white":2}},{"id":"t2-19","tier":2,"bonus":"red","points":1,"cost":{"black":3,"white":2}},{"id":"t2-20","tier":2,"bonus":"red","points":1,"cost":{"black":2,"white":2,"blue":2}},{"id":"t2-21","tier":2,"bonus":"red","points":2,"cost":{"black":5}},{"id":"t2-22","tier":2,"bonus":"red","points":2,"cost":{"black":4,"white":1}},{"id":"t2-23","tier":2,"bonus":"red","points":2,"cost":{"black":3,"white":3}},{"id":"t2-24","tier":2,"bonus":"red","points":3,"cost":{"black":3,"white":2,"blue":2}},{"id":"t2-25","tier":2,"bonus":"black","points":1,"cost":{"white":3,"blue":2}},{"id":"t2-26","tier":2,"bonus":"black","points":1,"cost":{"white":2,"blue":2,"green":2}},{"id":"t2-27","tier":2,"bonus":"black","points":2,"cost":{"white":5}},{"id":"t2-28","tier":2,"bonus":"black","points":2,"cost":{"white":4,"blue":1}},{"id":"t2-29","tier":2,"bonus":"black","points":2,"cost":{"white":3,"blue":3}},{"id":"t2-30","tier":2,"bonus":"black","points":3,"cost":{"white":3,"blue":2,"green":2}},{"id":"t3-1","tier":3,"bonus":"white","points":3,"cost":{"blue":3,"green":3,"red":5}},{"id":"t3-2","tier":3,"bonus":"white","points":4,"cost":{"blue":7}},{"id":"t3-3","tier":3,"bonus":"white","points":4,"cost":{"blue":6,"green":3}},{"id":"t3-4","tier":3,"bonus":"white","points":5,"cost":{"blue":3,"green":3,"red":3,"black":5}},{"id":"t3-5","tier":3,"bonus":"blue","points":3,"cost":{"green":3,"red":3,"black":5}},{"id":"t3-6","tier":3,"bonus":"blue","points":4,"cost":{"green":7}},{"id":"t3-7","tier":3,"bonus":"blue","points":4,"cost":{"green":6,"red":3}},{"id":"t3-8","tier":3,"bonus":"blue","points":5,"cost":{"green":3,"red":3,"black":3,"white":5}},{"id":"t3-9","tier":3,"bonus":"green","points":3,"cost":{"red":3,"black":3,"white":5}},{"id":"t3-10","tier":3,"bonus":"green","points":4,"cost":{"red":7}},{"id":"t3-11","tier":3,"bonus":"green","points":4,"cost":{"red":6,"black":3}},{"id":"t3-12","tier":3,"bonus":"green","points":5,"cost":{"red":3,"black":3,"white":3,"blue":5}},{"id":"t3-13","tier":3,"bonus":"red","points":3,"cost":{"black":3,"white":3,"blue":5}},{"id":"t3-14","tier":3,"bonus":"red","points":4,"cost":{"black":7}},{"id":"t3-15","tier":3,"bonus":"red","points":4,"cost":{"black":6,"white":3}},{"id":"t3-16","tier":3,"bonus":"red","points":5,"cost":{"black":3,"white":3,"blue":3,"green":5}},{"id":"t3-17","tier":3,"bonus":"black","points":3,"cost":{"white":3,"blue":3,"green":5}},{"id":"t3-18","tier":3,"bonus":"black","points":4,"cost":{"white":7}},{"id":"t3-19","tier":3,"bonus":"black","points":4,"cost":{"white":6,"blue":3}},{"id":"t3-20","tier":3,"bonus":"black","points":5,"cost":{"white":3,"blue":3,"green":3,"red":5}}];
+const NOBLES_ALL = [{"id":"n1","points":3,"requirement":{"white":3,"blue":3,"green":3}},{"id":"n2","points":3,"requirement":{"white":3,"blue":3,"red":3}},{"id":"n3","points":3,"requirement":{"white":3,"blue":3,"black":3}},{"id":"n4","points":3,"requirement":{"white":3,"green":3,"red":3}},{"id":"n5","points":3,"requirement":{"white":3,"green":3,"black":3}},{"id":"n6","points":3,"requirement":{"white":3,"red":3,"black":3}},{"id":"n7","points":3,"requirement":{"white":4,"blue":4}},{"id":"n8","points":3,"requirement":{"white":4,"green":4}},{"id":"n9","points":3,"requirement":{"white":4,"red":4}},{"id":"n10","points":3,"requirement":{"white":4,"black":4}}];
+
+/* ============ SHARED UI HELPERS ============ */
+const SCREENS=['setup','lobby','game'];
+function showScreen(id){ SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
+function setMessage(text, kind){
+  const b=document.getElementById('banner');
+  b.textContent=text; b.className='banner '+kind;
+}
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ ZOOM ============ */
+const UI_ZOOM_DEFAULT=1, UI_ZOOM_MIN=0.5, UI_ZOOM_MAX=1.6, UI_ZOOM_STEP=0.1;
+let uiZoom=UI_ZOOM_DEFAULT;
+function applyZoom(){
+  document.getElementById('game').style.zoom=uiZoom;
+  document.getElementById('zoom-pct').textContent=Math.round(uiZoom*100)+'%';
+  document.getElementById('zoom-out-btn').disabled=uiZoom<=UI_ZOOM_MIN+1e-9;
+  document.getElementById('zoom-in-btn').disabled=uiZoom>=UI_ZOOM_MAX-1e-9;
+}
+document.getElementById('zoom-out-btn').addEventListener('click',()=>{ uiZoom=Math.max(UI_ZOOM_MIN, +(uiZoom-UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Math.min(UI_ZOOM_MAX, +(uiZoom+UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+
+/* ============ SHARED GAME STATE ============ */
+let mode='solo'; // 'local' | 'solo' | 'online'
+let bank={};
+let decks={1:[],2:[],3:[]};
+let board={1:[],2:[],3:[]};
+let nobles=[];
+let players=[]; // local/solo: {name, gems, bonuses, reserved:[], purchased:[], nobles:[], points}
+let currentPlayerIdx=0;
+let pendingTokens={};
+let gameOver=false;
+let finalRoundTriggerIdx=null;
+let selectedCard=null; // {source:'board'|'reserved', tier, idx}
+let aiSeats=new Set(); // solo mode: player indices controlled by computer
+
+function tokenCountsFor(numPlayers){
+  if(numPlayers===2) return 4;
+  if(numPlayers===3) return 5;
+  return 7;
+}
+function emptyGemObj(withGold){
+  const o={}; COLORS.forEach(c=>o[c]=0); if(withGold) o.gold=0; return o;
+}
+
+/* ============ DERIVED HELPERS (mode-aware) ============ */
+function isOnline(){ return mode==='online'; }
+function curPlayer(){ return players[currentPlayerIdx]; }
+function totalGemsOf(gemsObj){ return COLORS.reduce((s,c)=>s+(gemsObj[c]||0),0)+(gemsObj.gold||0); }
+function effectiveCost(card, bonuses){
+  const cost={};
+  COLORS.forEach(c=>{ cost[c]=Math.max(0,(card.cost[c]||0)-(bonuses[c]||0)); });
+  return cost;
+}
+function canAffordWith(card, gems, bonuses){
+  const cost=effectiveCost(card, bonuses);
+  let shortfall=0;
+  COLORS.forEach(c=>{ shortfall += Math.max(0, cost[c]-(gems[c]||0)); });
+  return shortfall <= (gems.gold||0);
+}
+function payCostFrom(card, gems, bonuses, bankObj){
+  const cost=effectiveCost(card, bonuses);
+  let goldUsed=0;
+  COLORS.forEach(c=>{
+    const pay=Math.min(cost[c], gems[c]||0);
+    gems[c]-=pay;
+    bankObj[c]+=pay;
+    const remaining=cost[c]-pay;
+    if(remaining>0){ goldUsed+=remaining; }
+  });
+  gems.gold-=goldUsed;
+  bankObj.gold+=goldUsed;
+}
+/* view-model accessors: local/solo read from `players`, online reads from onlineRoom + onlineMyReserved */
+function myGemsView(){ return isOnline() ? onlineRoom.gems[myId] : curPlayer().gems; }
+function myBonusesView(){ return isOnline() ? onlineRoom.bonuses[myId] : curPlayer().bonuses; }
+function myReservedView(){ return isOnline() ? onlineMyReserved : curPlayer().reserved; }
+function canIActNow(){
+  if(isOnline()) return onlineRoom && currentTurnUid(onlineRoom)===myId;
+  if(mode==='solo') return !aiSeats.has(currentPlayerIdx);
+  return !gameOver;
+}
+
+/* ============ LOCAL / SOLO GAME SETUP ============ */
+function newLocalGame(numPlayers, aiSeatIndices){
+  mode = (aiSeatIndices && aiSeatIndices.length>0) ? 'solo' : 'local';
+  const perColor=tokenCountsFor(numPlayers);
+  bank=emptyGemObj(true);
+  COLORS.forEach(c=>bank[c]=perColor);
+  bank.gold=5;
+
+  decks={1:shuffle(CARDS.filter(c=>c.tier===1)), 2:shuffle(CARDS.filter(c=>c.tier===2)), 3:shuffle(CARDS.filter(c=>c.tier===3))};
+  board={1:[],2:[],3:[]};
+  [1,2,3].forEach(t=>{ for(let i=0;i<4;i++){ const c=decks[t].pop(); if(c) board[t].push(c); } });
+
+  nobles=shuffle(NOBLES_ALL).slice(0, numPlayers+1);
+
+  aiSeats=new Set(aiSeatIndices||[]);
+  players=Array.from({length:numPlayers},(_,i)=>({
+    name:`플레이어 ${i+1}${aiSeats.has(i)?' 🤖':''}`, gems:emptyGemObj(true), bonuses:emptyGemObj(false),
+    reserved:[], purchased:[], nobles:[], points:0
+  }));
+  currentPlayerIdx=0; pendingTokens={}; gameOver=false; finalRoundTriggerIdx=null; selectedCard=null;
+
+  applyZoom();
+  renderAll();
+  setMessage(`${players[0].name} 차례 — 보석을 가져오거나 카드를 예약/구매하세요`,'info');
+  maybeTriggerAiTurn();
+}
+
+/* ============ RENDER ============ */
+function renderAll(){
+  renderSidePanels();
+  renderNobles();
+  renderBank();
+  renderTiers();
+  renderPlayerPanel();
+  renderTokenControls();
+}
+function buildPlayerViews(){
+  if(isOnline()){
+    if(!onlineRoom) return [];
+    return onlineRoom.playerOrder.map(uid=>({
+      key:uid,
+      name:(onlineRoom.players[uid]||{}).name || '???',
+      points: (onlineRoom.points||{})[uid]||0,
+      gems: (onlineRoom.gems||{})[uid] || emptyGemObj(true),
+      bonuses: (onlineRoom.bonuses||{})[uid] || emptyGemObj(false),
+      reservedCount: (onlineRoom.reservedCounts||{})[uid]||0,
+      purchasedCount: (onlineRoom.purchasedCount||{})[uid]||0,
+      noblesCount: (onlineRoom.playerNoblesCount||{})[uid]||0,
+      isMe: uid===myId, isAI:false,
+      isActive: uid===currentTurnUid(onlineRoom)
+    }));
+  }
+  return players.map((p,i)=>({
+    key:i, name:p.name, points:p.points, gems:p.gems, bonuses:p.bonuses,
+    reservedCount:p.reserved.length, purchasedCount:p.purchased.length, noblesCount:p.nobles.length,
+    isMe: mode!=='solo' || i===soloHumanSeat, isAI: mode==='solo' && aiSeats.has(i),
+    isActive: i===currentPlayerIdx
+  }));
+}
+function renderSidePanels(){
+  const views=buildPlayerViews();
+  const left=document.getElementById('side-col-left');
+  const right=document.getElementById('side-col-right');
+  const mid=Math.ceil(views.length/2);
+  const leftViews=views.slice(0,mid), rightViews=views.slice(mid);
+  function cardHtml(v){
+    const gemsHtml=[...COLORS,'gold'].map(c=>v.gems[c]?`<div class="sp-chip"><div class="dot gem-dot ${c}"></div><span>${v.gems[c]}</span></div>`:'').join('');
+    const bonusHtml=COLORS.map(c=>v.bonuses[c]?`<div class="sp-chip"><div class="dot gem-dot ${c}"></div><span>${v.bonuses[c]}</span></div>`:'').join('');
+    return `
+      <div class="side-player-card ${v.isActive?'active':''}">
+        <div class="sp-name">${v.name}${v.isMe?' (나)':''} <span class="pts">${v.points}점</span></div>
+        <div class="mini-label" style="margin-top:6px;">보유 보석</div>
+        <div class="sp-gems-row">${gemsHtml||'<span style="color:var(--muted);font-size:11px;">없음</span>'}</div>
+        <div class="mini-label" style="margin-top:6px;">보너스</div>
+        <div class="sp-bonus-row">${bonusHtml||'<span style="color:var(--muted);font-size:11px;">없음</span>'}</div>
+        <div class="sp-meta">예약 ${v.reservedCount}장 · 구매 ${v.purchasedCount}장 · 귀족 ${v.noblesCount}명</div>
+      </div>`;
+  }
+  left.innerHTML=leftViews.map(cardHtml).join('');
+  right.innerHTML=rightViews.map(cardHtml).join('');
+}
+function renderNobles(){
+  const el=document.getElementById('nobles-row');
+  el.innerHTML=(nobles||[]).map(n=>`
+    <div class="noble-tile">
+      <div class="noble-pts">${n.points}</div>
+      <div class="noble-reqs">${Object.entries(n.requirement).map(([c,v])=>`<div class="noble-req"><div class="dot gem-dot ${c}"></div>${v}</div>`).join('')}</div>
+    </div>
+  `).join('');
+}
+function renderBank(){
+  const el=document.getElementById('bank-row');
+  const cols=[...COLORS,'gold'];
+  const canAct=canIActNow();
+  el.innerHTML=cols.map(c=>{
+    const pend=pendingTokens[c]||0;
+    return `
+    <div class="gem-pile ${pend>0?'pending':''}" data-color="${c}" style="${c==='gold'?'cursor:default;opacity:0.85;':''}">
+      <div class="gem-dot ${c}"></div>
+      <div class="gem-count">${bank[c]}</div>
+      <div class="gem-pending-badge">${pend>0?'+'+pend:''}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.gem-pile').forEach(div=>{
+    const color=div.dataset.color;
+    if(color==='gold') return;
+    if(canAct) div.addEventListener('click',()=>onBankClick(color));
+  });
+}
+function renderTiers(){
+  const el=document.getElementById('tiers-area');
+  el.innerHTML='';
+  const canAct=canIActNow();
+  [3,2,1].forEach(tier=>{
+    const row=document.createElement('div');
+    row.className='tier-row';
+    const label=document.createElement('div');
+    label.className='tier-label';
+    label.textContent=`${tier}단계\n(${(decks[tier]||[]).length}장)`;
+    label.style.whiteSpace='pre-line';
+    row.appendChild(label);
+    const deckBack=document.createElement('div');
+    deckBack.className='deck-back';
+    deckBack.textContent=(decks[tier]||[]).length>0 ? '뒤집지 않고\n예약' : '없음';
+    if(canAct && (decks[tier]||[]).length>0) deckBack.addEventListener('click',()=>onBlindReserve(tier));
+    row.appendChild(deckBack);
+    (board[tier]||[]).forEach((card,idx)=>{
+      row.appendChild(renderCardEl(card, 'board', tier, idx, canAct));
+    });
+    el.appendChild(row);
+  });
+}
+function renderCardEl(card, source, tier, idx, canAct){
+  const div=document.createElement('div');
+  const gems=myGemsView(), bonuses=myBonusesView();
+  const affordable=canAffordWith(card,gems,bonuses);
+  const isSel = selectedCard && selectedCard.source===source && selectedCard.tier===tier && selectedCard.idx===idx;
+  div.className='card'+(affordable?'':' unaffordable')+(isSel?' selected':'');
+  div.innerHTML=`
+    <div class="card-top">
+      <div class="card-points">${card.points>0?card.points:''}</div>
+      <div class="card-bonus gem-dot ${card.bonus}"></div>
+    </div>
+    <div class="card-costs">${Object.entries(card.cost).map(([c,v])=>`<div class="cost-chip"><div class="dot gem-dot ${c}"></div><span>${v}</span></div>`).join('')}</div>
+  `;
+  if(canAct) div.addEventListener('click',()=>onCardClick(source,tier,idx));
+  return div;
+}
+function renderPlayerPanel(){
+  const el=document.getElementById('player-panel');
+  const canAct=canIActNow();
+  if(mode==='solo' && !canAct){
+    el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:20px;">🤖 컴퓨터가 진행 중입니다...</div>`;
+    return;
+  }
+  const gems=myGemsView(), bonuses=myBonusesView(), reserved=myReservedView();
+  const gemsHtml=[...COLORS,'gold'].map(c=>`
+    <div class="hand-gem"><div class="gem-dot ${c}"></div><div class="n">${gems[c]||0}</div></div>
+  `).join('');
+  const bonusHtml=COLORS.map(c=>`
+    <div class="bonus-chip"><div class="gem-dot ${c}"></div><span>${bonuses[c]||0}</span></div>
+  `).join('');
+  let reservedHtml='';
+  if(reserved.length>0){
+    reservedHtml=reserved.map((card,idx)=>{
+      const affordable=canAffordWith(card,gems,bonuses);
+      const isSel = selectedCard && selectedCard.source==='reserved' && selectedCard.idx===idx;
+      return `<div class="card${affordable?'':' unaffordable'}${isSel?' selected':''}" data-idx="${idx}">
+        <div class="card-top">
+          <div class="card-points">${card.points>0?card.points:''}</div>
+          <div class="card-bonus gem-dot ${card.bonus}"></div>
+        </div>
+        <div class="card-costs">${Object.entries(card.cost).map(([c,v])=>`<div class="cost-chip"><div class="dot gem-dot ${c}"></div><span>${v}</span></div>`).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    reservedHtml='<span style="color:var(--muted);font-size:12px;">예약한 카드 없음</span>';
+  }
+  const nameLabel = isOnline() ? '나' : curPlayer().name;
+  el.innerHTML=`
+    <div class="panel-row">
+      <div>
+        <div class="mini-label">${nameLabel} · 보유 보석 (총 ${totalGemsOf(gems)}/10)</div>
+        <div class="hand-gems">${gemsHtml}</div>
+      </div>
+      <div>
+        <div class="mini-label">보너스</div>
+        <div class="purchased-summary">${bonusHtml}</div>
+      </div>
+      <div>
+        <div class="mini-label">예약한 카드 (${reserved.length}/3)</div>
+        <div class="reserved-row" id="reserved-row">${reservedHtml}</div>
+      </div>
+    </div>
+  `;
+  el.querySelectorAll('#reserved-row .card').forEach(cardEl=>{
+    cardEl.addEventListener('click',()=>onCardClick('reserved',null,+cardEl.dataset.idx));
+  });
+}
+function renderTokenControls(){
+  const canAct=canIActNow();
+  const pendCount=Object.values(pendingTokens).reduce((a,b)=>a+b,0);
+  const colorsUsed=Object.keys(pendingTokens).filter(c=>pendingTokens[c]>0);
+  let valid=false;
+  if(colorsUsed.length>=1 && colorsUsed.length<=3 && colorsUsed.every(c=>pendingTokens[c]===1)) valid=true;
+  if(colorsUsed.length===1 && pendingTokens[colorsUsed[0]]===2) valid=true;
+  document.getElementById('confirm-tokens-btn').disabled=!valid || !canAct;
+  document.getElementById('cancel-tokens-btn').disabled=(pendCount===0);
+}
+
+/* ============ INTERACTION: TAKE TOKENS ============ */
+function onBankClick(color){
+  if(gameOver || !canIActNow()) return;
+  const colorsUsed=Object.keys(pendingTokens).filter(c=>pendingTokens[c]>0);
+  const curPend=pendingTokens[color]||0;
+  if(curPend===0){
+    if(colorsUsed.length>=3) return;
+    if(colorsUsed.length===1 && pendingTokens[colorsUsed[0]]===2) return;
+    if(bank[color]<=0) return;
+    pendingTokens[color]=1;
+  } else if(curPend===1){
+    if(colorsUsed.length===1){
+      if(bank[color]>=4){
+        pendingTokens[color]=2;
+      } else {
+        setMessage('같은 색 2개를 가져오려면 은행에 그 색이 4개 이상 남아있어야 해요.','bad');
+        return;
+      }
+    } else {
+      delete pendingTokens[color];
+    }
+  } else if(curPend===2){
+    delete pendingTokens[color];
+  }
+  renderBank(); renderTokenControls();
+}
+document.getElementById('cancel-tokens-btn').addEventListener('click',()=>{
+  pendingTokens={};
+  renderBank(); renderTokenControls();
+});
+document.getElementById('confirm-tokens-btn').addEventListener('click',()=>{
+  if(!canIActNow()) return;
+  const takenList=Object.entries(pendingTokens).filter(([c,v])=>v>0);
+  if(isOnline()){ onlineTakeTokens(takenList); return; }
+  const p=curPlayer();
+  takenList.forEach(([c,v])=>{ bank[c]-=v; p.gems[c]+=v; });
+  const took=takenList.map(([c,v])=>`${GEM_LABEL[c]} ${v}개`).join(', ');
+  pendingTokens={};
+  setMessage(`${p.name}님이 ${took}를 가져왔습니다`,'info');
+  afterAction();
+});
+
+/* ============ INTERACTION: RESERVE / PURCHASE ============ */
+function onCardClick(source, tier, idx){
+  if(gameOver || !canIActNow()) return;
+  if(Object.values(pendingTokens).some(v=>v>0)){
+    setMessage('토큰 선택을 먼저 취소하거나 확정해주세요.','bad');
+    return;
+  }
+  const same = selectedCard && selectedCard.source===source && selectedCard.tier===tier && selectedCard.idx===idx;
+  selectedCard = same ? null : {source, tier, idx};
+  renderTiers(); renderPlayerPanel();
+  if(selectedCard) showCardActionPrompt();
+  else clearActionButtons();
+}
+function getSelectedCardObj(){
+  if(!selectedCard) return null;
+  if(selectedCard.source==='board') return board[selectedCard.tier][selectedCard.idx];
+  return myReservedView()[selectedCard.idx];
+}
+function showCardActionPrompt(){
+  const card=getSelectedCardObj();
+  if(!card) return;
+  const gems=myGemsView(), bonuses=myBonusesView();
+  const affordable=canAffordWith(card,gems,bonuses);
+  const canReserve = selectedCard.source==='board' && myReservedView().length<3;
+  setMessage(`선택한 카드: ${GEM_LABEL[card.bonus]} 보너스, ${card.points}점`,'info');
+  renderActionButtons(affordable, canReserve);
+}
+function renderActionButtons(affordable, canReserve){
+  let panel=document.getElementById('card-action-panel');
+  if(!panel){
+    panel=document.createElement('div');
+    panel.id='card-action-panel';
+    panel.className='controls-row';
+    document.getElementById('confirm-tokens-btn').parentElement.insertBefore(panel, document.getElementById('confirm-tokens-btn'));
+  }
+  panel.innerHTML=`
+    <button class="ctrl-btn buy" id="buy-btn" ${affordable?'':'disabled'}>💰 구매하기</button>
+    <button class="ctrl-btn" id="reserve-btn" ${canReserve?'':'disabled'}>📌 예약하기</button>
+    <button class="ctrl-btn" id="cancel-card-btn">취소</button>
+  `;
+  document.getElementById('buy-btn').addEventListener('click', doPurchase);
+  document.getElementById('reserve-btn').addEventListener('click', doReserveSelected);
+  document.getElementById('cancel-card-btn').addEventListener('click', ()=>{
+    selectedCard=null; clearActionButtons(); renderTiers(); renderPlayerPanel();
+  });
+}
+function clearActionButtons(){
+  const panel=document.getElementById('card-action-panel');
+  if(panel) panel.remove();
+}
+function doPurchase(){
+  const card=getSelectedCardObj();
+  const gems=myGemsView(), bonuses=myBonusesView();
+  if(!canAffordWith(card,gems,bonuses)) return;
+  if(isOnline()){ onlinePurchase(card, selectedCard); return; }
+  const p=curPlayer();
+  payCostFrom(card,p.gems,p.bonuses,bank);
+  p.bonuses[card.bonus]+=1;
+  p.points+=card.points;
+  p.purchased.push(card);
+  if(selectedCard.source==='board'){
+    const tier=selectedCard.tier, idx=selectedCard.idx;
+    board[tier].splice(idx,1);
+    const next=decks[tier].pop();
+    if(next) board[tier].push(next);
+  } else {
+    p.reserved.splice(selectedCard.idx,1);
+  }
+  setMessage(`${p.name}님이 카드를 구매했습니다 (+${card.points}점, ${GEM_LABEL[card.bonus]} 보너스)`,'good');
+  selectedCard=null; clearActionButtons();
+  afterAction();
+}
+function doReserveSelected(){
+  if(myReservedView().length>=3) return;
+  if(isOnline()){ onlineReserve(selectedCard.tier, selectedCard.idx); return; }
+  const p=curPlayer();
+  const tier=selectedCard.tier, idx=selectedCard.idx;
+  const card=board[tier][idx];
+  board[tier].splice(idx,1);
+  const next=decks[tier].pop();
+  if(next) board[tier].push(next);
+  p.reserved.push(card);
+  let gotGold=false;
+  if(bank.gold>0){ bank.gold--; p.gems.gold++; gotGold=true; }
+  setMessage(`${p.name}님이 카드를 예약했습니다${gotGold?' (황금 보석 +1)':''}`,'info');
+  selectedCard=null; clearActionButtons();
+  afterAction();
+}
+function onBlindReserve(tier){
+  if(gameOver || !canIActNow()) return;
+  if(Object.values(pendingTokens).some(v=>v>0)){ setMessage('토큰 선택을 먼저 취소하거나 확정해주세요.','bad'); return; }
+  if(myReservedView().length>=3){ setMessage('이미 예약한 카드가 3장이에요. 먼저 구매하거나 포기해야 해요.','bad'); return; }
+  if(isOnline()){ onlineBlindReserve(tier); return; }
+  const p=curPlayer();
+  const card=decks[tier].pop();
+  if(!card) return;
+  p.reserved.push(card);
+  let gotGold=false;
+  if(bank.gold>0){ bank.gold--; p.gems.gold++; gotGold=true; }
+  setMessage(`${p.name}님이 ${tier}단계 카드를 뒤집지 않고 예약했습니다${gotGold?' (황금 보석 +1)':''}`,'info');
+  afterAction();
+}
+
+/* ============ POST-ACTION: TOKEN LIMIT, NOBLES, TURN ADVANCE (local/solo) ============ */
+function afterAction(){
+  renderAll();
+  const p=curPlayer();
+  if(totalGemsOf(p.gems)>10){
+    if(mode==='solo' && aiSeats.has(currentPlayerIdx)){ aiAutoDiscard(p); resolveNoblesThenAdvance(); return; }
+    promptDiscard();
+    return;
+  }
+  resolveNoblesThenAdvance();
+}
+function promptDiscard(){
+  const p=curPlayer();
+  const overBy=totalGemsOf(p.gems)-10;
+  document.getElementById('discard-msg').textContent=`${overBy}개를 반납해야 해요. 반납할 보석을 클릭하세요.`;
+  const pendingReturn={};
+  function render(){
+    const el=document.getElementById('discard-gems-row');
+    el.innerHTML=[...COLORS,'gold'].map(c=>{
+      const avail=p.gems[c]-(pendingReturn[c]||0);
+      return `
+      <div class="gem-pile ${pendingReturn[c]?'pending':''}" data-color="${c}">
+        <div class="gem-dot ${c}"></div>
+        <div class="gem-count">${avail}</div>
+        <div class="gem-pending-badge">${pendingReturn[c]?'-'+pendingReturn[c]:''}</div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.gem-pile').forEach(div=>{
+      const c=div.dataset.color;
+      div.addEventListener('click',()=>{
+        const totalReturned=Object.values(pendingReturn).reduce((a,b)=>a+b,0);
+        if(totalReturned>=overBy) return;
+        if((p.gems[c]-(pendingReturn[c]||0))<=0) return;
+        pendingReturn[c]=(pendingReturn[c]||0)+1;
+        render();
+      });
+    });
+    const totalReturned=Object.values(pendingReturn).reduce((a,b)=>a+b,0);
+    document.getElementById('discard-confirm-btn').disabled = totalReturned!==overBy;
+  }
+  render();
+  document.getElementById('discard-overlay').classList.remove('hidden');
+  document.getElementById('discard-confirm-btn').onclick=()=>{
+    Object.entries(pendingReturn).forEach(([c,v])=>{ p.gems[c]-=v; bank[c]+=v; });
+    document.getElementById('discard-overlay').classList.add('hidden');
+    renderAll();
+    resolveNoblesThenAdvance();
+  };
+}
+function resolveNoblesThenAdvance(){
+  const p=curPlayer();
+  const qualifying=nobles.filter(n=>Object.entries(n.requirement).every(([c,v])=>p.bonuses[c]>=v));
+  if(qualifying.length===0){
+    advanceTurn();
+  } else if(qualifying.length===1 || (mode==='solo' && aiSeats.has(currentPlayerIdx))){
+    awardNoble(qualifying[0]);
+    advanceTurn();
+  } else {
+    document.getElementById('noble-choice-row').innerHTML=qualifying.map((n,i)=>`
+      <div class="noble-tile" data-i="${i}">
+        <div class="noble-pts">${n.points}</div>
+        <div class="noble-reqs">${Object.entries(n.requirement).map(([c,v])=>`<div class="noble-req"><div class="dot gem-dot ${c}"></div>${v}</div>`).join('')}</div>
+      </div>
+    `).join('');
+    document.getElementById('noble-overlay').classList.remove('hidden');
+    document.querySelectorAll('#noble-choice-row .noble-tile').forEach(div=>{
+      div.addEventListener('click',()=>{
+        const n=qualifying[+div.dataset.i];
+        awardNoble(n);
+        document.getElementById('noble-overlay').classList.add('hidden');
+        advanceTurn();
+      });
+    });
+  }
+}
+function awardNoble(noble){
+  const p=curPlayer();
+  p.nobles.push(noble);
+  p.points+=noble.points;
+  nobles=nobles.filter(n=>n.id!==noble.id);
+  setMessage(`${p.name}님에게 귀족이 방문했습니다! (+${noble.points}점)`,'good');
+}
+function advanceTurn(){
+  const p=curPlayer();
+  if(p.points>=15 && finalRoundTriggerIdx===null){
+    finalRoundTriggerIdx=currentPlayerIdx;
+  }
+  if(finalRoundTriggerIdx!==null && currentPlayerIdx===players.length-1){
+    endGame();
+    return;
+  }
+  currentPlayerIdx=(currentPlayerIdx+1)%players.length;
+  selectedCard=null; clearActionButtons();
+  renderAll();
+  setMessage(`${curPlayer().name} 차례 — 보석을 가져오거나 카드를 예약/구매하세요`,'info');
+  maybeTriggerAiTurn();
+}
+
+/* ============ SIMPLE HEURISTIC AI (solo mode) ============ */
+function aiListAffordable(player){
+  const cands=[];
+  [1,2,3].forEach(t=>board[t].forEach(c=>{ if(canAffordWith(c,player.gems,player.bonuses)) cands.push({card:c, source:'board', tier:t}); }));
+  player.reserved.forEach((c,idx)=>{ if(canAffordWith(c,player.gems,player.bonuses)) cands.push({card:c, source:'reserved', idx}); });
+  return cands;
+}
+function aiShortfall(card, player){
+  const cost=effectiveCost(card, player.bonuses);
+  let shortfall=0;
+  const neededColors=[];
+  COLORS.forEach(c=>{
+    const need=Math.max(0, cost[c]-player.gems[c]);
+    if(need>0){ shortfall+=need; neededColors.push({color:c, need}); }
+  });
+  return {shortfall, neededColors};
+}
+function aiPickTarget(player){
+  let best=null, bestShort=Infinity, bestPts=-1;
+  [1,2,3].forEach(t=>board[t].forEach(c=>{
+    const {shortfall}=aiShortfall(c, player);
+    if(shortfall<bestShort || (shortfall===bestShort && c.points>bestPts)){
+      bestShort=shortfall; best=c; bestPts=c.points;
+    }
+  }));
+  return best;
+}
+function aiTakeThreeDistinct(player, colors){
+  colors.forEach(c=>{ if(bank[c]>0){ bank[c]--; player.gems[c]++; } });
+}
+function aiTakeTwoSame(player, color){
+  bank[color]-=2; player.gems[color]+=2;
+}
+function aiPadToThree(colorsSoFar){
+  const chosen=[...colorsSoFar];
+  for(const c of COLORS){
+    if(chosen.length>=3) break;
+    if(!chosen.includes(c) && bank[c]>0) chosen.push(c);
+  }
+  return chosen;
+}
+function aiAutoDiscard(player){
+  let over=totalGemsOf(player.gems)-10;
+  const order=[...COLORS,'gold'].sort((a,b)=>(player.gems[b]||0)-(player.gems[a]||0));
+  for(const c of order){
+    while(over>0 && player.gems[c]>0){ player.gems[c]--; bank[c]++; over--; }
+    if(over<=0) break;
+  }
+}
+function performAiTurn(){
+  if(gameOver) return;
+  const player=players[currentPlayerIdx];
+  if(!aiSeats.has(currentPlayerIdx)) return;
+
+  const buyChoice=aiListAffordable(player).sort((a,b)=>b.card.points-a.card.points || b.card.tier-a.card.tier)[0];
+  if(buyChoice){
+    payCostFrom(buyChoice.card, player.gems, player.bonuses, bank);
+    player.bonuses[buyChoice.card.bonus]+=1;
+    player.points+=buyChoice.card.points;
+    player.purchased.push(buyChoice.card);
+    if(buyChoice.source==='board'){
+      board[buyChoice.tier].splice(board[buyChoice.tier].indexOf(buyChoice.card),1);
+      const next=decks[buyChoice.tier].pop();
+      if(next) board[buyChoice.tier].push(next);
+    } else {
+      player.reserved.splice(buyChoice.idx,1);
+    }
+    setMessage(`${player.name}이(가) 카드를 구매했습니다 (+${buyChoice.card.points}점)`,'good');
+    afterAction();
+    return;
+  }
+
+  const target=aiPickTarget(player);
+  if(target){
+    const {shortfall, neededColors}=aiShortfall(target, player);
+    if(target.points>=4 && player.reserved.length<3 && shortfall>=3 && Math.random()<0.5){
+      const tier=[1,2,3].find(t=>board[t].includes(target));
+      const idx=board[tier].indexOf(target);
+      board[tier].splice(idx,1);
+      const next=decks[tier].pop();
+      if(next) board[tier].push(next);
+      player.reserved.push(target);
+      if(bank.gold>0){ bank.gold--; player.gems.gold++; }
+      setMessage(`${player.name}이(가) 카드를 예약했습니다`,'info');
+      afterAction();
+      return;
+    }
+    const avail=neededColors.filter(n=>bank[n.color]>0).sort((a,b)=>b.need-a.need);
+    if(avail.length>=3){
+      aiTakeThreeDistinct(player, avail.slice(0,3).map(n=>n.color));
+    } else if(avail.length===1 && bank[avail[0].color]>=4 && avail[0].need>=2){
+      aiTakeTwoSame(player, avail[0].color);
+    } else {
+      aiTakeThreeDistinct(player, aiPadToThree(avail.map(n=>n.color)));
+    }
+    setMessage(`${player.name}이(가) 보석을 가져왔습니다`,'info');
+    afterAction();
+    return;
+  }
+  const anyColors=aiPadToThree([]);
+  if(anyColors.length>0) aiTakeThreeDistinct(player, anyColors);
+  setMessage(`${player.name}이(가) 보석을 가져왔습니다`,'info');
+  afterAction();
+}
+function maybeTriggerAiTurn(){
+  if(gameOver || mode!=='solo') return;
+  if(!aiSeats.has(currentPlayerIdx)) return;
+  setMessage(`${players[currentPlayerIdx].name} 생각 중...`,'info');
+  renderAll();
+  setTimeout(performAiTurn, 700);
+}
+
+/* ============ END GAME (local/solo) ============ */
+function endGame(){
+  gameOver=true;
+  const scored=players.map(p=>({name:p.name, points:p.points, cards:p.purchased.length}));
+  scored.sort((a,b)=> b.points-a.points || a.cards-b.cards);
+  const top=scored[0];
+  const winners=scored.filter(s=>s.points===top.points && s.cards===top.cards);
+  document.getElementById('end-winner').textContent = winners.length>1 ? winners.map(w=>w.name).join(', ')+' 공동 우승!' : top.name+' 승리!';
+  document.getElementById('final-scores').innerHTML = scored.map(s=>`${s.name}: ${s.points}점 (카드 ${s.cards}장)`).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+  renderAll();
+}
+
+/* ============ ONLINE (Firebase Realtime Database + Anonymous Auth for private reserved cards) ============ */
+let app=null, db=null, auth=null, firebaseReady=false;
+try{
+  if(firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_')){
+    app=initializeApp(firebaseConfig);
+    db=getDatabase(app);
+    auth=getAuth(app);
+    firebaseReady=true;
+  }
+}catch(e){ console.error('Firebase init failed', e); }
+
+let myId=null;
+let onlineRoom=null, roomCode=null, isHost=false;
+let onlineMyReserved=[];
+let roomUnsub=null;
+let lastSeenVersion=-1;
+let onRoomUpdateBusy=false, onRoomUpdatePending=null;
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function currentTurnUid(room){ return room.playerOrder[room.currentIdx]; }
+
+async function ensureSignedIn(){
+  if(!firebaseReady) return { ok:false, reason:'firebase-not-configured' };
+  if(myId) return { ok:true };
+  try{
+    const cred=await signInAnonymously(auth);
+    myId=cred.user.uid;
+    return { ok:true };
+  }catch(e){
+    console.error('signInAnonymously failed', e);
+    return { ok:false, reason:'auth-failed', error:e };
+  }
+}
+async function createRoom(name, maxPlayers){
+  document.getElementById('create-msg').textContent='';
+  const signIn=await ensureSignedIn();
+  if(!signIn.ok){
+    if(signIn.reason==='firebase-not-configured'){ document.getElementById('config-error').classList.remove('hidden'); return; }
+    document.getElementById('create-msg').textContent='로그인에 실패했어요. Firebase 콘솔에서 Authentication > 익명 로그인이 켜져 있는지 확인해주세요. ('+(signIn.error && signIn.error.code || '')+')';
+    return;
+  }
+  if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
+  try{
+    let code, snap;
+    for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `splendorRooms/${code}`)); if(!snap.exists()) break; }
+    isHost=true; roomCode=code;
+    const room={
+      status:'lobby', hostId:myId, maxPlayers,
+      playerOrder:[myId],
+      players:{ [myId]:{name} },
+      reservedCounts:{ [myId]:0 },
+      purchasedCount:{ [myId]:0 },
+      playerNoblesCount:{ [myId]:0 },
+      points:{ [myId]:0 },
+      currentIdx:0, version:0, lastMove:null, phase:'action'
+    };
+    await set(ref(db, `splendorRooms/${code}`), room);
+    enterOnlineFlow();
+  }catch(e){
+    console.error('createRoom failed', e);
+    document.getElementById('create-msg').textContent='방을 만들지 못했어요. Firebase 보안 규칙이 최신 firebase.rules.json으로 게시되어 있는지 확인해주세요. ('+(e && e.code || e)+')';
+  }
+}
+async function joinRoom(name, code){
+  document.getElementById('join-msg').textContent='';
+  const signIn=await ensureSignedIn();
+  if(!signIn.ok){
+    if(signIn.reason==='firebase-not-configured'){ document.getElementById('config-error').classList.remove('hidden'); return; }
+    document.getElementById('join-msg').textContent='로그인에 실패했어요. Firebase 콘솔에서 Authentication > 익명 로그인이 켜져 있는지 확인해주세요. ('+(signIn.error && signIn.error.code || '')+')';
+    return;
+  }
+  if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
+  try{
+    const roomRef=ref(db, `splendorRooms/${code}`);
+    const snap=await get(roomRef);
+    if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+    const room=snap.val();
+    if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+    if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+    await update(ref(db, `splendorRooms/${code}`), {
+      playerOrder:[...room.playerOrder, myId],
+      [`players/${myId}`]:{name},
+      [`reservedCounts/${myId}`]:0,
+      [`purchasedCount/${myId}`]:0,
+      [`playerNoblesCount/${myId}`]:0,
+      [`points/${myId}`]:0
+    });
+    isHost=false; roomCode=code;
+    enterOnlineFlow();
+  }catch(e){
+    console.error('joinRoom failed', e);
+    document.getElementById('join-msg').textContent='참가하지 못했어요. Firebase 보안 규칙이 최신 firebase.rules.json으로 게시되어 있는지 확인해주세요. ('+(e && e.code || e)+')';
+  }
+}
+function enterOnlineFlow(){
+  mode='online';
+  showScreen('lobby');
+  lastSeenVersion=-1; onRoomUpdateBusy=false; onRoomUpdatePending=null;
+  if(roomUnsub) roomUnsub();
+  roomUnsub=onValue(ref(db, `splendorRooms/${roomCode}`), (snap)=>{
+    const room=snap.val();
+    if(!room) return;
+    queueRoomUpdate(room);
+  });
+}
+function queueRoomUpdate(room){
+  if(onRoomUpdateBusy){ onRoomUpdatePending=room; return; }
+  onRoomUpdateBusy=true;
+  onRoomUpdate(room).catch(e=>console.error('onRoomUpdate error', e)).finally(()=>{
+    onRoomUpdateBusy=false;
+    if(onRoomUpdatePending){
+      const next=onRoomUpdatePending; onRoomUpdatePending=null;
+      queueRoomUpdate(next);
+    }
+  });
+}
+async function onRoomUpdate(room){
+  const versionChanged=room.version!==lastSeenVersion;
+  lastSeenVersion=room.version;
+  onlineRoom=room;
+  if(room.status==='lobby'){ renderLobby(); return; }
+  if(room.status==='playing'){
+    if(document.getElementById('game').classList.contains('hidden')){
+      await refreshMyReservedFromFirebase();
+      bank=room.bank; decks=room.decks||{1:[],2:[],3:[]}; board=room.board||{1:[],2:[],3:[]}; nobles=room.nobles||[];
+      applyZoom();
+      showScreen('game');
+    } else {
+      bank=room.bank; decks=room.decks||{1:[],2:[],3:[]}; board=room.board||{1:[],2:[],3:[]}; nobles=room.nobles||[];
+      if(currentTurnUid(room)===myId) await refreshMyReservedFromFirebase();
+    }
+    selectedCard=null; clearActionButtons(); pendingTokens={};
+    renderAll();
+    if(room.phase==='discard' && currentTurnUid(room)===myId){
+      onlinePromptDiscard();
+    } else if(room.phase==='noble' && currentTurnUid(room)===myId){
+      onlinePromptNobleChoice();
+    }
+    if(versionChanged && room.lastMove){
+      setMessage(room.lastMove.text, 'info');
+    } else if(room.phase==='action') {
+      const turnUid=currentTurnUid(room);
+      const turnName=room.players[turnUid] ? room.players[turnUid].name : '';
+      setMessage(turnUid===myId ? '내 차례예요' : `${turnName} 차례를 기다리는 중...`, 'info');
+    }
+  } else if(room.status==='ended'){
+    bank=room.bank; decks=room.decks||{1:[],2:[],3:[]}; board=room.board||{1:[],2:[],3:[]}; nobles=room.nobles||[];
+    renderAll();
+    renderOnlineEndModal(room);
+  }
+}
+async function refreshMyReservedFromFirebase(){
+  const snap=await get(ref(db, `splendorReserved/${roomCode}/${myId}`));
+  onlineMyReserved=snap.exists() ? snap.val() : [];
+}
+function renderLobby(){
+  document.getElementById('lobby-code').textContent=roomCode;
+  document.getElementById('lobby-players').innerHTML=onlineRoom.playerOrder.map(uid=>{
+    const p=onlineRoom.players[uid];
+    return `<div class="lobby-player"><span>${p.name}${uid===onlineRoom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}</span></div>`;
+  }).join('');
+  const startBtn=document.getElementById('lobby-start-btn');
+  const waiting=document.getElementById('lobby-waiting');
+  const joined=onlineRoom.playerOrder.length;
+  if(isHost){
+    startBtn.classList.remove('hidden');
+    startBtn.disabled=joined<2;
+    waiting.textContent = joined<2 ? '2명 이상 모이면 시작할 수 있어요' : (joined<onlineRoom.maxPlayers ? `${onlineRoom.maxPlayers-joined}자리 더 받을 수 있어요 (지금 시작하면 ${joined}인 게임으로 진행됩니다)` : '');
+  } else {
+    startBtn.classList.add('hidden');
+    waiting.textContent='방장이 게임을 시작하기를 기다리는 중...';
+  }
+}
+document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
+  const snap=await get(ref(db, `splendorRooms/${roomCode}`));
+  const room=snap.val();
+  const numPlayers=room.playerOrder.length;
+  const perColor=tokenCountsFor(numPlayers);
+  const newBank=emptyGemObj(true);
+  COLORS.forEach(c=>newBank[c]=perColor);
+  newBank.gold=5;
+  const newDecks={1:shuffle(CARDS.filter(c=>c.tier===1)), 2:shuffle(CARDS.filter(c=>c.tier===2)), 3:shuffle(CARDS.filter(c=>c.tier===3))};
+  const newBoard={1:[],2:[],3:[]};
+  [1,2,3].forEach(t=>{ for(let i=0;i<4;i++){ const c=newDecks[t].pop(); if(c) newBoard[t].push(c); } });
+  const newNobles=shuffle(NOBLES_ALL).slice(0, numPlayers+1);
+  const gemsInit={}, bonusesInit={};
+  room.playerOrder.forEach(uid=>{ gemsInit[uid]=emptyGemObj(true); bonusesInit[uid]=emptyGemObj(false); });
+  await update(ref(db, `splendorRooms/${roomCode}`), {
+    status:'playing', bank:newBank, decks:newDecks, board:newBoard, nobles:newNobles,
+    gems:gemsInit, bonuses:bonusesInit, currentIdx:0, lastMove:null, phase:'action', version:0
+  });
+  // clear everyone's private reserved cards for a fresh game
+  for(const uid of room.playerOrder){
+    await set(ref(db, `splendorReserved/${roomCode}/${uid}`), []);
+  }
+});
+document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
+function leaveOnline(){
+  if(roomUnsub){ roomUnsub(); roomUnsub=null; }
+  roomCode=null; onlineRoom=null; selectedCard=null; pendingTokens={};
+}
+
+/* ---- online action commits ---- */
+async function onlineTakeTokens(takenList){
+  const roomRef=ref(db, `splendorRooms/${roomCode}`);
+  const myName=onlineRoom.players[myId].name;
+  let failReason=null;
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(currentTurnUid(room)!==myId || room.phase!=='action') return room;
+    for(const [c,v] of takenList){
+      if(room.bank[c]<v){ failReason='보석이 부족해요.'; return; }
+      room.bank[c]-=v;
+      room.gems[myId][c]=(room.gems[myId][c]||0)+v;
+    }
+    const took=takenList.map(([c,v])=>`${GEM_LABEL[c]} ${v}개`).join(', ');
+    room.lastMove={ text:`${myName}님이 ${took}를 가져왔습니다` };
+    finishActionInRoom(room, myId);
+    return room;
+  });
+  pendingTokens={};
+  if(failReason) setMessage(failReason,'bad');
+}
+async function onlinePurchase(card, sel){
+  const roomRef=ref(db, `splendorRooms/${roomCode}`);
+  const myName=onlineRoom.players[myId].name;
+  let newReserved=null;
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(currentTurnUid(room)!==myId || room.phase!=='action') return room;
+    if(!canAffordWith(card, room.gems[myId], room.bonuses[myId])) return room;
+    payCostFrom(card, room.gems[myId], room.bonuses[myId], room.bank);
+    room.bonuses[myId][card.bonus]+=1;
+    room.points[myId]=(room.points[myId]||0)+card.points;
+    room.purchasedCount[myId]=(room.purchasedCount[myId]||0)+1;
+    if(sel.source==='board'){
+      const tier=sel.tier;
+      const arr=room.board[tier];
+      const i=arr.findIndex(c=>c.id===card.id);
+      if(i>=0) arr.splice(i,1);
+      const next=room.decks[tier].pop();
+      if(next) arr.push(next);
+    } else {
+      newReserved = onlineMyReserved.filter(c=>c.id!==card.id);
+      room.reservedCounts[myId]=Math.max(0,(room.reservedCounts[myId]||1)-1);
+    }
+    room.lastMove={ text:`${myName}님이 카드를 구매했습니다 (+${card.points}점)` };
+    finishActionInRoom(room, myId);
+    return room;
+  });
+  if(newReserved!==null){
+    onlineMyReserved=newReserved;
+    await set(ref(db, `splendorReserved/${roomCode}/${myId}`), onlineMyReserved);
+  }
+  selectedCard=null; clearActionButtons();
+}
+async function onlineReserve(tier, idx){
+  const roomRef=ref(db, `splendorRooms/${roomCode}`);
+  const myName=onlineRoom.players[myId].name;
+  let reservedCard=null;
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(currentTurnUid(room)!==myId || room.phase!=='action') return room;
+    if((room.reservedCounts[myId]||0)>=3) return room;
+    const arr=room.board[tier];
+    reservedCard=arr[idx];
+    if(!reservedCard) return room;
+    arr.splice(idx,1);
+    const next=room.decks[tier].pop();
+    if(next) arr.push(next);
+    room.reservedCounts[myId]=(room.reservedCounts[myId]||0)+1;
+    let gotGold=false;
+    if(room.bank.gold>0){ room.bank.gold--; room.gems[myId].gold=(room.gems[myId].gold||0)+1; gotGold=true; }
+    room.lastMove={ text:`${myName}님이 카드를 예약했습니다${gotGold?' (황금 보석 +1)':''}` };
+    finishActionInRoom(room, myId);
+    return room;
+  });
+  if(reservedCard){
+    onlineMyReserved=[...onlineMyReserved, reservedCard];
+    await set(ref(db, `splendorReserved/${roomCode}/${myId}`), onlineMyReserved);
+  }
+  selectedCard=null; clearActionButtons();
+}
+async function onlineBlindReserve(tier){
+  const roomRef=ref(db, `splendorRooms/${roomCode}`);
+  const myName=onlineRoom.players[myId].name;
+  let reservedCard=null;
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(currentTurnUid(room)!==myId || room.phase!=='action') return room;
+    if((room.reservedCounts[myId]||0)>=3) return room;
+    reservedCard=room.decks[tier].pop();
+    if(!reservedCard) return room;
+    room.reservedCounts[myId]=(room.reservedCounts[myId]||0)+1;
+    let gotGold=false;
+    if(room.bank.gold>0){ room.bank.gold--; room.gems[myId].gold=(room.gems[myId].gold||0)+1; gotGold=true; }
+    room.lastMove={ text:`${myName}님이 ${tier}단계 카드를 뒤집지 않고 예약했습니다${gotGold?' (황금 보석 +1)':''}` };
+    finishActionInRoom(room, myId);
+    return room;
+  });
+  if(reservedCard){
+    onlineMyReserved=[...onlineMyReserved, reservedCard];
+    await set(ref(db, `splendorReserved/${roomCode}/${myId}`), onlineMyReserved);
+  }
+}
+function finishActionInRoom(room, uid){
+  const total=COLORS.reduce((s,c)=>s+(room.gems[uid][c]||0),0)+(room.gems[uid].gold||0);
+  room.version=(room.version||0)+1;
+  if(total>10){
+    room.phase='discard';
+    return;
+  }
+  resolveNoblesInRoom(room, uid);
+}
+function resolveNoblesInRoom(room, uid){
+  const bonuses=room.bonuses[uid];
+  const qualifying=(room.nobles||[]).filter(n=>Object.entries(n.requirement).every(([c,v])=>bonuses[c]>=v));
+  if(qualifying.length===0){
+    advanceTurnInRoom(room);
+  } else if(qualifying.length===1){
+    awardNobleInRoom(room, uid, qualifying[0]);
+    advanceTurnInRoom(room);
+  } else {
+    room.phase='noble';
+  }
+}
+function awardNobleInRoom(room, uid, noble){
+  room.points[uid]=(room.points[uid]||0)+noble.points;
+  room.playerNoblesCount[uid]=(room.playerNoblesCount[uid]||0)+1;
+  room.nobles=(room.nobles||[]).filter(n=>n.id!==noble.id);
+}
+function advanceTurnInRoom(room){
+  room.phase='action';
+  if((room.points[currentTurnUid(room)]||0)>=15 && room.finalRoundTriggerIdx==null){
+    room.finalRoundTriggerIdx=room.currentIdx;
+  }
+  if(room.finalRoundTriggerIdx!=null && room.currentIdx===room.playerOrder.length-1){
+    room.status='ended';
+    return;
+  }
+  room.currentIdx=(room.currentIdx+1)%room.playerOrder.length;
+}
+async function onlinePromptDiscard(){
+  const p=curPlayerOnlineGemsRef();
+  const gems=onlineRoom.gems[myId];
+  const overBy=totalGemsOf(gems)-10;
+  document.getElementById('discard-msg').textContent=`${overBy}개를 반납해야 해요. 반납할 보석을 클릭하세요.`;
+  const pendingReturn={};
+  function render(){
+    const el=document.getElementById('discard-gems-row');
+    el.innerHTML=[...COLORS,'gold'].map(c=>{
+      const avail=(gems[c]||0)-(pendingReturn[c]||0);
+      return `
+      <div class="gem-pile ${pendingReturn[c]?'pending':''}" data-color="${c}">
+        <div class="gem-dot ${c}"></div>
+        <div class="gem-count">${avail}</div>
+        <div class="gem-pending-badge">${pendingReturn[c]?'-'+pendingReturn[c]:''}</div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.gem-pile').forEach(div=>{
+      const c=div.dataset.color;
+      div.addEventListener('click',()=>{
+        const totalReturned=Object.values(pendingReturn).reduce((a,b)=>a+b,0);
+        if(totalReturned>=overBy) return;
+        if(((gems[c]||0)-(pendingReturn[c]||0))<=0) return;
+        pendingReturn[c]=(pendingReturn[c]||0)+1;
+        render();
+      });
+    });
+    const totalReturned=Object.values(pendingReturn).reduce((a,b)=>a+b,0);
+    document.getElementById('discard-confirm-btn').disabled = totalReturned!==overBy;
+  }
+  render();
+  document.getElementById('discard-overlay').classList.remove('hidden');
+  document.getElementById('discard-confirm-btn').onclick=async ()=>{
+    document.getElementById('discard-overlay').classList.add('hidden');
+    const roomRef=ref(db, `splendorRooms/${roomCode}`);
+    await runTransaction(roomRef, (room)=>{
+      if(!room) return room;
+      if(currentTurnUid(room)!==myId || room.phase!=='discard') return room;
+      Object.entries(pendingReturn).forEach(([c,v])=>{ room.gems[myId][c]-=v; room.bank[c]+=v; });
+      room.phase='action';
+      resolveNoblesInRoom(room, myId);
+      room.version=(room.version||0)+1;
+      return room;
+    });
+  };
+}
+function curPlayerOnlineGemsRef(){ return onlineRoom.gems[myId]; }
+function onlinePromptNobleChoice(){
+  const bonuses=onlineRoom.bonuses[myId];
+  const qualifying=(onlineRoom.nobles||[]).filter(n=>Object.entries(n.requirement).every(([c,v])=>bonuses[c]>=v));
+  document.getElementById('noble-choice-row').innerHTML=qualifying.map((n,i)=>`
+    <div class="noble-tile" data-i="${i}">
+      <div class="noble-pts">${n.points}</div>
+      <div class="noble-reqs">${Object.entries(n.requirement).map(([c,v])=>`<div class="noble-req"><div class="dot gem-dot ${c}"></div>${v}</div>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('noble-overlay').classList.remove('hidden');
+  document.querySelectorAll('#noble-choice-row .noble-tile').forEach(div=>{
+    div.addEventListener('click', async ()=>{
+      document.getElementById('noble-overlay').classList.add('hidden');
+      const nobleId=qualifying[+div.dataset.i].id;
+      const roomRef=ref(db, `splendorRooms/${roomCode}`);
+      await runTransaction(roomRef, (room)=>{
+        if(!room) return room;
+        if(currentTurnUid(room)!==myId || room.phase!=='noble') return room;
+        const noble=(room.nobles||[]).find(n=>n.id===nobleId);
+        if(noble) awardNobleInRoom(room, myId, noble);
+        room.phase='action';
+        advanceTurnInRoom(room);
+        room.version=(room.version||0)+1;
+        return room;
+      });
+    });
+  });
+}
+function renderOnlineEndModal(room){
+  const scored=room.playerOrder.map(uid=>({name:room.players[uid].name, points:room.points[uid]||0, cards:room.purchasedCount[uid]||0}));
+  scored.sort((a,b)=> b.points-a.points || a.cards-b.cards);
+  const top=scored[0];
+  const winners=scored.filter(s=>s.points===top.points && s.cards===top.cards);
+  document.getElementById('end-winner').textContent = winners.length>1 ? winners.map(w=>w.name).join(', ')+' 공동 우승!' : top.name+' 승리!';
+  document.getElementById('final-scores').innerHTML = scored.map(s=>`${s.name}: ${s.points}점 (카드 ${s.cards}장)`).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+}
+
+/* ============ SETUP SCREEN WIRING ============ */
+let chosenCount=3;
+document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    chosenCount=+btn.dataset.count;
+  });
+});
+
+let soloCount=3, soloHumanSeat=0;
+function renderSoloOrderOptions(n){
+  const el=document.getElementById('solo-order-grid');
+  el.innerHTML=Array.from({length:n},(_,i)=>`<button class="opt-btn ${i===0?'selected':''}" data-seat="${i}">${i+1}번째</button>`).join('');
+  soloHumanSeat=0;
+  el.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      soloHumanSeat=+btn.dataset.seat;
+    });
+  });
+}
+renderSoloOrderOptions(soloCount);
+document.querySelectorAll('#solo-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#solo-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    soloCount=+btn.dataset.count;
+    renderSoloOrderOptions(soloCount);
+  });
+});
+
+let onlineChosenCount=3;
+document.querySelectorAll('#online-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#online-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    onlineChosenCount=+btn.dataset.count;
+  });
+});
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('create-tab').classList.toggle('hidden', btn.dataset.tab!=='create');
+    document.getElementById('join-tab').classList.toggle('hidden', btn.dataset.tab!=='join');
+  });
+});
+document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mode-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const m=btn.dataset.mode;
+    document.getElementById('solo-panel').classList.toggle('hidden', m!=='solo');
+    document.getElementById('local-panel').classList.toggle('hidden', m!=='local');
+    document.getElementById('online-panel').classList.toggle('hidden', m!=='online');
+    document.getElementById('start-btn').classList.toggle('hidden', m==='online');
+    document.getElementById('start-btn').dataset.mode=m;
+  });
+});
+document.getElementById('start-btn').dataset.mode='solo';
+document.getElementById('start-btn').addEventListener('click',()=>{
+  const m=document.getElementById('start-btn').dataset.mode;
+  showScreen('game');
+  if(m==='solo'){
+    const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeat);
+    newLocalGame(soloCount, aiList);
+  } else {
+    newLocalGame(chosenCount, []);
+  }
+});
+document.getElementById('create-room-btn').addEventListener('click',()=>{
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
+});
+document.getElementById('join-room-btn').addEventListener('click',()=>{
+  joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());
+});
+document.getElementById('quit-btn').addEventListener('click',()=>{
+  leaveOnline();
+  document.getElementById('end-overlay').classList.add('hidden');
+  showScreen('setup');
+});
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('end-overlay').classList.add('hidden');
+  leaveOnline();
+  showScreen('setup');
+});
+</script>
+</body>
+</html>
