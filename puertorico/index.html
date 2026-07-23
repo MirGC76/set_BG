@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4, user-scalable=yes">
+<title>푸에르토리코</title>
+<style>
+:root{
+  --bg-deep:#12211C;
+  --bg-mid:#1B322A;
+  --line:#3A5347;
+  --text:#EFEDE3;
+  --muted:#9FB3A8;
+  --gold:#D9A441;
+  --good:#2FA84F;
+  --bad:#D8483D;
+  --corn:#E8C547;
+  --indigo:#3355A8;
+  --sugar:#F2F2F0;
+  --coffee:#5A3A28;
+  --tobacco:#7A3B2E;
+  --quarry:#8A8A8A;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  min-height:100vh;
+  background:radial-gradient(ellipse at top, var(--bg-mid), var(--bg-deep));
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Pretendard",sans-serif;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.hidden{display:none !important;}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 12px 50px;}
+.back-link{align-self:flex-start;color:var(--muted);font-size:12.5px;text-decoration:none;margin-bottom:10px;}
+
+/* ---------- SETUP ---------- */
+#setup{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;margin-top:2vh;}
+h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margin:4px 0;color:var(--gold);}
+.subtitle{color:var(--muted);font-size:13.5px;margin-bottom:22px;text-align:center;}
+.panel{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+.panel h2{font-size:12.5px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;text-transform:uppercase;}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.opt-btn{flex:1;min-width:90px;background:rgba(255,255,255,0.05);border:2px solid var(--line);color:var(--text);border-radius:10px;padding:13px 8px;font-weight:800;font-size:14px;cursor:pointer;}
+.opt-btn.selected,.opt-btn:hover{border-color:var(--gold);background:rgba(217,164,65,0.14);}
+.start-btn{margin-top:8px;background:linear-gradient(180deg,#F0CE85,var(--gold));color:#2b1d05;border:none;border-radius:10px;padding:15px 40px;font-weight:900;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #8a6a1f;}
+.start-btn:active{transform:translateY(3px);box-shadow:none;}
+.start-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.rules-box{font-size:12px;color:var(--muted);line-height:1.75;text-align:left;}
+.rules-box b{color:var(--text);}
+.text-input{width:100%;padding:12px 14px;border-radius:8px;border:2px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;margin-bottom:10px;}
+.text-input::placeholder{color:var(--muted);}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tab-btn{flex:1;background:transparent;border:2px solid var(--line);color:var(--muted);border-radius:8px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;}
+.tab-btn.selected{border-color:var(--gold);color:var(--text);background:rgba(217,164,65,0.1);}
+.warn-note{font-size:11.5px;color:var(--gold);background:rgba(217,164,65,0.1);border-radius:8px;padding:8px 12px;margin-top:6px;line-height:1.6;}
+.field-msg{font-size:12.5px;color:var(--bad);min-height:16px;margin:-4px 0 8px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.toggle-desc{font-size:12px;color:var(--muted);}
+
+/* ---------- LOBBY ---------- */
+#lobby{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;margin-top:5vh;}
+.room-code-box{background:rgba(255,255,255,0.06);border:2px dashed var(--gold);border-radius:14px;padding:20px 34px;text-align:center;margin-bottom:20px;}
+.room-code-box .lbl{font-size:12px;color:var(--muted);letter-spacing:2px;}
+.room-code-box .code{font-size:40px;font-weight:900;letter-spacing:8px;color:var(--gold);margin-top:4px;}
+.lobby-players{width:100%;background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px;}
+.lobby-player{display:flex;justify-content:space-between;padding:8px 4px;font-size:15px;border-bottom:1px solid var(--line);}
+.lobby-player:last-child{border-bottom:none;}
+.host-badge{font-size:10px;background:var(--gold);color:#2b1d05;border-radius:6px;padding:2px 6px;margin-left:8px;font-weight:800;}
+.waiting-msg{color:var(--muted);font-size:14px;text-align:center;margin-top:6px;}
+
+/* ---------- GAME ---------- */
+#game{width:100%;max-width:1200px;display:flex;flex-direction:column;align-items:center;}
+.topbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;}
+.zoom-row{display:flex;align-items:center;gap:8px;}
+.zoom-btn{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--text);border-radius:8px;width:32px;height:32px;font-size:17px;font-weight:800;cursor:pointer;}
+.zoom-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.zoom-pct{font-size:12px;color:var(--muted);min-width:40px;text-align:center;}
+.info-chip{background:rgba(255,255,255,0.07);border-radius:20px;padding:7px 16px;font-size:12.5px;font-weight:700;}
+
+.banner{min-height:18px;margin:8px 0;padding:9px 22px;border-radius:20px;font-weight:700;font-size:13.5px;text-align:center;max-width:760px;}
+.banner.good{background:rgba(47,168,79,0.2);color:#8CE6A0;}
+.banner.bad{background:rgba(216,72,61,0.2);color:#FF9B8F;}
+.banner.info{background:rgba(255,255,255,0.06);color:var(--muted);}
+
+.roles-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+.role-card{
+  width:96px;background:rgba(255,255,255,0.05);border:2px solid var(--line);border-radius:12px;padding:10px 6px;
+  text-align:center;cursor:pointer;transition:border-color .12s, transform .12s;
+}
+.role-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.role-card.taken{opacity:0.35;cursor:not-allowed;}
+.role-card .rname{font-weight:800;font-size:13px;}
+.role-card .rbonus{color:var(--gold);font-size:12px;font-weight:800;margin-top:4px;}
+
+.supply-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+.supply-box{background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--muted);}
+.supply-box b{color:var(--text);}
+.tile{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;font-size:11px;font-weight:900;color:#1a1a1a;margin:2px;cursor:pointer;border:2px solid transparent;}
+.tile.corn{background:var(--corn);}
+.tile.indigo{background:var(--indigo);color:#fff;}
+.tile.sugar{background:var(--sugar);}
+.tile.coffee{background:var(--coffee);color:#fff;}
+.tile.tobacco{background:var(--tobacco);color:#fff;}
+.tile.quarry{background:var(--quarry);color:#fff;}
+.tile.selected{border-color:#fff;transform:scale(1.15);}
+.tile.disabled{opacity:0.3;cursor:not-allowed;}
+.ship-box{display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;}
+
+.players-area{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.player-board{background:rgba(255,255,255,0.03);border:2px solid var(--line);border-radius:12px;padding:10px 12px;}
+.player-board.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,164,65,0.15);}
+.pb-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.pb-name{font-weight:800;font-size:13.5px;}
+.pb-stats{display:flex;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
+.pb-stats b{color:var(--gold);}
+.pb-row-label{font-size:10px;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin:4px 0 2px;}
+.pb-slots{display:flex;flex-wrap:wrap;gap:3px;}
+.slot-empty{width:26px;height:26px;border-radius:6px;border:2px dashed var(--line);}
+.colonist-dot{position:relative;}
+.colonist-dot::after{content:"●";position:absolute;top:-6px;right:-4px;font-size:9px;color:#fff;text-shadow:0 0 2px #000;}
+.bldg-tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:6px;font-size:9px;font-weight:800;color:#fff;margin:2px;padding:2px;background:#4a3d2a;border:2px solid transparent;cursor:pointer;text-align:center;line-height:1.1;}
+.bldg-tile.selected{border-color:#fff;}
+.pb-goods{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.good-chip{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.25);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;}
+.good-chip .dot{width:12px;height:12px;border-radius:50%;}
+
+.controls-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0;}
+.ctrl-btn{background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;}
+.ctrl-btn.primary{background:linear-gradient(180deg,#F0CE85,var(--gold));color:#2b1d05;border:none;}
+.ctrl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.build-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:900px;margin:10px 0;}
+.build-card{width:110px;background:rgba(255,255,255,0.05);border:2px solid var(--line);border-radius:10px;padding:8px;text-align:center;cursor:pointer;font-size:11px;}
+.build-card:hover{border-color:var(--gold);}
+.build-card.disabled{opacity:0.35;cursor:not-allowed;}
+.build-card .bname{font-weight:800;font-size:12px;margin-bottom:3px;}
+.build-card .bcost{color:var(--gold);font-weight:800;}
+.build-card.expansion{border-color:#6b8f7a;}
+
+#end-overlay,#config-error{position:fixed;inset:0;background:rgba(6,10,8,0.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+#end-modal{background:var(--bg-mid);border:1px solid var(--line);border-radius:16px;padding:30px 28px;max-width:440px;width:95%;text-align:center;}
+#end-modal h2{font-size:24px;margin:0 0 10px;color:var(--gold);}
+#end-modal .scores{margin:14px 0;font-size:13.5px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
+#config-error .box{max-width:520px;background:var(--bg-mid);border:1px solid var(--bad);border-radius:14px;padding:28px;text-align:center;}
+#config-error code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP -->
+  <div id="setup">
+    <a href="../" class="back-link">← 게임 허브로</a>
+    <h1 class="title">푸 에 르 토 리 코</h1>
+    <div class="subtitle">농장을 개척하고 상품을 생산·판매·수송하여 가장 많은 승점을 쌓는 경영 전략 게임</div>
+
+    <div class="panel">
+      <h2>진행 방식</h2>
+      <div class="row-btns" id="mode-grid">
+        <button class="opt-btn selected" data-mode="solo">혼자 (컴퓨터 대전)</button>
+        <button class="opt-btn" data-mode="local">한 기기에서 함께</button>
+        <button class="opt-btn" data-mode="online">온라인으로 함께</button>
+      </div>
+    </div>
+
+    <div class="panel" id="solo-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="solo-count-grid">
+        <button class="opt-btn" data-count="3">3명</button>
+        <button class="opt-btn selected" data-count="4">4명</button>
+        <button class="opt-btn" data-count="5">5명</button>
+      </div>
+      <h2 style="margin-top:18px;">내 순서</h2>
+      <div class="row-btns" id="solo-order-grid"></div>
+    </div>
+
+    <div class="panel hidden" id="local-panel">
+      <h2>인원 수</h2>
+      <div class="row-btns" id="count-grid">
+        <button class="opt-btn" data-count="3">3명</button>
+        <button class="opt-btn selected" data-count="4">4명</button>
+        <button class="opt-btn" data-count="5">5명</button>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="online-panel">
+      <h2>온라인 대결</h2>
+      <div class="tabs">
+        <button class="tab-btn selected" data-tab="create">방 만들기</button>
+        <button class="tab-btn" data-tab="join">참가하기</button>
+      </div>
+      <div id="create-tab">
+        <input class="text-input" id="create-name" placeholder="내 이름" maxlength="10">
+        <div class="row-btns" id="online-count-grid">
+          <button class="opt-btn" data-count="3">3명</button>
+          <button class="opt-btn selected" data-count="4">4명</button>
+          <button class="opt-btn" data-count="5">5명</button>
+        </div>
+        <div class="field-msg" id="create-msg"></div>
+        <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
+      </div>
+      <div id="join-tab" class="hidden">
+        <input class="text-input" id="join-name" placeholder="내 이름" maxlength="10">
+        <input class="text-input" id="join-code" placeholder="방 코드 (예: 7QXM)" maxlength="4" style="text-transform:uppercase;">
+        <div class="field-msg" id="join-msg"></div>
+        <button class="start-btn" id="join-room-btn" style="width:100%;">참가하기</button>
+      </div>
+      <div class="warn-note">⚠️ 방 코드를 아는 사람은 누구나 참가할 수 있어요. 방장은 방 만들기 화면에서 관전만 선택할 수도 있습니다.</div>
+    </div>
+
+    <div class="panel">
+      <h2>확장판</h2>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:700;">확장판 건물 추가</div>
+          <div class="toggle-desc">특수 건물 8종을 추가로 사용합니다 (커피 수출상의 저택, 대저택, 해군 기지 등)</div>
+        </div>
+        <div class="row-btns" id="expansion-grid" style="max-width:160px;">
+          <button class="opt-btn" data-exp="off">끄기</button>
+          <button class="opt-btn selected" data-exp="on">켜기</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start-btn">게임 시작</button>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>규칙 요약</h2>
+      <div class="rules-box">
+        <b>① 진행</b> — 매 라운드, 총독부터 시계 방향으로 한 명씩 역할을 하나 골라 그 역할의 행동을 합니다. 각자 라운드마다 역할 하나씩만 고를 수 있어요.<br>
+        <b>② 역할 7가지</b><br>
+        &nbsp;· <b>탐험가</b> — 고른 사람만 동전 1개 획득<br>
+        &nbsp;· <b>개척자</b> — 모두 순서대로 농장/채석장 타일 1개를 섬에 놓을 수 있음<br>
+        &nbsp;· <b>시장</b> — 새 이주민이 도착, 모두 순서대로 농장·건물에 일꾼을 배치<br>
+        &nbsp;· <b>건축가</b> — 모두 순서대로 건물 1개를 구매 가능 (고른 사람은 1 할인)<br>
+        &nbsp;· <b>장인</b> — 모두 동시에 상품 생산 (일꾼 있는 농장 × 해당 건물 용량만큼)<br>
+        &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능<br>
+        &nbsp;· <b>선장</b> — 모두 순서대로 배에 상품을 실어 승점 획득 (실을 수 있으면 반드시 실어야 함)<br>
+        <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
+        <b>④ 창고</b> — 소형/대형 창고 건물이 없으면, 그 라운드에 팔거나 싣지 못한 상품은 라운드가 끝날 때 버려집니다.<br>
+        <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="lobby" class="hidden">
+    <div class="room-code-box">
+      <div class="lbl">방 코드</div>
+      <div class="code" id="lobby-code">----</div>
+    </div>
+    <div class="lobby-players" id="lobby-players"></div>
+    <button class="start-btn hidden" id="lobby-start-btn">게임 시작</button>
+    <div class="waiting-msg" id="lobby-waiting"></div>
+    <button class="icon-btn" id="lobby-leave-btn" style="margin-top:16px;">방 나가기</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="quit-btn">← 처음으로</button>
+      <div class="info-chip" id="round-chip">라운드 1</div>
+      <div class="zoom-row">
+        <span style="font-size:11.5px;color:var(--muted);">화면 크기</span>
+        <button class="zoom-btn" id="zoom-out-btn">－</button>
+        <span class="zoom-pct" id="zoom-pct">100%</span>
+        <button class="zoom-btn" id="zoom-in-btn">＋</button>
+      </div>
+    </div>
+
+    <div class="banner info" id="banner">게임을 시작합니다</div>
+
+    <div class="roles-row" id="roles-row"></div>
+    <div class="supply-row" id="supply-row"></div>
+    <div class="build-list hidden" id="build-list"></div>
+    <div class="controls-row" id="action-controls"></div>
+
+    <div class="players-area" id="players-area"></div>
+  </div>
+
+</div>
+
+<div id="end-overlay" class="hidden">
+  <div id="end-modal">
+    <h2>게임 종료! 🏆</h2>
+    <div id="end-winner" style="font-size:20px;font-weight:900;margin-bottom:8px;"></div>
+    <div class="scores" id="final-scores"></div>
+    <div style="margin-top:16px;"><button class="start-btn" id="restart-btn">처음으로</button></div>
+  </div>
+</div>
+
+<div id="config-error" class="hidden">
+  <div class="box">
+    <h2 style="margin-top:0;">Firebase 설정이 필요해요</h2>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+      <code>firebase-config.js</code> 파일의 설정값이 채워지지 않았어요. 같이 배포한 README.md를 참고해주세요.
+      (혼자·한 기기에서 함께 모드는 설정 없이도 바로 사용할 수 있습니다.)
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "../firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, get, update, onValue, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ============ DATA ============ */
+const GOODS=["corn","indigo","sugar","coffee","tobacco"];
+const SELL_PRICE={"corn":0,"indigo":1,"sugar":2,"tobacco":3,"coffee":4};
+const GOOD_LABEL={corn:"옥수수",indigo:"인디고",sugar:"설탕",coffee:"커피",tobacco:"담배"};
+const ALL_BUILDINGS = [{"id":"small_indigo","name":"소형 인디고 공장","size":1,"cost":1,"vp":0,"category":"production","good":"indigo","capacity":1,"supply":4,"expansion":false},{"id":"indigo_plant","name":"인디고 공장","size":2,"cost":2,"vp":1,"category":"production","good":"indigo","capacity":3,"supply":3,"expansion":false},{"id":"small_sugar","name":"소형 제당소","size":1,"cost":2,"vp":0,"category":"production","good":"sugar","capacity":1,"supply":4,"expansion":false},{"id":"sugar_mill","name":"제당소","size":2,"cost":4,"vp":1,"category":"production","good":"sugar","capacity":3,"supply":3,"expansion":false},{"id":"small_tobacco","name":"소형 담배 건조장","size":1,"cost":3,"vp":0,"category":"production","good":"tobacco","capacity":1,"supply":4,"expansion":false},{"id":"tobacco_factory","name":"담배 공장","size":2,"cost":7,"vp":2,"category":"production","good":"tobacco","capacity":3,"supply":3,"expansion":false},{"id":"coffee_roaster","name":"커피 로스터리","size":2,"cost":6,"vp":2,"category":"production","good":"coffee","capacity":2,"supply":3,"expansion":false},{"id":"small_market","name":"소규모 시장","size":1,"cost":1,"vp":0,"category":"special","power":"sell_bonus_1","supply":2,"expansion":false},{"id":"hacienda","name":"농장 저택","size":1,"cost":2,"vp":0,"category":"special","power":"free_plantation","supply":2,"expansion":false},{"id":"small_warehouse","name":"소형 창고","size":1,"cost":3,"vp":0,"category":"special","power":"storage_plus_1","supply":2,"expansion":false},{"id":"hospice","name":"구빈원","size":2,"cost":4,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":2,"expansion":false},{"id":"office","name":"사무소","size":2,"cost":5,"vp":1,"category":"special","power":"sell_duplicate_ok","supply":2,"expansion":false},{"id":"large_market","name":"대형 시장","size":2,"cost":5,"vp":1,"category":"special","power":"sell_bonus_2","supply":2,"expansion":false},{"id":"university","name":"대학","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":2,"expansion":false},{"id":"large_warehouse","name":"대형 창고","size":2,"cost":6,"vp":1,"category":"special","power":"storage_plus_2","supply":2,"expansion":false},{"id":"harbor","name":"항구","size":3,"cost":8,"vp":2,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":false},{"id":"wharf","name":"부두","size":3,"cost":9,"vp":3,"category":"special","power":"free_shipping","supply":1,"expansion":false},{"id":"city_hall","name":"시청","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_special_building","supply":1,"expansion":false},{"id":"fortress","name":"요새","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_3_colonists","supply":1,"expansion":false},{"id":"customs_house","name":"세관","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_4_doubloons","supply":1,"expansion":false},{"id":"guild_hall","name":"길드 홀","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_2_production","supply":1,"expansion":false},{"id":"residence","name":"주택","size":3,"cost":10,"vp":4,"category":"special","power":"end_plantation_table","supply":1,"expansion":false},{"id":"coffee_exporter","name":"커피 수출상의 저택","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_coffee_2","supply":1,"expansion":true},{"id":"tobacco_distillery","name":"담배 증류소","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_tobacco_2","supply":1,"expansion":true},{"id":"grand_hotel","name":"대저택","size":3,"cost":9,"vp":5,"category":"special","power":"flat_vp_bonus_3","supply":1,"expansion":true},{"id":"immigration_office","name":"이민 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":1,"expansion":true},{"id":"grand_market","name":"대형 시장 (확장)","size":2,"cost":6,"vp":1,"category":"special","power":"sell_bonus_2","supply":1,"expansion":true},{"id":"naval_base","name":"해군 기지","size":3,"cost":9,"vp":3,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":true},{"id":"grand_wharf","name":"대형 부두","size":3,"cost":11,"vp":4,"category":"special","power":"free_shipping","supply":1,"expansion":true},{"id":"plantation_office","name":"농장 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":1,"expansion":true}];
+const ROLES_DEF = [{"id":"prospector","name":"탐험가"},{"id":"settler","name":"개척자"},{"id":"mayor","name":"시장"},{"id":"builder","name":"건축가"},{"id":"craftsman","name":"장인"},{"id":"trader","name":"상인"},{"id":"captain","name":"선장"}];
+const BUILDING_BY_ID = Object.fromEntries(ALL_BUILDINGS.map(b=>[b.id,b]));
+
+/* ============ SHARED UI HELPERS ============ */
+function showScreen(id){ ['setup','lobby','game'].forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
+function setMessage(text, kind){ const b=document.getElementById('banner'); b.textContent=text; b.className='banner '+kind; }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ ZOOM ============ */
+const UI_ZOOM_DEFAULT=1, UI_ZOOM_MIN=0.5, UI_ZOOM_MAX=1.6, UI_ZOOM_STEP=0.1;
+let uiZoom=UI_ZOOM_DEFAULT;
+function applyZoom(){
+  document.getElementById('game').style.zoom=uiZoom;
+  document.getElementById('zoom-pct').textContent=Math.round(uiZoom*100)+'%';
+  document.getElementById('zoom-out-btn').disabled=uiZoom<=UI_ZOOM_MIN+1e-9;
+  document.getElementById('zoom-in-btn').disabled=uiZoom>=UI_ZOOM_MAX-1e-9;
+}
+document.getElementById('zoom-out-btn').addEventListener('click',()=>{ uiZoom=Math.max(UI_ZOOM_MIN, +(uiZoom-UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Math.min(UI_ZOOM_MAX, +(uiZoom+UI_ZOOM_STEP).toFixed(2)); applyZoom(); });
+
+/* ============ PURE GAME-LOGIC HELPERS (operate on a player object; no shared state needed) ============ */
+function usedBuildingSize(p){ return p.buildings.reduce((s,b)=>s+BUILDING_BY_ID[b.id].size,0); }
+function filledPlantationCount(p){ return p.plantations.filter(x=>x).length; }
+function activeColonistCount(p){ return p.plantations.filter(x=>x&&x.colonist).length + p.buildings.filter(b=>b.colonist).length; }
+function hasPower(p, power){ return p.buildings.some(b=>BUILDING_BY_ID[b.id].power===power); }
+function powerCount(p, power){ return p.buildings.filter(b=>BUILDING_BY_ID[b.id].power===power).length; }
+function storageCapacity(p){ return powerCount(p,'storage_plus_1')*1 + powerCount(p,'storage_plus_2')*2; }
+function activeQuarries(p){ return p.plantations.filter(x=>x&&x.type==='quarry'&&x.colonist).length; }
+function sellBonus(p){ return powerCount(p,'sell_bonus_1')*1 + powerCount(p,'sell_bonus_2')*2; }
+function computeProduction(p){
+  const produced={corn:0,indigo:0,sugar:0,coffee:0,tobacco:0};
+  p.plantations.forEach(pl=>{ if(pl && pl.type==='corn' && pl.colonist) produced.corn++; });
+  ['indigo','sugar','coffee','tobacco'].forEach(good=>{
+    const activePlantations=p.plantations.filter(pl=>pl&&pl.type===good&&pl.colonist).length;
+    const activeCapacity=p.buildings.filter(b=>b.colonist && BUILDING_BY_ID[b.id].good===good).reduce((s,b)=>s+BUILDING_BY_ID[b.id].capacity,0);
+    produced[good]=Math.min(activePlantations, activeCapacity);
+  });
+  return produced;
+}
+function buildingCost(buildingId, p, isPickerDiscount){
+  const base=BUILDING_BY_ID[buildingId].cost;
+  let cost=base-activeQuarries(p)-(isPickerDiscount?1:0);
+  return Math.max(0,cost);
+}
+function residenceVP(filled){
+  if(filled>=12) return 13;
+  if(filled>=11) return 10;
+  if(filled>=10) return 7;
+  if(filled>=9) return 4;
+  return 2;
+}
+function computeFinalBonusVP(p){
+  let bonus=0;
+  const owned=p.buildings.map(b=>BUILDING_BY_ID[b.id]);
+  owned.forEach(b=>{
+    if(b.power==='end_per_special_building') bonus+=owned.filter(x=>x.category==='special').length;
+    else if(b.power==='end_per_3_colonists') bonus+=Math.floor(activeColonistCount(p)/3);
+    else if(b.power==='end_per_4_doubloons') bonus+=Math.floor(p.doubloons/4);
+    else if(b.power==='end_per_2_production') bonus+=Math.floor(owned.filter(x=>x.category==='production').length/2);
+    else if(b.power==='end_plantation_table') bonus+=residenceVP(filledPlantationCount(p));
+  });
+  return bonus;
+}
+function totalScore(p){ return p.vp + computeFinalBonusVP(p); }
+function sellPriceFor(good, p, isPicker){
+  let price=SELL_PRICE[good]+sellBonus(p)+(isPicker?1:0);
+  if(good==='coffee') price += powerCount(p,'sell_bonus_coffee_2')*2;
+  if(good==='tobacco') price += powerCount(p,'sell_bonus_tobacco_2')*2;
+  return price;
+}
+function shipVpMultiplier(p){ return hasPower(p,'ship_vp_bonus_1')?2:1; }
+
+/* ============ PURE STATE-MUTATING ENGINE (S = the whole game state object) ============
+   Used identically by local pass-and-play, solo-vs-AI, and online modes -- online just
+   runs these same functions inside a Firebase transaction with S = the room object. */
+function makePlantationDeck(){
+  const deck=[];
+  const counts={indigo:12,sugar:11,corn:10,tobacco:9,coffee:8};
+  Object.entries(counts).forEach(([type,n])=>{ for(let i=0;i<n;i++) deck.push({type}); });
+  return shuffle(deck);
+}
+function newGameState(numPlayers, useExpansion, playerNames){
+  const S={};
+  S.numPlayers=numPlayers;
+  S.useExpansion=!!useExpansion;
+  S.players=Array.from({length:numPlayers},(_,i)=>({
+    name:(playerNames&&playerNames[i])||`플레이어 ${i+1}`,
+    plantations:Array(12).fill(null), buildings:[], doubloons:i,
+    goods:{corn:0,indigo:0,sugar:0,coffee:0,tobacco:0}, vp:0
+  }));
+  S.players.forEach(p=>{ p.plantations[0]={type:'corn',colonist:true}; });
+  S.roles=ROLES_DEF.map(r=>({...r, available:true, bonus:0}));
+  S.governorIdx=0; S.round=1; S.phase='role-pick'; S.currentPickerIdx=0; S.picksThisRound=0;
+  S.activeRoleId=null; S.roleTurnOrder=[]; S.roleTurnPos=0; S.gameOver=false; S.endTriggered=false;
+  S.plantationDeck=makePlantationDeck();
+  S.plantationSupply=[]; for(let i=0;i<4;i++){ const t=S.plantationDeck.pop(); if(t) S.plantationSupply.push(t); }
+  S.quarrySupply=8;
+  S.buildingSupply={}; ALL_BUILDINGS.forEach(b=>{ if(!b.expansion || S.useExpansion) S.buildingSupply[b.id]=b.supply; });
+  S.colonistPool=40+numPlayers*5;
+  S.shipColonists=0;
+  S.ships=[{cap:4,good:null,amount:0},{cap:5,good:null,amount:0},{cap:6,good:null,amount:0}];
+  S.tradingHouse=[];
+  S.lastMove=null;
+  return S;
+}
+function currentActorIdx(S){
+  if(S.phase==='role-pick' || S.phase==='craftsman') return S.currentPickerIdx;
+  return S.roleTurnOrder[S.roleTurnPos];
+}
+function pickRole(S, roleId){
+  const r=S.roles.find(x=>x.id===roleId);
+  if(!r || !r.available) return false;
+  r.available=false;
+  S.activeRoleId=roleId;
+  const pickerIdx=S.currentPickerIdx;
+  const picker=S.players[pickerIdx];
+  picker.doubloons+=r.bonus;
+  r.bonus=0;
+  S.roleTurnOrder=[]; for(let i=0;i<S.players.length;i++) S.roleTurnOrder.push((pickerIdx+i)%S.players.length);
+  S.roleTurnPos=0;
+  if(roleId==='prospector'){
+    picker.doubloons+=1;
+    S.lastMove={text:`${picker.name}님이 탐험가로 동전을 얻었습니다`};
+    finishRolePickTurn(S);
+    return true;
+  }
+  if(roleId==='settler'){ S.phase='settler'; S.lastMove={text:`${picker.name}님이 개척자를 선택했습니다`}; }
+  else if(roleId==='mayor'){
+    const arriving=Math.min(1,S.colonistPool);
+    S.colonistPool-=arriving; S.shipColonists+=arriving+0; // colonists already waiting on ship (from prior rounds) carry over automatically since shipColonists isn't reset
+    S.phase='mayor';
+    S.lastMove={text:`${picker.name}님이 시장을 선택했습니다 (이주민 ${S.shipColonists}명 대기 중)`};
+  }
+  else if(roleId==='builder'){ S.phase='builder'; S.lastMove={text:`${picker.name}님이 건축가를 선택했습니다`}; }
+  else if(roleId==='craftsman'){
+    S.phase='craftsman';
+    S.players.forEach(pl=>{ const prod=computeProduction(pl); GOODS.forEach(g=>pl.goods[g]+=prod[g]); });
+    S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
+  }
+  else if(roleId==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
+  else if(roleId==='captain'){ S.phase='captain'; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
+  return true;
+}
+function finishRolePickTurn(S){
+  S.picksThisRound++;
+  if(S.picksThisRound>=S.players.length){ endRound(S); return; }
+  S.currentPickerIdx=(S.currentPickerIdx+1)%S.players.length;
+  S.phase='role-pick'; S.activeRoleId=null;
+}
+function endRound(S){
+  S.roles.forEach(r=>{ if(r.available) r.bonus++; });
+  S.roles.forEach(r=>r.available=true);
+  if(S.endTriggered){ S.phase='gameover'; S.gameOver=true; return; }
+  S.governorIdx=(S.governorIdx+1)%S.players.length;
+  S.currentPickerIdx=S.governorIdx; S.picksThisRound=0; S.round++;
+  S.phase='role-pick'; S.activeRoleId=null;
+}
+function settlerPlaceTile(S, kind, supplyIdx, playerIdx, slotIdx){
+  const p=S.players[playerIdx];
+  if(p.plantations[slotIdx]) return false;
+  if(kind==='quarry'){
+    if(S.quarrySupply<=0) return false;
+    p.plantations[slotIdx]={type:'quarry',colonist:false};
+    S.quarrySupply--;
+  } else {
+    const tile=S.plantationSupply[supplyIdx];
+    if(!tile) return false;
+    p.plantations[slotIdx]={type:tile.type,colonist:false};
+    S.plantationSupply.splice(supplyIdx,1);
+    const next=S.plantationDeck.pop();
+    if(next) S.plantationSupply.push(next);
+  }
+  S.lastMove={text:`${p.name}님이 농장 타일을 놓았습니다`};
+  return true;
+}
+function mayorAssignColonist(S, playerIdx, kind, slotIdx){
+  if(S.shipColonists<=0) return false;
+  const p=S.players[playerIdx];
+  if(kind==='plantation'){
+    if(!p.plantations[slotIdx] || p.plantations[slotIdx].colonist) return false;
+    p.plantations[slotIdx].colonist=true;
+  } else {
+    if(!p.buildings[slotIdx] || p.buildings[slotIdx].colonist) return false;
+    p.buildings[slotIdx].colonist=true;
+  }
+  S.shipColonists--;
+  return true;
+}
+function buyBuilding(S, playerIdx, buildingId){
+  const p=S.players[playerIdx];
+  const isPicker=playerIdx===S.roleTurnOrder[0];
+  const cost=buildingCost(buildingId,p,isPicker);
+  if(p.doubloons<cost) return false;
+  if((S.buildingSupply[buildingId]||0)<=0) return false;
+  if(usedBuildingSize(p)+BUILDING_BY_ID[buildingId].size>12) return false;
+  p.doubloons-=cost;
+  p.buildings.push({id:buildingId,colonist:false});
+  S.buildingSupply[buildingId]--;
+  p.vp+=BUILDING_BY_ID[buildingId].vp;
+  const power=BUILDING_BY_ID[buildingId].power;
+  if(power==='free_plantation'){
+    const next=S.plantationDeck.pop();
+    const emptySlot=p.plantations.findIndex(x=>!x);
+    if(next && emptySlot>=0) p.plantations[emptySlot]={type:next.type,colonist:false};
+  }
+  if(power==='flat_vp_bonus_3') p.vp+=3;
+  if(usedBuildingSize(p)>=12) S.endTriggered=true;
+  S.lastMove={text:`${p.name}님이 ${BUILDING_BY_ID[buildingId].name}을(를) 건설했습니다`};
+  return true;
+}
+function sellGood(S, playerIdx, good){
+  const p=S.players[playerIdx];
+  if(p.goods[good]<=0) return null;
+  if(S.tradingHouse.length>=4) return null;
+  if(S.tradingHouse.includes(good) && !hasPower(p,'sell_duplicate_ok')) return null;
+  const isPicker=playerIdx===S.roleTurnOrder[0];
+  const price=sellPriceFor(good,p,isPicker);
+  p.doubloons+=price;
+  p.goods[good]--;
+  S.tradingHouse.push(good);
+  S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]}을(를) ${price}금에 팔았습니다`};
+  return price;
+}
+function shipGood(S, playerIdx, good, shipIdx){
+  const p=S.players[playerIdx];
+  if(p.goods[good]<=0) return null;
+  const ship=S.ships[shipIdx];
+  if(ship.good && ship.good!==good) return null;
+  if(ship.amount>=ship.cap) return null;
+  const amount=Math.min(p.goods[good], ship.cap-ship.amount);
+  p.goods[good]-=amount;
+  ship.good=good; ship.amount+=amount;
+  const vp=amount*shipVpMultiplier(p);
+  p.vp+=vp;
+  if(ship.amount>=ship.cap){ ship.good=null; ship.amount=0; }
+  S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
+  return {amount,vp};
+}
+function shipViaWharf(S, playerIdx, good){
+  const p=S.players[playerIdx];
+  if(p.goods[good]<=0 || !hasPower(p,'free_shipping')) return null;
+  const amount=p.goods[good];
+  p.goods[good]=0;
+  const vp=amount*shipVpMultiplier(p);
+  p.vp+=vp;
+  S.lastMove={text:`${p.name}님이 부두로 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
+  return {amount,vp};
+}
+function canShipAnything(S, p){
+  return GOODS.some(g=>p.goods[g]>0 && (S.ships.some(s=>(!s.good||s.good===g)&&s.amount<s.cap) || hasPower(p,'free_shipping')));
+}
+function craftsmanBonus(S, playerIdx, good){
+  S.players[playerIdx].goods[good]++;
+  finishRolePickTurn(S);
+}
+function discardGood(S, playerIdx, good){
+  const p=S.players[playerIdx];
+  if(p.goods[good]<=0) return false;
+  p.goods[good]--;
+  return true;
+}
+function playerNeedsDiscard(S, p){ return GOODS.reduce((s,g)=>s+p.goods[g],0) > storageCapacity(p); }
+function advanceRoleTurn(S){
+  S.roleTurnPos++;
+  if(S.roleTurnPos>=S.roleTurnOrder.length){
+    if(S.activeRoleId==='captain'){ startCleanupIfNeeded(S); return; }
+    finishRolePickTurn(S);
+    return;
+  }
+}
+function startCleanupIfNeeded(S){
+  const needy=S.players.map((p,i)=>i).filter(i=>playerNeedsDiscard(S,S.players[i]));
+  if(needy.length===0){ finishRolePickTurn(S); return; }
+  S.phase='cleanup';
+  S.roleTurnOrder=needy;
+  S.roleTurnPos=0;
+}
+function advanceCleanupTurn(S){
+  const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
+  if(playerNeedsDiscard(S,p)) return; // still needs to discard more
+  S.roleTurnPos++;
+  if(S.roleTurnPos>=S.roleTurnOrder.length){ finishRolePickTurn(S); }
+}
+
+/* ============ SIMPLE AI HEURISTICS (solo mode) ============ */
+function aiChooseRole(S, playerIdx){
+  const p=S.players[playerIdx];
+  const avail=S.roles.filter(r=>r.available).map(r=>r.id);
+  const score={};
+  if(avail.includes('builder')){
+    const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12);
+    score.builder = affordable.length>0 ? 6+Math.max(...affordable.map(b=>b.vp)) : 0;
+  }
+  if(avail.includes('craftsman')){
+    const totalProdCapable=GOODS.filter(g=>g!=='corn').reduce((s,g)=>{
+      const active=p.plantations.filter(pl=>pl&&pl.type===g&&pl.colonist).length;
+      return s+(active>0?1:0);
+    },0);
+    score.craftsman = 4+totalProdCapable;
+  }
+  if(avail.includes('captain')){
+    const totalGoods=GOODS.reduce((s,g)=>s+p.goods[g],0);
+    score.captain = totalGoods>0 ? 5+totalGoods : 0;
+  }
+  if(avail.includes('trader')){
+    const sellable=GOODS.filter(g=>p.goods[g]>0);
+    score.trader = sellable.length>0 ? 3+Math.max(0,...sellable.map(g=>SELL_PRICE[g])) : 0;
+  }
+  if(avail.includes('settler')){
+    score.settler = filledPlantationCount(p)<10 ? 5 : 1;
+  }
+  if(avail.includes('mayor')){
+    const emptySlots=p.plantations.filter(x=>x&&!x.colonist).length + p.buildings.filter(b=>!b.colonist).length;
+    score.mayor = emptySlots>0 ? 5+emptySlots : 2;
+  }
+  if(avail.includes('prospector')) score.prospector = 2;
+  let best=avail[0], bestScore=-1;
+  avail.forEach(id=>{ const s=(score[id]||0)+ (S.roles.find(r=>r.id===id).bonus||0); if(s>bestScore){ bestScore=s; best=id; } });
+  return best;
+}
+function aiSettlerChoice(S, playerIdx){
+  const p=S.players[playerIdx];
+  if(filledPlantationCount(p)>=11) return null;
+  const emptySlot=p.plantations.findIndex(x=>!x);
+  if(emptySlot<0) return null;
+  // prefer a good matching existing unused production capacity, else corn, else whatever's available
+  const wantedGood=GOODS.find(g=>g!=='corn' && p.buildings.some(b=>BUILDING_BY_ID[b.id].good===g) &&
+    p.plantations.filter(pl=>pl&&pl.type===g).length < p.buildings.filter(b=>BUILDING_BY_ID[b.id].good===g).reduce((s,b)=>s+BUILDING_BY_ID[b.id].capacity,0));
+  let idx=S.plantationSupply.findIndex(t=>t.type===wantedGood);
+  if(idx<0) idx=S.plantationSupply.findIndex(t=>t.type==='corn');
+  if(idx<0 && S.plantationSupply.length>0) idx=0;
+  if(idx>=0) return {kind:'plantation', supplyIdx:idx, slotIdx:emptySlot};
+  if(S.quarrySupply>0) return {kind:'quarry', supplyIdx:null, slotIdx:emptySlot};
+  return null;
+}
+function aiMayorChoices(S, playerIdx){
+  const p=S.players[playerIdx];
+  const moves=[];
+  let remaining=S.shipColonists;
+  // prioritize production buildings, then plantations, then other buildings
+  const emptyBuildings=p.buildings.map((b,i)=>({b,i})).filter(x=>!x.b.colonist);
+  const emptyPlantations=p.plantations.map((pl,i)=>({pl,i})).filter(x=>x.pl&&!x.pl.colonist);
+  emptyBuildings.forEach(x=>{ if(remaining>0){ moves.push({kind:'building',slotIdx:x.i}); remaining--; } });
+  emptyPlantations.forEach(x=>{ if(remaining>0){ moves.push({kind:'plantation',slotIdx:x.i}); remaining--; } });
+  return moves;
+}
+function aiBuilderChoice(S, playerIdx){
+  const p=S.players[playerIdx];
+  const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12);
+  if(affordable.length===0) return null;
+  affordable.sort((a,b)=>b.vp-a.vp || b.cost-a.cost);
+  return affordable[0].id;
+}
+function aiCraftsmanBonus(S, playerIdx){
+  const p=S.players[playerIdx];
+  let best='corn', bestAmt=-1;
+  GOODS.forEach(g=>{ if(p.goods[g]>bestAmt){ bestAmt=p.goods[g]; best=g; } });
+  return best;
+}
+function aiTraderChoice(S, playerIdx){
+  const p=S.players[playerIdx];
+  const sellable=GOODS.filter(g=>p.goods[g]>0 && S.tradingHouse.length<4 && (!S.tradingHouse.includes(g)||hasPower(p,'sell_duplicate_ok')));
+  if(sellable.length===0) return null;
+  sellable.sort((a,b)=>sellPriceFor(b,p,false)-sellPriceFor(a,p,false));
+  return sellable[0];
+}
+function aiCaptainChoices(S, playerIdx){
+  const p=S.players[playerIdx];
+  const moves=[];
+  let goodsLeft={...p.goods};
+  let progressed=true;
+  while(progressed){
+    progressed=false;
+    for(const g of GOODS){
+      if(goodsLeft[g]<=0) continue;
+      for(let i=0;i<S.ships.length;i++){
+        const s=S.ships[i];
+        if(s.good && s.good!==g) continue;
+        if(s.amount>=s.cap) continue;
+        moves.push({good:g, shipIdx:i});
+        const amt=Math.min(goodsLeft[g], s.cap-s.amount);
+        goodsLeft[g]-=amt;
+        s.amount+=amt; // NOTE: mutates a local copy concept only conceptually; real ship state updated by caller via shipGood
+        progressed=true;
+        break;
+      }
+    }
+  }
+  return moves;
+}
+
+/* ============ LOCAL / SOLO / SHARED RENDERING STATE ============ */
+let mode='solo';
+let S=null; // the authoritative local/solo game state
+let selected=null; // transient UI-only selection (settler tile picking)
+let aiSeats=new Set();
+let soloHumanSeat=0;
+
+function isOnline(){ return mode==='online'; }
+function isSpectator(){ return isOnline() && onlineRoom && !onlineRoom.playerOrder.includes(myId); }
+function activeState(){ return isOnline() ? onlineRoom : S; }
+function myPlayerIdx(){
+  if(isOnline()) return onlineRoom ? onlineRoom.playerOrder.indexOf(myId) : -1;
+  return mode==='solo' ? soloHumanSeat : -1; // -1 in plain local mode means "whoever is acting" (shared device)
+}
+function canIActNow(){
+  const st=activeState();
+  if(!st) return false;
+  if(isOnline()) return currentActorIdx(st)===myPlayerIdx();
+  if(mode==='solo') return !aiSeats.has(currentActorIdx(st));
+  return !st.gameOver;
+}
+
+/* ============ NEW GAME (local/solo) ============ */
+function startLocalGame(numPlayers, aiSeatIndices, useExpansion){
+  mode=(aiSeatIndices && aiSeatIndices.length>0) ? 'solo' : 'local';
+  aiSeats=new Set(aiSeatIndices||[]);
+  const names=Array.from({length:numPlayers},(_,i)=>`플레이어 ${i+1}${aiSeats.has(i)?' 🤖':''}`);
+  S=newGameState(numPlayers, useExpansion, names);
+  selected=null;
+  applyZoom();
+  renderAll();
+  setMessage(`${S.players[0].name}님부터 역할을 고르세요 (총독)`,'info');
+  maybeTriggerAiTurn();
+}
+
+/* ============ RENDER (shared by local/solo/online) ============ */
+function renderAll(){
+  const st=activeState();
+  if(!st) return;
+  renderTop(st);
+  renderRoles(st);
+  renderSupply(st);
+  renderPlayers(st);
+  renderControls(st);
+}
+function renderTop(st){ document.getElementById('round-chip').textContent=`라운드 ${st.round}`; }
+function renderRoles(st){
+  const el=document.getElementById('roles-row');
+  const canPick = st.phase==='role-pick' && canIActNow();
+  el.innerHTML=st.roles.map(r=>`
+    <div class="role-card ${r.available?'':'taken'}" data-role="${r.id}">
+      <div class="rname">${r.name}</div>
+      <div class="rbonus">${r.bonus>0?'+'+r.bonus+'금':''}</div>
+    </div>
+  `).join('');
+  if(canPick){
+    el.querySelectorAll('.role-card').forEach(div=>{
+      const r=st.roles.find(x=>x.id===div.dataset.role);
+      if(r.available) div.addEventListener('click',()=>doPickRole(r.id));
+    });
+  }
+}
+function renderSupply(st){
+  const el=document.getElementById('supply-row');
+  const plantHtml=st.plantationSupply.map((t,i)=>`<span class="tile ${t.type}" data-idx="${i}" data-kind="plantation">${t.type[0].toUpperCase()}</span>`).join('');
+  const quarryHtml=`<span class="tile quarry" data-kind="quarry">Q×${st.quarrySupply}</span>`;
+  const shipsHtml=st.ships.map((s,i)=>`<div class="ship-box"><b>배 ${i+1}</b><span>${s.good?GOOD_LABEL[s.good]:'비어있음'}</span><span>${s.amount}/${s.cap}</span></div>`).join('');
+  const traderHtml=`<div class="supply-box">무역소: ${st.tradingHouse.map(g=>GOOD_LABEL[g]).join(', ')||'비어있음'} (${st.tradingHouse.length}/4)</div>`;
+  el.innerHTML=`
+    <div class="supply-box"><b>농장 타일</b><br>${plantHtml}${quarryHtml}</div>
+    <div class="supply-box"><b>이주민</b><br>San Juan: ${st.colonistPool} · 배: ${st.shipColonists}</div>
+    ${traderHtml}
+    ${shipsHtml}
+  `;
+  const canAct=canIActNow();
+  if(st.phase==='settler' && canAct){
+    el.querySelectorAll('.tile[data-kind="plantation"]').forEach(t=>{
+      t.addEventListener('click',()=>{ selected={kind:'plantation', supplyIdx:+t.dataset.idx}; renderAll(); setMessage('놓을 빈 농장 칸을 클릭하세요','info'); });
+    });
+    const q=el.querySelector('.tile[data-kind="quarry"]');
+    if(q && st.quarrySupply>0) q.addEventListener('click',()=>{ selected={kind:'quarry', supplyIdx:null}; renderAll(); setMessage('놓을 빈 농장 칸을 클릭하세요','info'); });
+  }
+}
+function renderPlayers(st){
+  const el=document.getElementById('players-area');
+  el.innerHTML='';
+  st.players.forEach((p,idx)=>{
+    const actorIdx=currentActorIdx(st);
+    const isActing = canIActNow() && actorIdx===idx && (!isOnline() || myPlayerIdx()===idx) && (mode!=='local' || true);
+    const div=document.createElement('div');
+    div.className='player-board'+(actorIdx===idx?' active':'');
+    const plantHtml=Array(12).fill(null).map((_,i)=>{
+      const pl=p.plantations[i];
+      if(!pl) return `<div class="slot-empty" data-kind="plantation-slot" data-idx="${i}"></div>`;
+      return `<span class="tile ${pl.type} ${pl.colonist?'colonist-dot':''}" data-kind="plantation-slot" data-idx="${i}">${pl.type[0].toUpperCase()}</span>`;
+    }).join('');
+    const bldgHtml=p.buildings.map((b,i)=>{
+      const bd=BUILDING_BY_ID[b.id];
+      return `<span class="bldg-tile ${b.colonist?'colonist-dot':''}" data-kind="building-slot" data-idx="${i}">${bd.name}</span>`;
+    }).join('') || '<span style="color:var(--muted);font-size:11px;">건물 없음</span>';
+    const goodsHtml=GOODS.map(g=>p.goods[g]>0?`<div class="good-chip"><div class="dot" style="background:var(--${g})"></div>${GOOD_LABEL[g]} ${p.goods[g]}</div>`:'').join('');
+    div.innerHTML=`
+      <div class="pb-header">
+        <div class="pb-name">${idx===st.governorIdx?'👑 ':''}${p.name}${(!isOnline()&&mode==='solo'&&idx===soloHumanSeat)?' (나)':''}${isOnline()&&idx===myPlayerIdx()?' (나)':''}</div>
+        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${p.vp}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span></div>
+      </div>
+      <div class="pb-row-label">농장 (${filledPlantationCount(p)}/12)</div>
+      <div class="pb-slots">${plantHtml}</div>
+      <div class="pb-row-label">건물</div>
+      <div class="pb-slots">${bldgHtml}</div>
+      <div class="pb-goods">${goodsHtml}</div>
+    `;
+    el.appendChild(div);
+    if(actorIdx===idx && canIActNow()){
+      wirePlayerBoardInteractions(div, st, p, idx);
+    }
+  });
+}
+function wirePlayerBoardInteractions(div, st, p, idx){
+  if(st.phase==='settler' && selected){
+    div.querySelectorAll('[data-kind="plantation-slot"]').forEach(s=>{
+      const i=+s.dataset.idx;
+      if(!p.plantations[i]) s.addEventListener('click',()=>doSettlerPlace(idx,i));
+    });
+  }
+  if(st.phase==='mayor'){
+    div.querySelectorAll('[data-kind="plantation-slot"]').forEach(s=>{
+      const i=+s.dataset.idx;
+      if(p.plantations[i] && !p.plantations[i].colonist) s.addEventListener('click',()=>doMayorAssign(idx,'plantation',i));
+    });
+    div.querySelectorAll('[data-kind="building-slot"]').forEach(s=>{
+      const i=+s.dataset.idx;
+      if(!p.buildings[i].colonist) s.addEventListener('click',()=>doMayorAssign(idx,'building',i));
+    });
+  }
+}
+
+/* ============ LOCAL/SOLO ACTION DISPATCH (mutate S directly, then re-render) ============ */
+function doPickRole(roleId){
+  if(isOnline()){ onlinePickRole(roleId); return; }
+  pickRole(S, roleId);
+  afterLocalChange();
+}
+function doSettlerPlace(playerIdx, slotIdx){
+  if(!selected) return;
+  if(isOnline()){ onlineSettlerPlace(selected.kind, selected.supplyIdx, slotIdx); selected=null; return; }
+  settlerPlaceTile(S, selected.kind, selected.supplyIdx, playerIdx, slotIdx);
+  selected=null;
+  doAdvanceRoleTurn();
+}
+function localSkipSettler(){ selected=null; doAdvanceRoleTurn(); }
+function doMayorAssign(playerIdx, kind, slotIdx){
+  if(isOnline()){ onlineMayorAssign(kind, slotIdx); return; }
+  mayorAssignColonist(S, playerIdx, kind, slotIdx);
+  afterLocalChange();
+}
+function doOpenBuildList(){
+  const st=activeState();
+  const p=st.players[currentActorIdx(st)];
+  const isPicker=currentActorIdx(st)===st.roleTurnOrder[0];
+  const list=ALL_BUILDINGS.filter(b=>(st.buildingSupply[b.id]||0)>0);
+  const el=document.getElementById('build-list');
+  el.classList.remove('hidden');
+  el.innerHTML=list.map(b=>{
+    const cost=buildingCost(b.id,p,isPicker);
+    const canAfford=p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
+    return `<div class="build-card ${canAfford?'':'disabled'} ${b.expansion?'expansion':''}" data-id="${b.id}">
+      <div class="bname">${b.name}${b.expansion?' 🌟':''}</div>
+      <div>크기 ${b.size} · VP ${b.vp}</div>
+      <div class="bcost">${cost}금</div>
+      <div style="color:var(--muted);">재고 ${st.buildingSupply[b.id]}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.build-card:not(.disabled)').forEach(div=>{
+    div.addEventListener('click',()=>doBuyBuilding(div.dataset.id));
+  });
+}
+function doBuyBuilding(buildingId){
+  const st=activeState();
+  const playerIdx=currentActorIdx(st);
+  if(isOnline()){ onlineBuyBuilding(buildingId); return; }
+  const ok=buyBuilding(S, playerIdx, buildingId);
+  document.getElementById('build-list').classList.add('hidden');
+  if(ok) setMessage(S.lastMove.text,'good');
+  doAdvanceRoleTurn();
+}
+function doSellGood(good){
+  const st=activeState();
+  const playerIdx=currentActorIdx(st);
+  if(isOnline()){ onlineSellGood(good); return; }
+  const price=sellGood(S, playerIdx, good);
+  if(price!=null) setMessage(S.lastMove.text,'good');
+  doAdvanceRoleTurn();
+}
+function doShipGood(good, shipIdx){
+  const st=activeState();
+  const playerIdx=currentActorIdx(st);
+  if(isOnline()){ onlineShipGood(good, shipIdx); return; }
+  const r=shipGood(S, playerIdx, good, shipIdx);
+  if(r) setMessage(S.lastMove.text,'good');
+  renderAll();
+}
+function doShipViaWharf(good){
+  const st=activeState();
+  const playerIdx=currentActorIdx(st);
+  if(isOnline()){ onlineShipViaWharf(good); return; }
+  const r=shipViaWharf(S, playerIdx, good);
+  if(r) setMessage(S.lastMove.text,'good');
+  renderAll();
+}
+function doCraftsmanBonus(good){
+  const st=activeState();
+  const playerIdx=st.currentPickerIdx;
+  if(isOnline()){ onlineCraftsmanBonus(good); return; }
+  craftsmanBonus(S, playerIdx, good);
+  afterLocalChange();
+}
+function doDiscardGood(good){
+  const st=activeState();
+  const playerIdx=st.roleTurnOrder[st.roleTurnPos];
+  if(isOnline()){ onlineDiscardGood(good); return; }
+  discardGood(S, playerIdx, good);
+  advanceCleanupTurn(S);
+  afterLocalChange();
+}
+function doAdvanceRoleTurn(){
+  if(isOnline()){ onlineAdvanceRoleTurn(); return; }
+  advanceRoleTurn(S);
+  afterLocalChange();
+}
+function afterLocalChange(){
+  renderAll();
+  const st=S;
+  if(st.gameOver){ finishGame(); return; }
+  if(st.phase==='role-pick'){
+    setMessage(`${st.players[st.currentPickerIdx].name}님, 역할을 고르세요`,'info');
+  } else if(st.phase==='craftsman'){
+    setMessage(`${st.players[st.currentPickerIdx].name}님, 보너스 상품을 고르세요`,'info');
+  } else if(st.phase==='cleanup'){
+    setMessage(`${st.players[st.roleTurnOrder[st.roleTurnPos]].name}님, 창고 용량을 초과했어요. 버릴 상품을 고르세요`,'bad');
+  } else {
+    const roleName=ROLES_DEF.find(r=>r.id===st.activeRoleId).name;
+    setMessage(`${roleName}: ${st.players[currentActorIdx(st)].name}님 차례입니다`,'info');
+  }
+  maybeTriggerAiTurn();
+}
+
+/* ============ AI TURN (solo mode) ============ */
+function maybeTriggerAiTurn(){
+  if(mode!=='solo' || S.gameOver) return;
+  const idx=currentActorIdx(S);
+  if(!aiSeats.has(idx)) return;
+  setMessage(`${S.players[idx].name} 생각 중...`,'info');
+  renderAll();
+  setTimeout(performAiStep, 600);
+}
+function performAiStep(){
+  if(S.gameOver) return;
+  const idx=currentActorIdx(S);
+  if(!aiSeats.has(idx)) return;
+  if(S.phase==='role-pick'){
+    const roleId=aiChooseRole(S, idx);
+    pickRole(S, roleId);
+  } else if(S.phase==='settler'){
+    const choice=aiSettlerChoice(S, idx);
+    if(choice) settlerPlaceTile(S, choice.kind, choice.supplyIdx, idx, choice.slotIdx);
+    advanceRoleTurn(S);
+  } else if(S.phase==='mayor'){
+    const moves=aiMayorChoices(S, idx);
+    moves.forEach(m=>mayorAssignColonist(S, idx, m.kind, m.slotIdx));
+    advanceRoleTurn(S);
+  } else if(S.phase==='builder'){
+    const buildingId=aiBuilderChoice(S, idx);
+    if(buildingId) buyBuilding(S, idx, buildingId);
+    advanceRoleTurn(S);
+  } else if(S.phase==='craftsman'){
+    craftsmanBonus(S, idx, aiCraftsmanBonus(S, idx));
+  } else if(S.phase==='trader'){
+    const good=aiTraderChoice(S, idx);
+    if(good) sellGood(S, idx, good);
+    advanceRoleTurn(S);
+  } else if(S.phase==='captain'){
+    const p=S.players[idx];
+    let shippedSomething=false;
+    for(const g of GOODS){
+      while(p.goods[g]>0){
+        let shipped=false;
+        for(let i=0;i<S.ships.length;i++){
+          if(shipGood(S, idx, g, i)){ shipped=true; shippedSomething=true; break; }
+        }
+        if(!shipped){
+          if(hasPower(p,'free_shipping')){ shipViaWharf(S, idx, g); shippedSomething=true; }
+          break;
+        }
+      }
+    }
+    advanceRoleTurn(S);
+  } else if(S.phase==='cleanup'){
+    const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
+    const cheapOrder=[...GOODS].sort((a,b)=>SELL_PRICE[a]-SELL_PRICE[b]);
+    for(const g of cheapOrder){
+      while(playerNeedsDiscard(S,p) && p.goods[g]>0) discardGood(S, S.roleTurnOrder[S.roleTurnPos], g);
+      if(!playerNeedsDiscard(S,p)) break;
+    }
+    advanceCleanupTurn(S);
+  }
+  afterLocalChange();
+}
+
+/* ============ CONTROLS (shared render, mode-aware dispatch) ============ */
+function renderControls(st){
+  const el=document.getElementById('action-controls');
+  el.innerHTML='';
+  document.getElementById('build-list').classList.add('hidden');
+  if(!canIActNow()){
+    if(isSpectator()){
+      const label=document.createElement('div');
+      label.style.cssText='color:var(--muted);font-size:12.5px;';
+      label.textContent='👀 관전 중입니다';
+      el.appendChild(label);
+    } else if(mode==='solo' && aiSeats.has(currentActorIdx(st))){
+      const label=document.createElement('div');
+      label.style.cssText='color:var(--muted);font-size:12.5px;';
+      label.textContent='🤖 컴퓨터가 진행 중입니다...';
+      el.appendChild(label);
+    }
+    return;
+  }
+  const phase=st.phase;
+  if(phase==='settler'){
+    const btn=document.createElement('button');
+    btn.className='ctrl-btn'; btn.textContent='건너뛰기';
+    btn.addEventListener('click',()=>{ selected=null; doAdvanceRoleTurn(); });
+    el.appendChild(btn);
+  } else if(phase==='mayor'){
+    const btn=document.createElement('button');
+    btn.className='ctrl-btn primary'; btn.textContent='배치 완료 (다음 사람)';
+    btn.addEventListener('click',()=>doAdvanceRoleTurn());
+    el.appendChild(btn);
+  } else if(phase==='builder'){
+    const openBtn=document.createElement('button');
+    openBtn.className='ctrl-btn primary'; openBtn.textContent='건물 목록 보기';
+    openBtn.addEventListener('click',doOpenBuildList);
+    el.appendChild(openBtn);
+    const skipBtn=document.createElement('button');
+    skipBtn.className='ctrl-btn'; skipBtn.textContent='건너뛰기';
+    skipBtn.addEventListener('click',()=>doAdvanceRoleTurn());
+    el.appendChild(skipBtn);
+  } else if(phase==='craftsman'){
+    const label=document.createElement('div');
+    label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
+    label.textContent='보너스로 +1 받을 상품을 고르세요:';
+    el.appendChild(label);
+    GOODS.forEach(g=>{
+      const btn=document.createElement('button');
+      btn.className='ctrl-btn'; btn.textContent=GOOD_LABEL[g];
+      btn.addEventListener('click',()=>doCraftsmanBonus(g));
+      el.appendChild(btn);
+    });
+  } else if(phase==='trader'){
+    const p=st.players[currentActorIdx(st)];
+    const isPicker=currentActorIdx(st)===st.roleTurnOrder[0];
+    GOODS.forEach(g=>{
+      if(p.goods[g]<=0) return;
+      const blocked=st.tradingHouse.length>=4 || (st.tradingHouse.includes(g) && !hasPower(p,'sell_duplicate_ok'));
+      const btn=document.createElement('button');
+      btn.className='ctrl-btn'+(blocked?'':' primary');
+      btn.disabled=blocked;
+      btn.textContent=`${GOOD_LABEL[g]} 판매 (${sellPriceFor(g,p,isPicker)}금)`;
+      btn.addEventListener('click',()=>doSellGood(g));
+      el.appendChild(btn);
+    });
+    const skipBtn=document.createElement('button');
+    skipBtn.className='ctrl-btn'; skipBtn.textContent='건너뛰기';
+    skipBtn.addEventListener('click',()=>doAdvanceRoleTurn());
+    el.appendChild(skipBtn);
+  } else if(phase==='captain'){
+    const p=st.players[currentActorIdx(st)];
+    GOODS.forEach(g=>{
+      if(p.goods[g]<=0) return;
+      st.ships.forEach((s,i)=>{
+        if(s.good && s.good!==g) return;
+        if(s.amount>=s.cap) return;
+        const btn=document.createElement('button');
+        btn.className='ctrl-btn primary';
+        btn.textContent=`${GOOD_LABEL[g]} → 배${i+1} (${Math.min(p.goods[g], s.cap-s.amount)}개)`;
+        btn.addEventListener('click',()=>doShipGood(g,i));
+        el.appendChild(btn);
+      });
+      if(hasPower(p,'free_shipping')){
+        const btn=document.createElement('button');
+        btn.className='ctrl-btn primary';
+        btn.textContent=`${GOOD_LABEL[g]} → 부두로 전량 선적`;
+        btn.addEventListener('click',()=>doShipViaWharf(g));
+        el.appendChild(btn);
+      }
+    });
+    if(!canShipAnything(st,p)){
+      const btn=document.createElement('button');
+      btn.className='ctrl-btn primary'; btn.textContent='실을 수 없음 (다음 사람)';
+      btn.addEventListener('click',()=>doAdvanceRoleTurn());
+      el.appendChild(btn);
+    }
+  } else if(phase==='cleanup'){
+    const p=st.players[st.roleTurnOrder[st.roleTurnPos]];
+    const cap=storageCapacity(p);
+    const total=GOODS.reduce((s,g)=>s+p.goods[g],0);
+    const label=document.createElement('div');
+    label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
+    label.textContent=`창고 용량 ${cap}, 현재 ${total}개 — ${total-cap}개를 버려야 해요`;
+    el.appendChild(label);
+    GOODS.forEach(g=>{
+      if(p.goods[g]<=0) return;
+      const btn=document.createElement('button');
+      btn.className='ctrl-btn'; btn.textContent=`${GOOD_LABEL[g]} 버리기 (${p.goods[g]}개 보유)`;
+      btn.addEventListener('click',()=>doDiscardGood(g));
+      el.appendChild(btn);
+    });
+  }
+}
+
+/* ============ END GAME (local/solo) ============ */
+function finishGame(){
+  const scored=S.players.map(p=>({name:p.name, score:totalScore(p), buildingVp:p.vp, bonusVp:computeFinalBonusVP(p)}));
+  scored.sort((a,b)=>b.score-a.score);
+  document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (기본 ${s.buildingVp} + 건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+}
+function finishGameOnline(room){
+  const scored=room.playerOrder.map(uid=>{
+    const p=room.players.find(x=>x.uid===uid);
+    return {name:p.name, score:totalScore(p), buildingVp:p.vp, bonusVp:computeFinalBonusVP(p)};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (기본 ${s.buildingVp} + 건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('end-overlay').classList.remove('hidden');
+}
+
+/* ============ ONLINE (Firebase Realtime Database) ============
+   Puerto Rico has NO hidden information (everything is visible on the table in
+   physical play), so unlike Rummikub/Splendor this needs no private per-player
+   paths or auth -- the whole game state can just be one open room object, same
+   trust model as SET/Blokus. Each action commits via a transaction that calls
+   the exact same pure functions used locally, with the room itself as S. */
+let app=null, db=null, firebaseReady=false;
+try{
+  if(firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_')){
+    app=initializeApp(firebaseConfig);
+    db=getDatabase(app);
+    firebaseReady=true;
+  }
+}catch(e){ console.error('Firebase init failed', e); }
+
+const myId='p_'+Math.random().toString(36).slice(2,9);
+let onlineRoom=null, roomCode=null, isHost=false;
+let roomUnsub=null;
+let lastSeenVersion=-1;
+let onRoomUpdateBusy=false, onRoomUpdatePending=null;
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+async function createRoom(name, maxPlayers, asSpectator, useExpansion){
+  if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
+  document.getElementById('create-msg').textContent='';
+  try{
+    let code, snap;
+    for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `puertoricoRooms/${code}`)); if(!snap.exists()) break; }
+    isHost=true; roomCode=code;
+    const room={
+      status:'lobby', hostId:myId, hostName:name, hostIsPlayer:!asSpectator, maxPlayers, useExpansion:!!useExpansion,
+      playerOrder: asSpectator ? [] : [myId],
+      playerNames: asSpectator ? {} : { [myId]:name },
+      version:0, lastMove:null
+    };
+    await set(ref(db, `puertoricoRooms/${code}`), room);
+    enterOnlineFlow();
+  }catch(e){
+    console.error('createRoom failed', e);
+    document.getElementById('create-msg').textContent='방을 만들지 못했어요. Firebase 설정과 보안 규칙이 최신 상태인지 확인해주세요. ('+(e && e.code || e)+')';
+  }
+}
+async function joinRoom(name, code){
+  if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
+  if(!name || !code){ document.getElementById('join-msg').textContent='이름과 방 코드를 모두 입력해주세요.'; return; }
+  document.getElementById('join-msg').textContent='';
+  try{
+    const roomRef=ref(db, `puertoricoRooms/${code}`);
+    const snap=await get(roomRef);
+    if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
+    const room=snap.val();
+    room.playerOrder=room.playerOrder||[];
+    if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
+    if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
+    await update(ref(db, `puertoricoRooms/${code}`), {
+      playerOrder:[...room.playerOrder, myId],
+      [`playerNames/${myId}`]: name
+    });
+    isHost=false; roomCode=code;
+    enterOnlineFlow();
+  }catch(e){
+    console.error('joinRoom failed', e);
+    document.getElementById('join-msg').textContent='참가하지 못했어요. Firebase 설정과 보안 규칙이 최신 상태인지 확인해주세요. ('+(e && e.code || e)+')';
+  }
+}
+function enterOnlineFlow(){
+  mode='online';
+  showScreen('lobby');
+  lastSeenVersion=-1; onRoomUpdateBusy=false; onRoomUpdatePending=null;
+  if(roomUnsub) roomUnsub();
+  roomUnsub=onValue(ref(db, `puertoricoRooms/${roomCode}`), (snap)=>{
+    const room=snap.val();
+    if(!room) return;
+    queueRoomUpdate(room);
+  });
+}
+function queueRoomUpdate(room){
+  if(onRoomUpdateBusy){ onRoomUpdatePending=room; return; }
+  onRoomUpdateBusy=true;
+  Promise.resolve(onRoomUpdate(room)).catch(e=>console.error('onRoomUpdate error',e)).finally(()=>{
+    onRoomUpdateBusy=false;
+    if(onRoomUpdatePending){ const next=onRoomUpdatePending; onRoomUpdatePending=null; queueRoomUpdate(next); }
+  });
+}
+function onRoomUpdate(room){
+  room.playerOrder=room.playerOrder||[];
+  const versionChanged=room.version!==lastSeenVersion;
+  lastSeenVersion=room.version;
+  onlineRoom=room;
+  if(room.status==='lobby'){ renderLobby(); return; }
+  if(room.status==='playing'){
+    if(document.getElementById('game').classList.contains('hidden')){
+      applyZoom(); showScreen('game');
+    }
+    renderAll();
+    if(versionChanged && room.lastMove){ setMessage(room.lastMove.text,'info'); }
+    else {
+      const actorUid=room.playerOrder[currentActorIdx(room)];
+      const actorName=room.players.find(p=>p.uid===actorUid);
+      setMessage(actorUid===myId ? '내 차례예요' : `${actorName?actorName.name:''} 차례를 기다리는 중...`, 'info');
+    }
+  } else if(room.status==='ended'){
+    renderAll();
+    finishGameOnline(room);
+  }
+}
+function renderLobby(){
+  document.getElementById('lobby-code').textContent=roomCode;
+  let rows='';
+  if(onlineRoom.hostIsPlayer===false){
+    rows+=`<div class="lobby-player"><span>👀 ${onlineRoom.hostName||'방장'}<span class="host-badge">방장 · 관전</span>${onlineRoom.hostId===myId?' (나)':''}</span></div>`;
+  }
+  rows+=onlineRoom.playerOrder.map(uid=>{
+    const nm=(onlineRoom.playerNames||{})[uid]||'???';
+    return `<div class="lobby-player"><span>${nm}${uid===onlineRoom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}</span></div>`;
+  }).join('');
+  document.getElementById('lobby-players').innerHTML=rows;
+  const startBtn=document.getElementById('lobby-start-btn');
+  const waiting=document.getElementById('lobby-waiting');
+  const joined=onlineRoom.playerOrder.length;
+  if(isHost){
+    startBtn.classList.remove('hidden');
+    startBtn.disabled=joined<3;
+    waiting.textContent = joined<3 ? '3명 이상 모이면 시작할 수 있어요' : (joined<onlineRoom.maxPlayers ? `${onlineRoom.maxPlayers-joined}자리 더 받을 수 있어요 (지금 시작하면 ${joined}인 게임으로 진행됩니다)` : '');
+  } else {
+    startBtn.classList.add('hidden');
+    waiting.textContent='방장이 게임을 시작하기를 기다리는 중...';
+  }
+}
+document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
+  const snap=await get(ref(db, `puertoricoRooms/${roomCode}`));
+  const room=snap.val();
+  room.playerOrder=room.playerOrder||[];
+  const names=room.playerOrder.map(uid=>(room.playerNames||{})[uid]||'???');
+  const freshS=newGameState(room.playerOrder.length, room.useExpansion, names);
+  freshS.players=freshS.players.map((p,i)=>({...p, uid:room.playerOrder[i]}));
+  freshS.status='playing'; freshS.hostId=room.hostId; freshS.hostName=room.hostName; freshS.hostIsPlayer=room.hostIsPlayer;
+  freshS.maxPlayers=room.maxPlayers; freshS.playerOrder=room.playerOrder; freshS.playerNames=room.playerNames;
+  freshS.version=0;
+  await set(ref(db, `puertoricoRooms/${roomCode}`), freshS);
+});
+document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
+function leaveOnline(){ if(roomUnsub){ roomUnsub(); roomUnsub=null; } roomCode=null; onlineRoom=null; selected=null; }
+
+async function onlineCommit(mutatorFn){
+  const roomRef=ref(db, `puertoricoRooms/${roomCode}`);
+  await runTransaction(roomRef, (room)=>{
+    if(!room) return room;
+    if(room.status!=='playing') return room;
+    const myIdx=room.playerOrder.indexOf(myId);
+    if(currentActorIdx(room)!==myIdx) return room;
+    mutatorFn(room, myIdx);
+    room.version=(room.version||0)+1;
+    if(room.gameOver) room.status='ended';
+    return room;
+  });
+}
+function onlinePickRole(roleId){ onlineCommit((room)=>{ pickRole(room, roleId); }); }
+function onlineSettlerPlace(kind, supplyIdx, slotIdx){ onlineCommit((room,idx)=>{ settlerPlaceTile(room, kind, supplyIdx, idx, slotIdx); advanceRoleTurn(room); }); }
+function onlineMayorAssign(kind, slotIdx){ onlineCommit((room,idx)=>{ mayorAssignColonist(room, idx, kind, slotIdx); }); }
+function onlineBuyBuilding(buildingId){ onlineCommit((room,idx)=>{ buyBuilding(room, idx, buildingId); advanceRoleTurn(room); }); }
+function onlineSellGood(good){ onlineCommit((room,idx)=>{ sellGood(room, idx, good); advanceRoleTurn(room); }); }
+function onlineShipGood(good, shipIdx){ onlineCommit((room,idx)=>{ shipGood(room, idx, good, shipIdx); }); }
+function onlineShipViaWharf(good){ onlineCommit((room,idx)=>{ shipViaWharf(room, idx, good); }); }
+function onlineCraftsmanBonus(good){ onlineCommit((room)=>{ craftsmanBonus(room, room.currentPickerIdx, good); }); }
+function onlineDiscardGood(good){ onlineCommit((room)=>{ const idx=room.roleTurnOrder[room.roleTurnPos]; discardGood(room, idx, good); advanceCleanupTurn(room); }); }
+function onlineAdvanceRoleTurn(){ onlineCommit((room)=>{ advanceRoleTurn(room); }); }
+
+/* ============ SETUP SCREEN WIRING ============ */
+let chosenCount=4, useExpansionChoice=true;
+document.querySelectorAll('#count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    chosenCount=+btn.dataset.count;
+  });
+});
+document.querySelectorAll('#expansion-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#expansion-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    useExpansionChoice=btn.dataset.exp==='on';
+  });
+});
+
+let soloCount=4, soloHumanSeatChoice=0;
+function renderSoloOrderOptions(n){
+  const el=document.getElementById('solo-order-grid');
+  el.innerHTML=Array.from({length:n},(_,i)=>`<button class="opt-btn ${i===0?'selected':''}" data-seat="${i}">${i+1}번째</button>`).join('');
+  soloHumanSeatChoice=0;
+  el.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      soloHumanSeatChoice=+btn.dataset.seat;
+    });
+  });
+}
+renderSoloOrderOptions(soloCount);
+document.querySelectorAll('#solo-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#solo-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    soloCount=+btn.dataset.count;
+    renderSoloOrderOptions(soloCount);
+  });
+});
+
+let onlineChosenCount=4;
+document.querySelectorAll('#online-count-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#online-count-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    onlineChosenCount=+btn.dataset.count;
+  });
+});
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('create-tab').classList.toggle('hidden', btn.dataset.tab!=='create');
+    document.getElementById('join-tab').classList.toggle('hidden', btn.dataset.tab!=='join');
+  });
+});
+document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mode-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const m=btn.dataset.mode;
+    document.getElementById('solo-panel').classList.toggle('hidden', m!=='solo');
+    document.getElementById('local-panel').classList.toggle('hidden', m!=='local');
+    document.getElementById('online-panel').classList.toggle('hidden', m!=='online');
+    document.getElementById('start-btn').classList.toggle('hidden', m==='online');
+    document.getElementById('start-btn').dataset.mode=m;
+  });
+});
+document.getElementById('start-btn').dataset.mode='solo';
+document.getElementById('start-btn').addEventListener('click',()=>{
+  const m=document.getElementById('start-btn').dataset.mode;
+  showScreen('game');
+  if(m==='solo'){
+    const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeatChoice);
+    startLocalGame(soloCount, aiList, useExpansionChoice);
+  } else {
+    startLocalGame(chosenCount, [], useExpansionChoice);
+  }
+});
+
+let hostAsSpectator=false;
+document.getElementById('create-room-btn').addEventListener('click',()=>{
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount, hostAsSpectator, useExpansionChoice);
+});
+document.getElementById('join-room-btn').addEventListener('click',()=>{
+  joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());
+});
+document.getElementById('quit-btn').addEventListener('click',()=>{
+  leaveOnline();
+  document.getElementById('end-overlay').classList.add('hidden');
+  showScreen('setup');
+});
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('end-overlay').classList.add('hidden');
+  leaveOnline();
+  showScreen('setup');
+});
+</script>
+</body>
+</html>
