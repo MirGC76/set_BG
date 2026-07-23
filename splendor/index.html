@@ -241,6 +241,10 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:4px;margi
           <button class="opt-btn selected" data-count="3">3명</button>
           <button class="opt-btn" data-count="4">4명</button>
         </div>
+        <div class="row-btns" id="host-role-grid" style="margin-top:10px;">
+          <button class="opt-btn selected" data-role="player">플레이어로 참여</button>
+          <button class="opt-btn" data-role="spectator">관전만 하기</button>
+        </div>
         <div class="field-msg" id="create-msg"></div>
         <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
       </div>
@@ -415,6 +419,7 @@ function emptyGemObj(withGold){
 
 /* ============ DERIVED HELPERS (mode-aware) ============ */
 function isOnline(){ return mode==='online'; }
+function isSpectator(){ return isOnline() && onlineRoom && !onlineRoom.playerOrder.includes(myId); }
 function curPlayer(){ return players[currentPlayerIdx]; }
 function totalGemsOf(gemsObj){ return COLORS.reduce((s,c)=>s+(gemsObj[c]||0),0)+(gemsObj.gold||0); }
 function effectiveCost(card, bonuses){
@@ -442,8 +447,8 @@ function payCostFrom(card, gems, bonuses, bankObj){
   bankObj.gold+=goldUsed;
 }
 /* view-model accessors: local/solo read from `players`, online reads from onlineRoom + onlineMyReserved */
-function myGemsView(){ return isOnline() ? onlineRoom.gems[myId] : curPlayer().gems; }
-function myBonusesView(){ return isOnline() ? onlineRoom.bonuses[myId] : curPlayer().bonuses; }
+function myGemsView(){ return isOnline() ? (onlineRoom.gems[myId] || emptyGemObj(true)) : curPlayer().gems; }
+function myBonusesView(){ return isOnline() ? (onlineRoom.bonuses[myId] || emptyGemObj(false)) : curPlayer().bonuses; }
 function myReservedView(){ return isOnline() ? onlineMyReserved : curPlayer().reserved; }
 function canIActNow(){
   if(isOnline()) return onlineRoom && currentTurnUid(onlineRoom)===myId;
@@ -604,6 +609,10 @@ function renderPlayerPanel(){
   const canAct=canIActNow();
   if(mode==='solo' && !canAct){
     el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:20px;">🤖 컴퓨터가 진행 중입니다...</div>`;
+    return;
+  }
+  if(isSpectator()){
+    el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:20px;">👀 관전 중입니다 (플레이어의 예약 카드는 보이지 않아요)</div>`;
     return;
   }
   const gems=myGemsView(), bonuses=myBonusesView(), reserved=myReservedView();
@@ -1066,7 +1075,7 @@ async function ensureSignedIn(){
     return { ok:false, reason:'auth-failed', error:e };
   }
 }
-async function createRoom(name, maxPlayers){
+async function createRoom(name, maxPlayers, asSpectator){
   document.getElementById('create-msg').textContent='';
   const signIn=await ensureSignedIn();
   if(!signIn.ok){
@@ -1080,13 +1089,13 @@ async function createRoom(name, maxPlayers){
     for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `splendorRooms/${code}`)); if(!snap.exists()) break; }
     isHost=true; roomCode=code;
     const room={
-      status:'lobby', hostId:myId, maxPlayers,
-      playerOrder:[myId],
-      players:{ [myId]:{name} },
-      reservedCounts:{ [myId]:0 },
-      purchasedCount:{ [myId]:0 },
-      playerNoblesCount:{ [myId]:0 },
-      points:{ [myId]:0 },
+      status:'lobby', hostId:myId, hostName:name, hostIsPlayer:!asSpectator, maxPlayers,
+      playerOrder: asSpectator ? [] : [myId],
+      players: asSpectator ? {} : { [myId]:{name} },
+      reservedCounts: asSpectator ? {} : { [myId]:0 },
+      purchasedCount: asSpectator ? {} : { [myId]:0 },
+      playerNoblesCount: asSpectator ? {} : { [myId]:0 },
+      points: asSpectator ? {} : { [myId]:0 },
       currentIdx:0, version:0, lastMove:null, phase:'action'
     };
     await set(ref(db, `splendorRooms/${code}`), room);
@@ -1110,6 +1119,7 @@ async function joinRoom(name, code){
     const snap=await get(roomRef);
     if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
     const room=snap.val();
+    room.playerOrder=room.playerOrder||[];
     if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
     if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
     await update(ref(db, `splendorRooms/${code}`), {
@@ -1150,6 +1160,7 @@ function queueRoomUpdate(room){
   });
 }
 async function onRoomUpdate(room){
+  room.playerOrder=room.playerOrder||[];
   const versionChanged=room.version!==lastSeenVersion;
   lastSeenVersion=room.version;
   onlineRoom=room;
@@ -1190,10 +1201,15 @@ async function refreshMyReservedFromFirebase(){
 }
 function renderLobby(){
   document.getElementById('lobby-code').textContent=roomCode;
-  document.getElementById('lobby-players').innerHTML=onlineRoom.playerOrder.map(uid=>{
+  let rows='';
+  if(onlineRoom.hostIsPlayer===false){
+    rows+=`<div class="lobby-player"><span>👀 ${onlineRoom.hostName||'방장'}<span class="host-badge">방장 · 관전</span>${onlineRoom.hostId===myId?' (나)':''}</span></div>`;
+  }
+  rows+=onlineRoom.playerOrder.map(uid=>{
     const p=onlineRoom.players[uid];
     return `<div class="lobby-player"><span>${p.name}${uid===onlineRoom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}</span></div>`;
   }).join('');
+  document.getElementById('lobby-players').innerHTML=rows;
   const startBtn=document.getElementById('lobby-start-btn');
   const waiting=document.getElementById('lobby-waiting');
   const joined=onlineRoom.playerOrder.length;
@@ -1209,6 +1225,7 @@ function renderLobby(){
 document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
   const snap=await get(ref(db, `splendorRooms/${roomCode}`));
   const room=snap.val();
+  room.playerOrder=room.playerOrder||[];
   const numPlayers=room.playerOrder.length;
   const perColor=tokenCountsFor(numPlayers);
   const newBank=emptyGemObj(true);
@@ -1532,8 +1549,16 @@ document.getElementById('start-btn').addEventListener('click',()=>{
     newLocalGame(chosenCount, []);
   }
 });
+let hostAsSpectator=false;
+document.querySelectorAll('#host-role-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#host-role-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    hostAsSpectator=btn.dataset.role==='spectator';
+  });
+});
 document.getElementById('create-room-btn').addEventListener('click',()=>{
-  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount, hostAsSpectator);
 });
 document.getElementById('join-room-btn').addEventListener('click',()=>{
   joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());

@@ -168,6 +168,10 @@ h1.title{font-size:clamp(28px,6vw,44px);font-weight:900;letter-spacing:4px;margi
       </div>
       <div id="create-tab">
         <input class="text-input" id="create-name" placeholder="내 이름" maxlength="10">
+        <div class="row-btns" id="host-role-grid" style="margin-bottom:10px;">
+          <button class="opt-btn selected" data-role="player">플레이어로 참여</button>
+          <button class="opt-btn" data-role="spectator">관전만 하기</button>
+        </div>
         <div class="field-msg" id="create-msg"></div>
         <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
       </div>
@@ -444,10 +448,18 @@ function localCardClick(idx){
   if(pos>-1){ state.selected.splice(pos,1); renderLocalBoard(); return; }
   if(state.selected.length>=3) return;
   state.selected.push(idx); renderLocalBoard();
-  if(state.selected.length===3) setTimeout(localEvaluate,180);
+  if(state.selected.length===3){
+    // Selection is complete -- stop the 10s claim timer now so it can't race with
+    // the evaluate call below (it used to be able to fire in the 180ms gap and
+    // reset state.selected/activePlayer out from under localEvaluate, crashing it
+    // silently inside the timeout and leaving the board stuck mid-selection).
+    clearTimeout(localTimeoutHandle); localTimeoutHandle=null; state.turnDeadline=null;
+    setTimeout(localEvaluate,180);
+  }
 }
 function localEvaluate(){
   clearTimeout(localTimeoutHandle); localTimeoutHandle=null; state.turnDeadline=null;
+  if(state.selected.length!==3){ renderLocalAll(); return; } // safety net: state changed out from under us, don't crash
   const [i,j,k]=state.selected;
   const valid=isSetIds(state.board[i],state.board[j],state.board[k]);
   const idxs=state.selected.slice().sort((a,b)=>b-a);
@@ -505,7 +517,7 @@ function genCode(){
 }
 function playersArray(room){ return room && room.players ? Object.entries(room.players).map(([id,p])=>({id, ...p})) : []; }
 
-async function createRoom(name){
+async function createRoom(name, asSpectator){
   if(!firebaseReady){ document.getElementById('config-error').classList.remove('hidden'); return; }
   if(!name){ document.getElementById('create-msg').textContent='이름을 입력해주세요.'; return; }
   let code, snap;
@@ -516,8 +528,8 @@ async function createRoom(name){
   }
   isHost=true; roomCode=code;
   const room={
-    status:'lobby', hostId:myId,
-    players:{ [myId]: { name, score:0 } },
+    status:'lobby', hostId:myId, hostName:name, hostIsPlayer:!asSpectator,
+    players: asSpectator ? {} : { [myId]: { name, score:0 } },
     deck:[], board:[], activePlayer:null, claimTs:null, lastResult:null, version:0
   };
   await set(ref(db, `rooms/${code}`), room);
@@ -597,9 +609,14 @@ async function tryApplyTimeout(){
 function renderLobby(){
   document.getElementById('lobby-code').textContent=roomCode;
   const players=playersArray(oroom);
-  document.getElementById('lobby-players').innerHTML=players.map(p=>`
+  let rows='';
+  if(oroom.hostIsPlayer===false){
+    rows+=`<div class="lobby-player"><span>${oroom.hostName||'방장'}<span class="host-badge">방장 · 관전</span>${oroom.hostId===myId?' (나)':''}</span></div>`;
+  }
+  rows+=players.map(p=>`
     <div class="lobby-player"><span>${p.name}${p.id===oroom.hostId?'<span class="host-badge">방장</span>':''}${p.id===myId?' (나)':''}</span></div>
   `).join('');
+  document.getElementById('lobby-players').innerHTML=rows;
   const startBtn=document.getElementById('lobby-start-btn');
   const waiting=document.getElementById('lobby-waiting');
   if(isHost){
@@ -678,6 +695,7 @@ function onlineCardClick(idx){
 }
 async function submitOnlineSelection(){
   const idxs=mySelected.slice();
+  if(idxs.length!==3){ return; } // selection changed during the delay (e.g. deselected) -- nothing to submit
   const roomRef=ref(db, `rooms/${roomCode}`);
   let outcome=null;
   await runTransaction(roomRef, (room)=>{
@@ -736,8 +754,16 @@ document.getElementById('start-btn').addEventListener('click',()=>{
   document.getElementById('solo-panel').classList.remove('hidden');
   newLocalGame(currentMode, count);
 });
+let hostAsSpectator=false;
+document.querySelectorAll('#host-role-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#host-role-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    hostAsSpectator=btn.dataset.role==='spectator';
+  });
+});
 document.getElementById('create-room-btn').addEventListener('click',()=>{
-  createRoom(document.getElementById('create-name').value.trim());
+  createRoom(document.getElementById('create-name').value.trim(), hostAsSpectator);
 });
 document.getElementById('join-room-btn').addEventListener('click',()=>{
   joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());

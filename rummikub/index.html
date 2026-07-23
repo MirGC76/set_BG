@@ -182,6 +182,10 @@ h1.title{font-size:clamp(26px,6vw,40px);font-weight:900;letter-spacing:3px;margi
           <button class="opt-btn selected" data-count="3">3명</button>
           <button class="opt-btn" data-count="4">4명</button>
         </div>
+        <div class="row-btns" id="host-role-grid" style="margin-top:10px;">
+          <button class="opt-btn selected" data-role="player">플레이어로 참여</button>
+          <button class="opt-btn" data-role="spectator">관전만 하기</button>
+        </div>
         <div class="field-msg" id="create-msg"></div>
         <button class="start-btn" id="create-room-btn" style="width:100%;">방 만들기</button>
       </div>
@@ -621,11 +625,16 @@ function renderPlayerRow(){
   const el=document.getElementById('player-row');
   if(mode==='online' && onlineRoom){
     const turnUid=currentTurnUid(onlineRoom);
-    el.innerHTML=onlineRoom.playerOrder.map(uid=>{
+    let rows='';
+    if(onlineRoom.hostIsPlayer===false){
+      rows+=`<div class="player-chip">👀 ${onlineRoom.hostName||'방장'}${onlineRoom.hostId===myId?' (나)':''}</div>`;
+    }
+    rows+=onlineRoom.playerOrder.map(uid=>{
       const p=onlineRoom.players[uid];
       const cnt=(onlineRoom.handCounts && onlineRoom.handCounts[uid]) || 0;
       return `<div class="player-chip ${uid===turnUid?'active':''}">${p.name}${uid===myId?' (나)':''} <span class="cnt">· ${cnt}장</span></div>`;
     }).join('');
+    el.innerHTML=rows;
   } else {
     el.innerHTML=players.map((p,i)=>`
       <div class="player-chip ${i===currentPlayerIdx?'active':''}">${p.name}${aiSeats.has(i)?' 🤖':''} <span class="cnt">· ${p.hand.length}장</span></div>
@@ -650,8 +659,15 @@ function renderTable(){
   newBtn.addEventListener('click',()=>{ if(selected) placeSelectedIntoSet(-1); });
   el.appendChild(newBtn);
 }
+function isSpectator(){
+  return mode==='online' && onlineRoom && !onlineRoom.playerOrder.includes(myId);
+}
 function renderHand(){
   const el=document.getElementById('hand-area'); el.innerHTML='';
+  if(isSpectator()){
+    el.innerHTML='<span style="color:var(--muted);font-size:13px;">👀 관전 중입니다 (플레이어의 타일은 보이지 않아요)</span>';
+    return;
+  }
   const hand=activeHand();
   hand.forEach((tile,idx)=>{
     el.appendChild(tileNode(tile, isSel('hand',idx), ()=>selectHandTile(idx)));
@@ -905,7 +921,7 @@ async function ensureSignedIn(){
     return { ok:false, reason:'auth-failed', error:e };
   }
 }
-async function createRoom(name, maxPlayers){
+async function createRoom(name, maxPlayers, asSpectator){
   document.getElementById('create-msg').textContent='';
   const signIn=await ensureSignedIn();
   if(!signIn.ok){
@@ -919,10 +935,10 @@ async function createRoom(name, maxPlayers){
     for(let i=0;i<6;i++){ code=genCode(); snap=await get(ref(db, `rummikubRooms/${code}`)); if(!snap.exists()) break; }
     isHost=true; roomCode=code;
     const room={
-      status:'lobby', hostId:myId, maxPlayers,
-      playerOrder:[myId],
-      players:{ [myId]:{name} },
-      handCounts:{ [myId]:0 },
+      status:'lobby', hostId:myId, hostName:name, hostIsPlayer:!asSpectator, maxPlayers,
+      playerOrder: asSpectator ? [] : [myId],
+      players: asSpectator ? {} : { [myId]:{name} },
+      handCounts: asSpectator ? {} : { [myId]:0 },
       melded:{},
       table:[], deck:[], deckCount:0,
       currentIdx:0, version:0, lastMove:null
@@ -948,6 +964,7 @@ async function joinRoom(name, code){
     const snap=await get(roomRef);
     if(!snap.exists()){ document.getElementById('join-msg').textContent='그런 방 코드를 찾을 수 없어요.'; return; }
     const room=snap.val();
+    room.playerOrder=room.playerOrder||[];
     if(room.status!=='lobby'){ document.getElementById('join-msg').textContent='이미 시작된 방이에요.'; return; }
     if(room.playerOrder.length>=room.maxPlayers){ document.getElementById('join-msg').textContent='방 인원이 가득 찼어요.'; return; }
     await update(ref(db, `rummikubRooms/${code}`), {
@@ -989,12 +1006,13 @@ function queueRoomUpdate(room){
   });
 }
 async function onRoomUpdate(room){
+  room.playerOrder=room.playerOrder||[];
   const versionChanged = room.version!==lastSeenVersion;
   lastSeenVersion=room.version;
   onlineRoom=room;
   if(room.status==='lobby'){ renderLobby(); return; }
   if(room.status==='dealing'){
-    if(!myInitialDealAttempted){ myInitialDealAttempted=true; await performInitialDrawIfNeeded(); }
+    if(!myInitialDealAttempted && room.playerOrder.includes(myId)){ myInitialDealAttempted=true; await performInitialDrawIfNeeded(); }
     return;
   }
   if(room.status==='playing'){
@@ -1054,10 +1072,15 @@ async function refreshMyHandFromFirebase(){
 }
 function renderLobby(){
   document.getElementById('lobby-code').textContent=roomCode;
-  document.getElementById('lobby-players').innerHTML=onlineRoom.playerOrder.map(uid=>{
+  let rows='';
+  if(onlineRoom.hostIsPlayer===false){
+    rows+=`<div class="lobby-player"><span>👀 ${onlineRoom.hostName||'방장'}<span class="host-badge">방장 · 관전</span>${onlineRoom.hostId===myId?' (나)':''}</span></div>`;
+  }
+  rows+=onlineRoom.playerOrder.map(uid=>{
     const p=onlineRoom.players[uid];
     return `<div class="lobby-player"><span>${p.name}${uid===onlineRoom.hostId?'<span class="host-badge">방장</span>':''}${uid===myId?' (나)':''}</span></div>`;
   }).join('');
+  document.getElementById('lobby-players').innerHTML=rows;
   const startBtn=document.getElementById('lobby-start-btn');
   const waiting=document.getElementById('lobby-waiting');
   const joined=onlineRoom.playerOrder.length;
@@ -1216,8 +1239,16 @@ document.getElementById('start-btn').addEventListener('click',()=>{
   const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeat);
   newLocalGame(soloCount, aiList);
 });
+let hostAsSpectator=false;
+document.querySelectorAll('#host-role-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#host-role-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    hostAsSpectator=btn.dataset.role==='spectator';
+  });
+});
 document.getElementById('create-room-btn').addEventListener('click',()=>{
-  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount);
+  createRoom(document.getElementById('create-name').value.trim(), onlineChosenCount, hostAsSpectator);
 });
 document.getElementById('join-room-btn').addEventListener('click',()=>{
   joinRoom(document.getElementById('join-name').value.trim(), document.getElementById('join-code').value.trim().toUpperCase());
