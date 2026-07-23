@@ -241,7 +241,10 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         &nbsp;· <b>선장</b> — 모두 순서대로 배에 상품을 실어 승점 획득 (실을 수 있으면 반드시 실어야 함)<br>
         <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
         <b>④ 창고</b> — 소형/대형 창고 건물이 없으면, 그 라운드에 팔거나 싣지 못한 상품은 라운드가 끝날 때 버려집니다.<br>
-        <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.
+        <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.<br>
+        <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있어서, 다 소진되면 그 이후로는 아무도 승점을 더 얻을 수 없습니다.<br>
+        <b>⑦ 인원 수에 따라</b> 배 크기·시작 농장·시작 자금·승점 칩 총량·이주민 총량이 규칙에 맞게 달라집니다.<br>
+        <b>⑧ 상품 창고</b>도 정해진 수량만 있어서, 다 떨어진 상품은 생산할 수 없어요. 팔거나 싣거나 버린 상품은 다시 창고로 돌아갑니다.
       </div>
     </div>
   </div>
@@ -385,6 +388,12 @@ function sellPriceFor(good, p, isPicker){
   return price;
 }
 function shipVpMultiplier(p){ return hasPower(p,'ship_vp_bonus_1')?2:1; }
+function awardVP(S, p, amount){
+  const actual=Math.max(0, Math.min(amount, S.vpPool));
+  p.vp+=actual;
+  S.vpPool-=actual;
+  return actual;
+}
 
 /* ============ PURE STATE-MUTATING ENGINE (S = the whole game state object) ============
    Used identically by local pass-and-play, solo-vs-AI, and online modes -- online just
@@ -395,26 +404,49 @@ function makePlantationDeck(){
   Object.entries(counts).forEach(([type,n])=>{ for(let i=0;i<n;i++) deck.push({type}); });
   return shuffle(deck);
 }
+/* ============ PER-PLAYER-COUNT SETUP TABLES ============ */
+const SHIP_CAPACITIES_BY_COUNT = { 3:[4,5,6], 4:[5,6,7], 5:[6,7,8] };
+const STARTING_DOUBLOONS_BY_COUNT = { 3:2, 4:3, 5:4 };
+const INDIGO_STARTERS_BY_COUNT = { 3:2, 4:2, 5:3 }; // first N seats start with indigo, rest with corn
+const COLONIST_TOTAL_BY_COUNT = { 3:55, 4:75, 5:95 };
+const VP_CHIPS_BY_COUNT = { 3:75, 4:100, 5:122 };
+const GOODS_BANK_TOTAL = { corn:10, indigo:11, sugar:11, coffee:9, tobacco:9 };
+
 function newGameState(numPlayers, useExpansion, playerNames){
   const S={};
   S.numPlayers=numPlayers;
   S.useExpansion=!!useExpansion;
   S.players=Array.from({length:numPlayers},(_,i)=>({
     name:(playerNames&&playerNames[i])||`플레이어 ${i+1}`,
-    plantations:Array(12).fill(null), buildings:[], doubloons:i,
+    plantations:Array(12).fill(null), buildings:[], doubloons:STARTING_DOUBLOONS_BY_COUNT[numPlayers],
     goods:{corn:0,indigo:0,sugar:0,coffee:0,tobacco:0}, vp:0
   }));
-  S.players.forEach(p=>{ p.plantations[0]={type:'corn',colonist:true}; });
   S.roles=ROLES_DEF.map(r=>({...r, available:true, bonus:0}));
   S.governorIdx=0; S.round=1; S.phase='role-pick'; S.currentPickerIdx=0; S.picksThisRound=0;
   S.activeRoleId=null; S.roleTurnOrder=[]; S.roleTurnPos=0; S.gameOver=false; S.endTriggered=false;
   S.plantationDeck=makePlantationDeck();
+  // starting plantations are drawn from the same shared tile pool (not created extra),
+  // so the total supply stays conserved just like the physical tile stacks
+  const indigoStarters=INDIGO_STARTERS_BY_COUNT[numPlayers];
+  S.players.forEach((p,i)=>{
+    const wantType = i<indigoStarters ? 'indigo' : 'corn';
+    const idx=S.plantationDeck.findIndex(t=>t.type===wantType);
+    const tile = idx>=0 ? S.plantationDeck.splice(idx,1)[0] : {type:wantType};
+    p.plantations[0]={type:tile.type,colonist:true};
+  });
   S.plantationSupply=[]; for(let i=0;i<4;i++){ const t=S.plantationDeck.pop(); if(t) S.plantationSupply.push(t); }
   S.quarrySupply=8;
   S.buildingSupply={}; ALL_BUILDINGS.forEach(b=>{ if(!b.expansion || S.useExpansion) S.buildingSupply[b.id]=b.supply; });
-  S.colonistPool=40+numPlayers*5;
-  S.shipColonists=0;
-  S.ships=[{cap:4,good:null,amount:0},{cap:5,good:null,amount:0},{cap:6,good:null,amount:0}];
+  // colonists: fixed total per player count, minus the one already placed on each player's
+  // starting plantation, minus the initial batch already waiting on the ship
+  S.colonistPool=COLONIST_TOTAL_BY_COUNT[numPlayers]-numPlayers-numPlayers;
+  S.shipColonists=numPlayers;
+  S.vpPool=VP_CHIPS_BY_COUNT[numPlayers];
+  // goods bank: a finite, shared, REPLENISHING supply of each good type. Production draws
+  // from it; selling/shipping/discarding returns goods to it -- so the total quantity of
+  // each good across the whole game (bank + everyone's storage) stays constant.
+  S.goodsBank={...GOODS_BANK_TOTAL};
+  S.ships=SHIP_CAPACITIES_BY_COUNT[numPlayers].map(cap=>({cap, good:null, amount:0}));
   S.tradingHouse=[];
   S.lastMove=null;
   return S;
@@ -450,7 +482,15 @@ function pickRole(S, roleId){
   else if(roleId==='builder'){ S.phase='builder'; S.lastMove={text:`${picker.name}님이 건축가를 선택했습니다`}; }
   else if(roleId==='craftsman'){
     S.phase='craftsman';
-    S.players.forEach(pl=>{ const prod=computeProduction(pl); GOODS.forEach(g=>pl.goods[g]+=prod[g]); });
+    S.roleTurnOrder.forEach(idx=>{
+      const pl=S.players[idx];
+      const prod=computeProduction(pl);
+      GOODS.forEach(g=>{
+        const amount=Math.min(prod[g], S.goodsBank[g]);
+        pl.goods[g]+=amount;
+        S.goodsBank[g]-=amount;
+      });
+    });
     S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
   }
   else if(roleId==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
@@ -512,14 +552,14 @@ function buyBuilding(S, playerIdx, buildingId){
   p.doubloons-=cost;
   p.buildings.push({id:buildingId,colonist:false});
   S.buildingSupply[buildingId]--;
-  p.vp+=BUILDING_BY_ID[buildingId].vp;
+  awardVP(S, p, BUILDING_BY_ID[buildingId].vp);
   const power=BUILDING_BY_ID[buildingId].power;
   if(power==='free_plantation'){
     const next=S.plantationDeck.pop();
     const emptySlot=p.plantations.findIndex(x=>!x);
     if(next && emptySlot>=0) p.plantations[emptySlot]={type:next.type,colonist:false};
   }
-  if(power==='flat_vp_bonus_3') p.vp+=3;
+  if(power==='flat_vp_bonus_3') awardVP(S, p, 3);
   if(usedBuildingSize(p)>=12) S.endTriggered=true;
   S.lastMove={text:`${p.name}님이 ${BUILDING_BY_ID[buildingId].name}을(를) 건설했습니다`};
   return true;
@@ -533,6 +573,7 @@ function sellGood(S, playerIdx, good){
   const price=sellPriceFor(good,p,isPicker);
   p.doubloons+=price;
   p.goods[good]--;
+  S.goodsBank[good]++;
   S.tradingHouse.push(good);
   S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]}을(를) ${price}금에 팔았습니다`};
   return price;
@@ -545,9 +586,9 @@ function shipGood(S, playerIdx, good, shipIdx){
   if(ship.amount>=ship.cap) return null;
   const amount=Math.min(p.goods[good], ship.cap-ship.amount);
   p.goods[good]-=amount;
+  S.goodsBank[good]+=amount;
   ship.good=good; ship.amount+=amount;
-  const vp=amount*shipVpMultiplier(p);
-  p.vp+=vp;
+  const vp=awardVP(S, p, amount*shipVpMultiplier(p));
   if(ship.amount>=ship.cap){ ship.good=null; ship.amount=0; }
   S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
@@ -557,8 +598,8 @@ function shipViaWharf(S, playerIdx, good){
   if(p.goods[good]<=0 || !hasPower(p,'free_shipping')) return null;
   const amount=p.goods[good];
   p.goods[good]=0;
-  const vp=amount*shipVpMultiplier(p);
-  p.vp+=vp;
+  S.goodsBank[good]+=amount;
+  const vp=awardVP(S, p, amount*shipVpMultiplier(p));
   S.lastMove={text:`${p.name}님이 부두로 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
 }
@@ -566,13 +607,14 @@ function canShipAnything(S, p){
   return GOODS.some(g=>p.goods[g]>0 && (S.ships.some(s=>(!s.good||s.good===g)&&s.amount<s.cap) || hasPower(p,'free_shipping')));
 }
 function craftsmanBonus(S, playerIdx, good){
-  S.players[playerIdx].goods[good]++;
+  if(S.goodsBank[good]>0){ S.goodsBank[good]--; S.players[playerIdx].goods[good]++; }
   finishRolePickTurn(S);
 }
 function discardGood(S, playerIdx, good){
   const p=S.players[playerIdx];
   if(p.goods[good]<=0) return false;
   p.goods[good]--;
+  S.goodsBank[good]++;
   return true;
 }
 function playerNeedsDiscard(S, p){ return GOODS.reduce((s,g)=>s+p.goods[g],0) > storageCapacity(p); }
@@ -776,6 +818,8 @@ function renderSupply(st){
   el.innerHTML=`
     <div class="supply-box"><b>농장 타일</b><br>${plantHtml}${quarryHtml}</div>
     <div class="supply-box"><b>이주민</b><br>San Juan: ${st.colonistPool} · 배: ${st.shipColonists}</div>
+    <div class="supply-box"><b>승점 칩</b><br>남은 칩: ${st.vpPool}</div>
+    <div class="supply-box"><b>상품 창고</b><br>${GOODS.map(g=>`${GOOD_LABEL[g]} ${st.goodsBank[g]}`).join(' · ')}</div>
     ${traderHtml}
     ${shipsHtml}
   `;
