@@ -254,8 +254,8 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         &nbsp;· <b>선장</b> — 고른 사람부터 순서대로 한 턴에 한 가지 상품만, 자리가 있는 만큼 전부 배에 실음 (다른 배가 싣고 있는 종류는 불가, 실을 수 있으면 반드시), 아무도 실을 수 없을 때까지 계속 돌아가고 가득 찬 배는 선장 턴이 끝난 뒤 한꺼번에 출항<br>
         <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
         <b>④ 창고</b> — 선적이 끝난 뒤, 기본적으로 상품 1개만 보관할 수 있어요. 소형 창고가 있으면 원하는 1종류를, 대형 창고까지 있으면 2종류를 추가로 개수 제한 없이 보관할 수 있고, 그 외 나머지는 합쳐서 1개까지만 남기고 버려집니다.<br>
-        <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.<br>
-        <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있고, <b>선장 역할로 상품을 배에 실을 때만</b> 이 칩에서 가져옵니다 (다 소진되면 그 이후로는 선적으로 승점을 더 얻을 수 없어요). 건물을 지을 때 얻는 승점은 이 칩과 무관하며, 게임이 끝날 때 항상 그대로 합산됩니다.<br>
+        <b>⑤ 종료</b> — 다음 중 하나라도 발생하면 그 라운드를 끝까지 마친 뒤 게임이 종료됩니다: ① 누군가 건물 칸(12칸)을 모두 채움 ② 시장 단계가 끝났을 때 배를 채울 이주민이 부족함 ③ 선장 단계에서 마지막 승점 칩이 소진됨. 승점이 가장 높은 사람이 승리하고, 동점이면 동전+남은 상품 수 합계가 더 많은 사람이 이깁니다.<br>
+        <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있고, <b>선장 역할로 상품을 배에 실을 때만</b> 이 칩에서 가져옵니다. 마지막 칩까지 소진되면 그 즉시 게임 종료 조건이 발동되지만(라운드는 끝까지 진행), 그 이후로 얻는 승점도 정상적으로 계속 기록됩니다 (실제 게임에서 종이에 적는 것과 같아요). 건물을 지을 때 얻는 승점은 이 칩과 무관하며, 게임이 끝날 때 항상 그대로 합산됩니다.<br>
         <b>⑦ 인원 수에 따라</b> 배 크기·시작 농장·시작 자금·승점 칩 총량·이주민 총량이 규칙에 맞게 달라집니다.<br>
         <b>⑧ 상품 창고</b>도 정해진 수량만 있어서, 다 떨어진 상품은 생산할 수 없어요. 팔거나 싣거나 버린 상품은 다시 창고로 돌아갑니다.
       </div>
@@ -460,10 +460,13 @@ function sellPriceFor(good, p, isPicker){
 }
 function harborBonus(p){ return hasPower(p,'ship_vp_bonus_1') ? 1 : 0; }
 function awardVP(S, p, amount){
-  const actual=Math.max(0, Math.min(amount, S.vpPool));
-  p.vp+=actual;
-  S.vpPool-=actual;
-  return actual;
+  // The VP score itself is never capped -- once the physical chip pool runs out,
+  // additional points are simply tracked on paper (matching the official rule),
+  // but the pool running out is what triggers the end-of-game condition.
+  p.vp+=amount;
+  S.vpPool=Math.max(0, S.vpPool-amount);
+  if(S.vpPool<=0 && amount>0){ S.endTriggered=true; }
+  return amount;
 }
 
 /* ============ PURE STATE-MUTATING ENGINE (S = the whole game state object) ============
@@ -832,6 +835,7 @@ function advanceRoleTurn(S){
     if(S.activeRoleId==='mayor'){
       const emptyBuildingSlots=S.players.reduce((s,p)=>s+p.buildings.reduce((s2,b)=>s2+(buildingSlots(b.id)-(b.colonists||0)),0),0);
       const needed=Math.max(emptyBuildingSlots, S.players.length);
+      if(S.colonistPool<needed){ S.endTriggered=true; }
       const arrive=Math.min(needed, S.colonistPool);
       S.colonistPool-=arrive;
       S.shipColonists+=arrive;
@@ -1542,21 +1546,22 @@ function renderControls(st){
 }
 
 /* ============ END GAME (local/solo) ============ */
+function tiebreakValue(p){ return p.doubloons + GOODS.reduce((s,g)=>s+p.goods[g],0); }
 function finishGame(){
-  const scored=S.players.map(p=>({name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p)}));
-  scored.sort((a,b)=>b.score-a.score);
+  const scored=S.players.map(p=>({name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p), tiebreak:tiebreakValue(p)}));
+  scored.sort((a,b)=>b.score-a.score || b.tiebreak-a.tiebreak);
   document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
-  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp}) · 동점 시 기준: 동전+상품 ${s.tiebreak}`).join('<br>');
   document.getElementById('end-overlay').classList.remove('hidden');
 }
 function finishGameOnline(room){
   const scored=room.playerOrder.map(uid=>{
     const p=room.players.find(x=>x.uid===uid);
-    return {name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p)};
+    return {name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p), tiebreak:tiebreakValue(p)};
   });
-  scored.sort((a,b)=>b.score-a.score);
+  scored.sort((a,b)=>b.score-a.score || b.tiebreak-a.tiebreak);
   document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
-  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp}) · 동점 시 기준: 동전+상품 ${s.tiebreak}`).join('<br>');
   document.getElementById('end-overlay').classList.remove('hidden');
 }
 
