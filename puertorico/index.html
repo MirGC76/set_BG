@@ -241,7 +241,7 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         <b>② 역할 7가지</b><br>
         &nbsp;· <b>광부</b> (카드 2장) — 고른 사람만 동전 1개 획득<br>
         &nbsp;· <b>개척자</b> — 모두 순서대로 공개된 농장 타일 1개를 섬에 놓음 (채석장은 고른 사람만 가능), 모두 끝나면 타일이 한꺼번에 새로 채워짐<br>
-        &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분, 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼 새 이주민 도착<br>
+        &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분, 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼(최소 인원 수만큼은 항상) 새 이주민 도착<br>
         &nbsp;· <b>건축가</b> — 모두 순서대로 건물 1개를 구매 가능 (고른 사람은 1 할인)<br>
         &nbsp;· <b>장인</b> — 모두 동시에 상품 생산 (일꾼 있는 농장 × 해당 건물 용량만큼)<br>
         &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능<br>
@@ -330,7 +330,7 @@ const ROLES_DEF = [{"id":"prospector","name":"광부","copies":2},{"id":"settler
 const ROLE_DESC = {
   prospector: "고른 사람만 동전 1개를 은행에서 가져옵니다. 다른 사람에게는 아무 효과가 없어요. (카드가 2장 있어서 같은 라운드에 두 명이 고를 수 있어요)",
   settler: "총독부터 순서대로, 공개된 농장 타일 중 하나를 골라 자신의 섬 빈 칸에 놓을 수 있습니다 (채석장은 이 역할을 고른 사람만 가져갈 수 있어요). 가져간 타일은 모두의 차례가 끝난 뒤 한꺼번에 새로 채워집니다.",
-  mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 새 이주민이 배에 도착합니다.",
+  mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 (최소 플레이어 수만큼은 항상) 새 이주민이 배에 도착합니다.",
   builder: "총독부터 순서대로, 각자 건물을 하나 구매해 지을 수 있습니다. 이 역할을 고른 사람은 비용이 1 할인돼요.",
   craftsman: "모든 플레이어가 동시에 상품을 생산합니다 (일꾼 있는 농장 수 × 관련 건물 용량만큼). 이 역할을 고른 사람은 생산한 상품 중 하나를 1개 추가로 받아요.",
   trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요.",
@@ -720,7 +720,8 @@ function advanceRoleTurn(S){
       while(S.plantationSupply.length<S.players.length+1){ const t=S.plantationDeck.pop(); if(!t) break; S.plantationSupply.push(t); }
     }
     if(S.activeRoleId==='mayor'){
-      const needed=S.players.reduce((s,p)=>s+p.buildings.filter(b=>!b.colonist).length,0);
+      const emptyBuildingSlots=S.players.reduce((s,p)=>s+p.buildings.filter(b=>!b.colonist).length,0);
+      const needed=Math.max(emptyBuildingSlots, S.players.length);
       const arrive=Math.min(needed, S.colonistPool);
       S.colonistPool-=arrive;
       S.shipColonists+=arrive;
