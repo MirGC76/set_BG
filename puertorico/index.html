@@ -121,6 +121,10 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 .slot-empty{width:26px;height:26px;border-radius:6px;border:2px dashed var(--line);}
 .colonist-dot{position:relative;}
 .colonist-badge{position:absolute;top:-5px;right:-4px;width:11px;height:11px;border-radius:50%;border:1.5px solid #222;box-shadow:0 0 2px rgba(0,0,0,0.6);}
+.colonist-badges{position:absolute;top:-5px;right:-3px;display:flex;flex-direction:row-reverse;gap:1px;}
+.colonist-badges .b{width:7px;height:7px;border-radius:50%;border:1px solid #222;box-shadow:0 0 1px rgba(0,0,0,0.6);}
+.colonist-badges .b.filled{background:#7a4a28;}
+.colonist-badges .b.empty{background:#fff;}
 .colonist-badge.filled{background:#7a4a28;}
 .colonist-badge.empty{background:#fff;}
 .bldg-tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:6px;font-size:9px;font-weight:800;color:#fff;margin:2px;padding:2px;background:#4a3d2a;border:2px solid transparent;cursor:pointer;text-align:center;line-height:1.1;}
@@ -340,7 +344,7 @@ function buildingDescription(b){
     builder_new_building_colonist: "건축가 역할일 때, 이 건물을 가진 사람이 새 건물을 지으면 그 위에 공급처의 일꾼 1명이 즉시 배치됩니다.",
     factory_bonus_gold: "장인 역할일 때, 이번에 생산한 상품의 종류 수에 따라 추가로 돈을 받습니다 (1종:0 / 2종:1 / 3종:2 / 4종:3 / 5종:5 더블론).",
     sell_duplicate_ok: "무역소에 이미 같은 색 상품이 있어도 팔 수 있습니다.",
-    ship_vp_bonus_1: "상품을 배에 실을 때마다 승점을 2배로 받습니다.",
+    ship_vp_bonus_1: "수송선에 상품을 선적할 때마다(선적 횟수당) 추가 승점 칩 +1점을 받습니다.",
     free_shipping: "선장 역할일 때, 공유 수송선 대신 개인 전용 선박으로 한 종류의 상품을 전부 수출할 수 있습니다 (라운드당 1회).",
     end_per_special_building: "[게임 종료 시] 자신의 도시판에 지어진 보라색(특수) 건물 1개당 승점 1점 (이 건물 자신도 포함).",
     end_per_3_colonists: "[게임 종료 시] 자신의 섬·건물 및 산후안 대기실에 있는 이주민 3명당 승점 1점.",
@@ -372,9 +376,10 @@ document.getElementById('zoom-in-btn').addEventListener('click',()=>{ uiZoom=Mat
 /* ============ PURE GAME-LOGIC HELPERS (operate on a player object; no shared state needed) ============ */
 function usedBuildingSize(p){ return p.buildings.reduce((s,b)=>s+BUILDING_BY_ID[b.id].size,0); }
 function filledPlantationCount(p){ return p.plantations.filter(x=>x).length; }
-function activeColonistCount(p){ return p.plantations.filter(x=>x&&x.colonist).length + p.buildings.filter(b=>b.colonist).length; }
-function hasPower(p, power){ return p.buildings.some(b=>BUILDING_BY_ID[b.id].power===power); }
-function powerCount(p, power){ return p.buildings.filter(b=>BUILDING_BY_ID[b.id].power===power).length; }
+function buildingSlots(buildingId){ const b=BUILDING_BY_ID[buildingId]; return b.category==='production' ? b.capacity : 1; }
+function activeColonistCount(p){ return p.plantations.filter(x=>x&&x.colonist).length + p.buildings.reduce((s,b)=>s+(b.colonists||0),0); }
+function hasPower(p, power){ return p.buildings.some(b=>(b.colonists||0)>0 && BUILDING_BY_ID[b.id].power===power); }
+function powerCount(p, power){ return p.buildings.filter(b=>(b.colonists||0)>0 && BUILDING_BY_ID[b.id].power===power).length; }
 function activeQuarries(p){ return p.plantations.filter(x=>x&&x.type==='quarry'&&x.colonist).length; }
 function sellBonus(p){ return powerCount(p,'sell_bonus_1')*1 + powerCount(p,'sell_bonus_2')*2; }
 function computeProduction(p){
@@ -382,7 +387,7 @@ function computeProduction(p){
   p.plantations.forEach(pl=>{ if(pl && pl.type==='corn' && pl.colonist) produced.corn++; });
   ['indigo','sugar','coffee','tobacco'].forEach(good=>{
     const activePlantations=p.plantations.filter(pl=>pl&&pl.type===good&&pl.colonist).length;
-    const activeCapacity=p.buildings.filter(b=>b.colonist && BUILDING_BY_ID[b.id].good===good).reduce((s,b)=>s+BUILDING_BY_ID[b.id].capacity,0);
+    const activeCapacity=p.buildings.filter(b=>BUILDING_BY_ID[b.id].good===good).reduce((s,b)=>s+(b.colonists||0),0);
     produced[good]=Math.min(activePlantations, activeCapacity);
   });
   return produced;
@@ -402,7 +407,9 @@ function residenceVP(filled){
 function computeFinalBonusVP(p){
   let bonus=0;
   const owned=p.buildings.map(b=>BUILDING_BY_ID[b.id]);
-  owned.forEach(b=>{
+  p.buildings.forEach(inst=>{
+    if((inst.colonists||0)<=0) return; // building must be staffed for its bonus to activate
+    const b=BUILDING_BY_ID[inst.id];
     if(b.power==='end_per_special_building') bonus+=owned.filter(x=>x.category==='special').length;
     else if(b.power==='end_per_3_colonists') bonus+=Math.floor((activeColonistCount(p)+(p.mayorAllotment||0))/3);
     else if(b.power==='end_per_4_doubloons') bonus+=Math.floor(p.doubloons/4);
@@ -424,7 +431,7 @@ function totalScore(p){ return p.vp + computeBuildingVP(p) + computeFinalBonusVP
 function sellPriceFor(good, p, isPicker){
   return SELL_PRICE[good]+sellBonus(p)+(isPicker?1:0);
 }
-function shipVpMultiplier(p){ return hasPower(p,'ship_vp_bonus_1')?2:1; }
+function harborBonus(p){ return hasPower(p,'ship_vp_bonus_1') ? 1 : 0; }
 function awardVP(S, p, amount){
   const actual=Math.max(0, Math.min(amount, S.vpPool));
   p.vp+=actual;
@@ -612,20 +619,32 @@ function mayorAssignColonist(S, playerIdx, kind, slotIdx){
     if(!p.plantations[slotIdx] || p.plantations[slotIdx].colonist) return false;
     p.plantations[slotIdx].colonist=true;
   } else {
-    if(!p.buildings[slotIdx] || p.buildings[slotIdx].colonist) return false;
-    p.buildings[slotIdx].colonist=true;
+    const b=p.buildings[slotIdx];
+    if(!b) return false;
+    if((b.colonists||0)>=buildingSlots(b.id)) return false;
+    b.colonists=(b.colonists||0)+1;
   }
   p.mayorAllotment--;
   return true;
 }
 function mayorMoveColonist(S, playerIdx, fromKind, fromIdx, toKind, toIdx){
   const p=S.players[playerIdx];
-  const fromSlot = fromKind==='plantation' ? p.plantations[fromIdx] : p.buildings[fromIdx];
-  const toSlot = toKind==='plantation' ? p.plantations[toIdx] : p.buildings[toIdx];
-  if(!fromSlot || !fromSlot.colonist) return false;
-  if(!toSlot || toSlot.colonist) return false;
-  fromSlot.colonist=false;
-  toSlot.colonist=true;
+  if(fromKind==='plantation'){
+    if(!p.plantations[fromIdx] || !p.plantations[fromIdx].colonist) return false;
+  } else {
+    const fromB=p.buildings[fromIdx];
+    if(!fromB || (fromB.colonists||0)<=0) return false;
+  }
+  if(toKind==='plantation'){
+    if(!p.plantations[toIdx] || p.plantations[toIdx].colonist) return false;
+  } else {
+    const toB=p.buildings[toIdx];
+    if(!toB || (toB.colonists||0)>=buildingSlots(toB.id)) return false;
+  }
+  if(fromKind==='plantation') p.plantations[fromIdx].colonist=false;
+  else p.buildings[fromIdx].colonists--;
+  if(toKind==='plantation') p.plantations[toIdx].colonist=true;
+  else p.buildings[toIdx].colonists=(p.buildings[toIdx].colonists||0)+1;
   return true;
 }
 function buyBuilding(S, playerIdx, buildingId){
@@ -637,7 +656,7 @@ function buyBuilding(S, playerIdx, buildingId){
   if(usedBuildingSize(p)+BUILDING_BY_ID[buildingId].size>12) return false;
   if(p.buildings.some(b=>b.id===buildingId)) return false; // no duplicate building types on one player's board
   p.doubloons-=cost;
-  p.buildings.push({id:buildingId,colonist:false});
+  p.buildings.push({id:buildingId,colonists:0});
   S.buildingSupply[buildingId]--;
   // NOTE: building VP does NOT draw from the shared victory-point chip pool -- only
   // shipping goods via Captain does that. Building points are added at final scoring
@@ -651,7 +670,7 @@ function buyBuilding(S, playerIdx, buildingId){
   }
   // University (대학): if the BUYER owns one, the newly-built building gets a free colonist immediately
   if(hasPower(p,'builder_new_building_colonist') && S.colonistPool>0){
-    p.buildings[p.buildings.length-1].colonist=true;
+    p.buildings[p.buildings.length-1].colonists=1;
     S.colonistPool--;
   }
   if(usedBuildingSize(p)>=12) S.endTriggered=true;
@@ -684,7 +703,7 @@ function shipGood(S, playerIdx, good, shipIdx){
   p.goods[good]-=amount;
   S.goodsBank[good]+=amount;
   ship.good=good; ship.amount+=amount;
-  const vp=awardVP(S, p, amount*shipVpMultiplier(p));
+  const vp=awardVP(S, p, amount+harborBonus(p));
   // NOTE: a full ship does NOT depart immediately -- it stays loaded (and unavailable)
   // until the whole Captain phase ends, at which point all full ships clear at once.
   S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
@@ -696,7 +715,7 @@ function shipViaWharf(S, playerIdx, good){
   const amount=p.goods[good];
   p.goods[good]=0;
   S.goodsBank[good]+=amount;
-  const vp=awardVP(S, p, amount*shipVpMultiplier(p));
+  const vp=awardVP(S, p, amount+harborBonus(p));
   S.lastMove={text:`${p.name}님이 부두로 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
 }
@@ -781,7 +800,7 @@ function advanceRoleTurn(S){
       while(S.plantationSupply.length<S.players.length+1){ const t=S.plantationDeck.pop(); if(!t) break; S.plantationSupply.push(t); }
     }
     if(S.activeRoleId==='mayor'){
-      const emptyBuildingSlots=S.players.reduce((s,p)=>s+p.buildings.filter(b=>!b.colonist).length,0);
+      const emptyBuildingSlots=S.players.reduce((s,p)=>s+p.buildings.reduce((s2,b)=>s2+(buildingSlots(b.id)-(b.colonists||0)),0),0);
       const needed=Math.max(emptyBuildingSlots, S.players.length);
       const arrive=Math.min(needed, S.colonistPool);
       S.colonistPool-=arrive;
@@ -842,7 +861,7 @@ function aiChooseRole(S, playerIdx){
     score.settler = filledPlantationCount(p)<10 ? 5 : 1;
   }
   if(availTypes.includes('mayor')){
-    const emptySlots=p.plantations.filter(x=>x&&!x.colonist).length + p.buildings.filter(b=>!b.colonist).length;
+    const emptySlots=p.plantations.filter(x=>x&&!x.colonist).length + p.buildings.reduce((s,b)=>s+(buildingSlots(b.id)-(b.colonists||0)),0);
     score.mayor = emptySlots>0 ? 5+emptySlots : 2;
   }
   if(availTypes.includes('prospector')) score.prospector = 2;
@@ -870,9 +889,13 @@ function aiMayorChoices(S, playerIdx){
   const moves=[];
   let remaining=p.mayorAllotment||0;
   // prioritize production buildings, then plantations, then other buildings
-  const emptyBuildings=p.buildings.map((b,i)=>({b,i})).filter(x=>!x.b.colonist);
+  const emptyBuildingSlotIdxs=[];
+  p.buildings.forEach((b,i)=>{
+    const avail=buildingSlots(b.id)-(b.colonists||0);
+    for(let k=0;k<avail;k++) emptyBuildingSlotIdxs.push(i);
+  });
   const emptyPlantations=p.plantations.map((pl,i)=>({pl,i})).filter(x=>x.pl&&!x.pl.colonist);
-  emptyBuildings.forEach(x=>{ if(remaining>0){ moves.push({kind:'building',slotIdx:x.i}); remaining--; } });
+  emptyBuildingSlotIdxs.forEach(i=>{ if(remaining>0){ moves.push({kind:'building',slotIdx:i}); remaining--; } });
   emptyPlantations.forEach(x=>{ if(remaining>0){ moves.push({kind:'plantation',slotIdx:x.i}); remaining--; } });
   return moves;
 }
@@ -1051,7 +1074,10 @@ function renderPlayers(st){
     const bldgHtml=p.buildings.map((b,i)=>{
       const bd=BUILDING_BY_ID[b.id];
       const catClass = bd.category==='production' ? `cat-${bd.good}` : 'cat-special';
-      return `<span class="bldg-tile ${catClass} colonist-dot" data-kind="building-slot" data-idx="${i}">${bd.name}<span class="colonist-badge ${b.colonist?'filled':'empty'}"></span></span>`;
+      const slots=buildingSlots(b.id);
+      const colonists=b.colonists||0;
+      const badges=Array.from({length:slots},(_,k)=>`<span class="b ${k<colonists?'filled':'empty'}"></span>`).join('');
+      return `<span class="bldg-tile ${catClass} colonist-dot" data-kind="building-slot" data-idx="${i}">${bd.name}<span class="colonist-badges">${badges}</span></span>`;
     }).join('') || '<span style="color:var(--muted);font-size:11px;">건물 없음</span>';
     const goodsHtml=GOODS.map(g=>p.goods[g]>0?`<div class="good-chip"><div class="dot" style="background:var(--${g})"></div>${GOOD_LABEL[g]} ${p.goods[g]}</div>`:'').join('');
     div.innerHTML=`
@@ -1110,25 +1136,35 @@ function localSkipSettler(){ selected=null; doAdvanceRoleTurn(); }
 function doMayorSlotClick(playerIdx, kind, slotIdx){
   const st=activeState();
   const p=st.players[playerIdx];
-  const slot = kind==='plantation' ? p.plantations[slotIdx] : p.buildings[slotIdx];
-  const occupied = slot && slot.colonist;
-  const empty = kind==='plantation' ? (slot && !slot.colonist) : (slot && !slot.colonist);
+  const hasRoom = kind==='plantation'
+    ? !!(p.plantations[slotIdx] && !p.plantations[slotIdx].colonist)
+    : !!(p.buildings[slotIdx] && (p.buildings[slotIdx].colonists||0) < buildingSlots(p.buildings[slotIdx].id));
+  const hasColonist = kind==='plantation'
+    ? !!(p.plantations[slotIdx] && p.plantations[slotIdx].colonist)
+    : !!(p.buildings[slotIdx] && (p.buildings[slotIdx].colonists||0)>0);
+
   if(selected && selected.kind==='mayor-move'){
-    if(empty){
+    if(selected.fromKind===kind && selected.fromIdx===slotIdx){
+      selected=null; renderAll(); return; // clicking the same slot again cancels the move
+    }
+    if(hasRoom){
       doMayorMove(playerIdx, selected.fromKind, selected.fromIdx, kind, slotIdx);
     }
     selected=null;
     renderAll();
     return;
   }
-  if(occupied){
+  // prefer placing a NEW colonist from the player's allotment when there's room
+  if((p.mayorAllotment||0)>0 && hasRoom){
+    doMayorAssign(playerIdx, kind, slotIdx);
+    return;
+  }
+  // otherwise, a staffed slot can be the source of a move
+  if(hasColonist){
     selected={kind:'mayor-move', fromKind:kind, fromIdx:slotIdx};
     renderAll();
     setMessage('옮길 빈 칸을 클릭하세요 (같은 칸을 다시 클릭하면 취소)','info');
     return;
-  }
-  if(empty){
-    doMayorAssign(playerIdx, kind, slotIdx);
   }
 }
 function doMayorAssign(playerIdx, kind, slotIdx){
