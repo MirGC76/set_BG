@@ -239,9 +239,9 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
       <div class="rules-box">
         <b>① 진행</b> — 매 라운드, 총독부터 시계 방향으로 한 명씩 역할을 하나 골라 그 역할의 행동을 합니다. 각자 라운드마다 역할 하나씩만 고를 수 있어요.<br>
         <b>② 역할 7가지</b><br>
-        &nbsp;· <b>탐험가</b> — 고른 사람만 동전 1개 획득<br>
-        &nbsp;· <b>개척자</b> — 모두 순서대로 농장/채석장 타일 1개를 섬에 놓을 수 있음<br>
-        &nbsp;· <b>시장</b> — 새 이주민이 도착, 모두 순서대로 농장·건물에 일꾼을 배치<br>
+        &nbsp;· <b>광부</b> (카드 2장) — 고른 사람만 동전 1개 획득<br>
+        &nbsp;· <b>개척자</b> — 모두 순서대로 공개된 농장 타일 1개를 섬에 놓음 (채석장은 고른 사람만 가능), 모두 끝나면 타일이 한꺼번에 새로 채워짐<br>
+        &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분, 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼 새 이주민 도착<br>
         &nbsp;· <b>건축가</b> — 모두 순서대로 건물 1개를 구매 가능 (고른 사람은 1 할인)<br>
         &nbsp;· <b>장인</b> — 모두 동시에 상품 생산 (일꾼 있는 농장 × 해당 건물 용량만큼)<br>
         &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능<br>
@@ -326,11 +326,11 @@ const GOODS=["corn","indigo","sugar","coffee","tobacco"];
 const SELL_PRICE={"corn":0,"indigo":1,"sugar":2,"tobacco":3,"coffee":4};
 const GOOD_LABEL={corn:"옥수수",indigo:"인디고",sugar:"설탕",coffee:"커피",tobacco:"인삼"};
 const ALL_BUILDINGS = [{"id":"small_indigo","name":"소형 인디고 공장","size":1,"cost":1,"vp":0,"category":"production","good":"indigo","capacity":1,"supply":4,"expansion":false},{"id":"indigo_plant","name":"인디고 공장","size":2,"cost":2,"vp":1,"category":"production","good":"indigo","capacity":3,"supply":3,"expansion":false},{"id":"small_sugar","name":"소형 제당소","size":1,"cost":2,"vp":0,"category":"production","good":"sugar","capacity":1,"supply":4,"expansion":false},{"id":"sugar_mill","name":"제당소","size":2,"cost":4,"vp":1,"category":"production","good":"sugar","capacity":3,"supply":3,"expansion":false},{"id":"small_tobacco","name":"소형 인삼 건조장","size":1,"cost":3,"vp":0,"category":"production","good":"tobacco","capacity":1,"supply":4,"expansion":false},{"id":"tobacco_factory","name":"인삼 공장","size":2,"cost":7,"vp":2,"category":"production","good":"tobacco","capacity":3,"supply":3,"expansion":false},{"id":"coffee_roaster","name":"커피 로스터리","size":2,"cost":6,"vp":2,"category":"production","good":"coffee","capacity":2,"supply":3,"expansion":false},{"id":"small_market","name":"소규모 시장","size":1,"cost":1,"vp":0,"category":"special","power":"sell_bonus_1","supply":2,"expansion":false},{"id":"hacienda","name":"농장 저택","size":1,"cost":2,"vp":0,"category":"special","power":"free_plantation","supply":2,"expansion":false},{"id":"small_warehouse","name":"소형 창고","size":1,"cost":3,"vp":0,"category":"special","power":"storage_plus_1","supply":2,"expansion":false},{"id":"hospice","name":"구빈원","size":2,"cost":4,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":2,"expansion":false},{"id":"office","name":"사무소","size":2,"cost":5,"vp":1,"category":"special","power":"sell_duplicate_ok","supply":2,"expansion":false},{"id":"large_market","name":"대형 시장","size":2,"cost":5,"vp":1,"category":"special","power":"sell_bonus_2","supply":2,"expansion":false},{"id":"university","name":"대학","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":2,"expansion":false},{"id":"large_warehouse","name":"대형 창고","size":2,"cost":6,"vp":1,"category":"special","power":"storage_plus_2","supply":2,"expansion":false},{"id":"harbor","name":"항구","size":3,"cost":8,"vp":2,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":false},{"id":"wharf","name":"부두","size":3,"cost":9,"vp":3,"category":"special","power":"free_shipping","supply":1,"expansion":false},{"id":"city_hall","name":"시청","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_special_building","supply":1,"expansion":false},{"id":"fortress","name":"요새","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_3_colonists","supply":1,"expansion":false},{"id":"customs_house","name":"세관","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_4_doubloons","supply":1,"expansion":false},{"id":"guild_hall","name":"길드 홀","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_2_production","supply":1,"expansion":false},{"id":"residence","name":"주택","size":3,"cost":10,"vp":4,"category":"special","power":"end_plantation_table","supply":1,"expansion":false},{"id":"coffee_exporter","name":"커피 수출상의 저택","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_coffee_2","supply":1,"expansion":true},{"id":"tobacco_distillery","name":"인삼 증류소","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_tobacco_2","supply":1,"expansion":true},{"id":"grand_hotel","name":"대저택","size":3,"cost":9,"vp":5,"category":"special","power":"flat_vp_bonus_3","supply":1,"expansion":true},{"id":"immigration_office","name":"이민 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":1,"expansion":true},{"id":"grand_market","name":"대형 시장 (확장)","size":2,"cost":6,"vp":1,"category":"special","power":"sell_bonus_2","supply":1,"expansion":true},{"id":"naval_base","name":"해군 기지","size":3,"cost":9,"vp":3,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":true},{"id":"grand_wharf","name":"대형 부두","size":3,"cost":11,"vp":4,"category":"special","power":"free_shipping","supply":1,"expansion":true},{"id":"plantation_office","name":"농장 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":1,"expansion":true}];
-const ROLES_DEF = [{"id":"prospector","name":"탐험가"},{"id":"settler","name":"개척자"},{"id":"mayor","name":"시장"},{"id":"builder","name":"건축가"},{"id":"craftsman","name":"장인"},{"id":"trader","name":"상인"},{"id":"captain","name":"선장"}];
+const ROLES_DEF = [{"id":"prospector","name":"광부","copies":2},{"id":"settler","name":"개척자"},{"id":"mayor","name":"시장"},{"id":"builder","name":"건축가"},{"id":"craftsman","name":"장인"},{"id":"trader","name":"상인"},{"id":"captain","name":"선장"}];
 const ROLE_DESC = {
-  prospector: "고른 사람만 동전 1개를 은행에서 가져옵니다. 다른 사람에게는 아무 효과가 없어요.",
-  settler: "총독부터 순서대로, 공개된 농장 타일이나 채석장 중 하나를 골라 자신의 섬 빈 칸에 놓을 수 있습니다 (원하면 건너뛰어도 돼요).",
-  mayor: "새 이주민이 배에 도착합니다. 총독부터 순서대로, 각자 자신의 농장·건물 빈 칸에 이주민을 원하는 만큼 배치합니다.",
+  prospector: "고른 사람만 동전 1개를 은행에서 가져옵니다. 다른 사람에게는 아무 효과가 없어요. (카드가 2장 있어서 같은 라운드에 두 명이 고를 수 있어요)",
+  settler: "총독부터 순서대로, 공개된 농장 타일 중 하나를 골라 자신의 섬 빈 칸에 놓을 수 있습니다 (채석장은 이 역할을 고른 사람만 가져갈 수 있어요). 가져간 타일은 모두의 차례가 끝난 뒤 한꺼번에 새로 채워집니다.",
+  mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 새 이주민이 배에 도착합니다.",
   builder: "총독부터 순서대로, 각자 건물을 하나 구매해 지을 수 있습니다. 이 역할을 고른 사람은 비용이 1 할인돼요.",
   craftsman: "모든 플레이어가 동시에 상품을 생산합니다 (일꾼 있는 농장 수 × 관련 건물 용량만큼). 이 역할을 고른 사람은 생산한 상품 중 하나를 1개 추가로 받아요.",
   trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요.",
@@ -463,7 +463,13 @@ function newGameState(numPlayers, useExpansion, playerNames){
     plantations:Array(12).fill(null), buildings:[], doubloons:STARTING_DOUBLOONS_BY_COUNT[numPlayers],
     goods:{corn:0,indigo:0,sugar:0,coffee:0,tobacco:0}, vp:0
   }));
-  S.roles=ROLES_DEF.map(r=>({...r, available:true, bonus:0}));
+  S.roles=[];
+  ROLES_DEF.forEach(r=>{
+    const copies=r.copies||1;
+    for(let i=0;i<copies;i++){
+      S.roles.push({ slotId: copies>1?`${r.id}_${i+1}`:r.id, roleType:r.id, name:r.name, available:true, bonus:0 });
+    }
+  });
   S.governorIdx=0; S.round=1; S.phase='role-pick'; S.currentPickerIdx=0; S.picksThisRound=0;
   S.activeRoleId=null; S.roleTurnOrder=[]; S.roleTurnPos=0; S.gameOver=false; S.endTriggered=false;
   S.plantationDeck=makePlantationDeck();
@@ -497,24 +503,25 @@ function currentActorIdx(S){
   if(S.phase==='role-pick' || S.phase==='craftsman') return S.currentPickerIdx;
   return S.roleTurnOrder[S.roleTurnPos];
 }
-function pickRole(S, roleId){
-  const r=S.roles.find(x=>x.id===roleId);
+function pickRole(S, slotId){
+  const r=S.roles.find(x=>x.slotId===slotId);
   if(!r || !r.available) return false;
   r.available=false;
-  S.activeRoleId=roleId;
+  const roleType=r.roleType;
+  S.activeRoleId=roleType;
   const pickerIdx=S.currentPickerIdx;
   const picker=S.players[pickerIdx];
   picker.doubloons+=r.bonus;
   r.bonus=0;
   S.roleTurnOrder=[]; for(let i=0;i<S.players.length;i++) S.roleTurnOrder.push((pickerIdx+i)%S.players.length);
   S.roleTurnPos=0;
-  if(roleId==='prospector'){
+  if(roleType==='prospector'){
     picker.doubloons+=1;
-    S.lastMove={text:`${picker.name}님이 탐험가로 동전을 얻었습니다`};
+    S.lastMove={text:`${picker.name}님이 광부로 동전을 얻었습니다`};
     finishRolePickTurn(S);
     return true;
   }
-  if(roleId==='settler'){
+  if(roleType==='settler'){
     S.phase='settler';
     S.lastMove={text:`${picker.name}님이 개척자를 선택했습니다`};
     if(hasPower(picker,'settler_bonus_colonist') && S.colonistPool>0){
@@ -526,15 +533,28 @@ function pickRole(S, roleId){
       }
     }
   }
-  else if(roleId==='mayor'){
-    const bonus=hasPower(picker,'mayor_bonus_colonist')?1:0;
-    const arriving=Math.min(1+bonus,S.colonistPool);
-    S.colonistPool-=arriving; S.shipColonists+=arriving; // colonists already waiting on ship (from prior rounds) carry over automatically since shipColonists isn't reset
+  else if(roleType==='mayor'){
+    // colonists on the ship are divided EQUALLY among all players; any remainder goes
+    // one-by-one starting from the picker, in turn order
+    const total=S.shipColonists;
+    const n=S.players.length;
+    const perPlayer=Math.floor(total/n);
+    const remainder=total%n;
+    S.players.forEach(p=>{ p.mayorAllotment=perPlayer; });
+    for(let k=0;k<remainder;k++){
+      const idx=S.roleTurnOrder[k%n];
+      S.players[idx].mayorAllotment++;
+    }
+    S.shipColonists=0;
+    if(hasPower(picker,'mayor_bonus_colonist') && S.colonistPool>0){
+      picker.mayorAllotment=(picker.mayorAllotment||0)+1;
+      S.colonistPool--;
+    }
     S.phase='mayor';
-    S.lastMove={text:`${picker.name}님이 시장을 선택했습니다 (이주민 ${S.shipColonists}명 대기 중)`};
+    S.lastMove={text:`${picker.name}님이 시장을 선택했습니다 (이주민 ${total}명을 나눠 가집니다)`};
   }
-  else if(roleId==='builder'){ S.phase='builder'; S.lastMove={text:`${picker.name}님이 건축가를 선택했습니다`}; }
-  else if(roleId==='craftsman'){
+  else if(roleType==='builder'){ S.phase='builder'; S.lastMove={text:`${picker.name}님이 건축가를 선택했습니다`}; }
+  else if(roleType==='craftsman'){
     S.phase='craftsman';
     S.roleTurnOrder.forEach(idx=>{
       const pl=S.players[idx];
@@ -547,8 +567,8 @@ function pickRole(S, roleId){
     });
     S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
   }
-  else if(roleId==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
-  else if(roleId==='captain'){ S.phase='captain'; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
+  else if(roleType==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
+  else if(roleType==='captain'){ S.phase='captain'; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
   return true;
 }
 function finishRolePickTurn(S){
@@ -569,6 +589,7 @@ function settlerPlaceTile(S, kind, supplyIdx, playerIdx, slotIdx){
   const p=S.players[playerIdx];
   if(p.plantations[slotIdx]) return false;
   if(kind==='quarry'){
+    if(playerIdx!==S.roleTurnOrder[0]) return false; // only the player who picked Settler may take a quarry
     if(S.quarrySupply<=0) return false;
     p.plantations[slotIdx]={type:'quarry',colonist:false};
     S.quarrySupply--;
@@ -577,15 +598,14 @@ function settlerPlaceTile(S, kind, supplyIdx, playerIdx, slotIdx){
     if(!tile) return false;
     p.plantations[slotIdx]={type:tile.type,colonist:false};
     S.plantationSupply.splice(supplyIdx,1);
-    const next=S.plantationDeck.pop();
-    if(next) S.plantationSupply.push(next);
+    // no immediate refill -- new tiles are revealed only once everyone has had their turn
   }
   S.lastMove={text:`${p.name}님이 농장 타일을 놓았습니다`};
   return true;
 }
 function mayorAssignColonist(S, playerIdx, kind, slotIdx){
-  if(S.shipColonists<=0) return false;
   const p=S.players[playerIdx];
+  if((p.mayorAllotment||0)<=0) return false;
   if(kind==='plantation'){
     if(!p.plantations[slotIdx] || p.plantations[slotIdx].colonist) return false;
     p.plantations[slotIdx].colonist=true;
@@ -593,7 +613,17 @@ function mayorAssignColonist(S, playerIdx, kind, slotIdx){
     if(!p.buildings[slotIdx] || p.buildings[slotIdx].colonist) return false;
     p.buildings[slotIdx].colonist=true;
   }
-  S.shipColonists--;
+  p.mayorAllotment--;
+  return true;
+}
+function mayorMoveColonist(S, playerIdx, fromKind, fromIdx, toKind, toIdx){
+  const p=S.players[playerIdx];
+  const fromSlot = fromKind==='plantation' ? p.plantations[fromIdx] : p.buildings[fromIdx];
+  const toSlot = toKind==='plantation' ? p.plantations[toIdx] : p.buildings[toIdx];
+  if(!fromSlot || !fromSlot.colonist) return false;
+  if(!toSlot || toSlot.colonist) return false;
+  fromSlot.colonist=false;
+  toSlot.colonist=true;
   return true;
 }
 function buyBuilding(S, playerIdx, buildingId){
@@ -675,6 +705,16 @@ function playerNeedsDiscard(S, p){ return GOODS.reduce((s,g)=>s+p.goods[g],0) > 
 function advanceRoleTurn(S){
   S.roleTurnPos++;
   if(S.roleTurnPos>=S.roleTurnOrder.length){
+    if(S.activeRoleId==='settler'){
+      while(S.plantationSupply.length<4){ const t=S.plantationDeck.pop(); if(!t) break; S.plantationSupply.push(t); }
+    }
+    if(S.activeRoleId==='mayor'){
+      const needed=S.players.reduce((s,p)=>s+p.buildings.filter(b=>!b.colonist).length,0);
+      const arrive=Math.min(needed, S.colonistPool);
+      S.colonistPool-=arrive;
+      S.shipColonists+=arrive;
+      S.players.forEach(p=>{ p.mayorAllotment=0; });
+    }
     if(S.activeRoleId==='captain'){ startCleanupIfNeeded(S); return; }
     finishRolePickTurn(S);
     return;
@@ -697,38 +737,39 @@ function advanceCleanupTurn(S){
 /* ============ SIMPLE AI HEURISTICS (solo mode) ============ */
 function aiChooseRole(S, playerIdx){
   const p=S.players[playerIdx];
-  const avail=S.roles.filter(r=>r.available).map(r=>r.id);
+  const availSlots=S.roles.filter(r=>r.available);
+  const availTypes=availSlots.map(r=>r.roleType);
   const score={};
-  if(avail.includes('builder')){
+  if(availTypes.includes('builder')){
     const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12);
     score.builder = affordable.length>0 ? 6+Math.max(...affordable.map(b=>b.vp)) : 0;
   }
-  if(avail.includes('craftsman')){
+  if(availTypes.includes('craftsman')){
     const totalProdCapable=GOODS.filter(g=>g!=='corn').reduce((s,g)=>{
       const active=p.plantations.filter(pl=>pl&&pl.type===g&&pl.colonist).length;
       return s+(active>0?1:0);
     },0);
     score.craftsman = 4+totalProdCapable;
   }
-  if(avail.includes('captain')){
+  if(availTypes.includes('captain')){
     const totalGoods=GOODS.reduce((s,g)=>s+p.goods[g],0);
     score.captain = totalGoods>0 ? 5+totalGoods : 0;
   }
-  if(avail.includes('trader')){
+  if(availTypes.includes('trader')){
     const sellable=GOODS.filter(g=>p.goods[g]>0);
     score.trader = sellable.length>0 ? 3+Math.max(0,...sellable.map(g=>SELL_PRICE[g])) : 0;
   }
-  if(avail.includes('settler')){
+  if(availTypes.includes('settler')){
     score.settler = filledPlantationCount(p)<10 ? 5 : 1;
   }
-  if(avail.includes('mayor')){
+  if(availTypes.includes('mayor')){
     const emptySlots=p.plantations.filter(x=>x&&!x.colonist).length + p.buildings.filter(b=>!b.colonist).length;
     score.mayor = emptySlots>0 ? 5+emptySlots : 2;
   }
-  if(avail.includes('prospector')) score.prospector = 2;
-  let best=avail[0], bestScore=-1;
-  avail.forEach(id=>{ const s=(score[id]||0)+ (S.roles.find(r=>r.id===id).bonus||0); if(s>bestScore){ bestScore=s; best=id; } });
-  return best;
+  if(availTypes.includes('prospector')) score.prospector = 2;
+  let best=availSlots[0], bestScore=-1;
+  availSlots.forEach(r=>{ const s=(score[r.roleType]||0)+(r.bonus||0); if(s>bestScore){ bestScore=s; best=r; } });
+  return best.slotId;
 }
 function aiSettlerChoice(S, playerIdx){
   const p=S.players[playerIdx];
@@ -748,7 +789,7 @@ function aiSettlerChoice(S, playerIdx){
 function aiMayorChoices(S, playerIdx){
   const p=S.players[playerIdx];
   const moves=[];
-  let remaining=S.shipColonists;
+  let remaining=p.mayorAllotment||0;
   // prioritize production buildings, then plantations, then other buildings
   const emptyBuildings=p.buildings.map((b,i)=>({b,i})).filter(x=>!x.b.colonist);
   const emptyPlantations=p.plantations.map((pl,i)=>({pl,i})).filter(x=>x.pl&&!x.pl.colonist);
@@ -853,16 +894,16 @@ function renderRoles(st){
   const el=document.getElementById('roles-row');
   const canPick = st.phase==='role-pick' && canIActNow();
   el.innerHTML=st.roles.map(r=>`
-    <div class="role-card ${r.available?'':'taken'} ${previewRoleId===r.id?'previewed':''}" data-role="${r.id}">
+    <div class="role-card ${r.available?'':'taken'} ${previewRoleId===r.slotId?'previewed':''}" data-role="${r.slotId}">
       <div class="rname">${r.name}</div>
       <div class="rbonus">${r.bonus>0?'+'+r.bonus+'금':''}</div>
     </div>
   `).join('');
   if(canPick){
     el.querySelectorAll('.role-card').forEach(div=>{
-      const r=st.roles.find(x=>x.id===div.dataset.role);
+      const r=st.roles.find(x=>x.slotId===div.dataset.role);
       if(r.available) div.addEventListener('click',()=>{
-        previewRoleId = (previewRoleId===r.id) ? null : r.id;
+        previewRoleId = (previewRoleId===r.slotId) ? null : r.slotId;
         renderRoles(st);
         renderRoleInfoPanel(st);
       });
@@ -875,11 +916,11 @@ function renderRoles(st){
 function renderRoleInfoPanel(st){
   const el=document.getElementById('role-info-panel');
   if(!previewRoleId || st.phase!=='role-pick' || !canIActNow()){ el.innerHTML=''; return; }
-  const r=st.roles.find(x=>x.id===previewRoleId);
+  const r=st.roles.find(x=>x.slotId===previewRoleId);
   el.innerHTML=`
     <div class="info-box">
       <div class="info-title">${r.name}</div>
-      <div class="info-desc">${ROLE_DESC[r.id]}</div>
+      <div class="info-desc">${ROLE_DESC[r.roleType]}</div>
       <button class="ctrl-btn primary" id="confirm-role-btn">이 역할 선택하기</button>
     </div>
   `;
@@ -892,7 +933,8 @@ function renderRoleInfoPanel(st){
 function renderSupply(st){
   const el=document.getElementById('supply-row');
   const plantHtml=st.plantationSupply.map((t,i)=>`<span class="tile ${t.type}" data-idx="${i}" data-kind="plantation">${t.type[0].toUpperCase()}</span>`).join('');
-  const quarryHtml=`<span class="tile quarry" data-kind="quarry">Q×${st.quarrySupply}</span>`;
+  const isSettlerPicker = st.roleTurnOrder.length>0 && currentActorIdx(st)===st.roleTurnOrder[0];
+  const quarryHtml=`<span class="tile quarry ${(st.phase==='settler' && !isSettlerPicker)?'disabled':''}" data-kind="quarry">Q×${st.quarrySupply}</span>`;
   const shipsHtml=st.ships.map((s,i)=>`<div class="ship-box"><b>배 ${i+1}</b><span>${s.good?GOOD_LABEL[s.good]:'비어있음'}</span><span>${s.amount}/${s.cap}</span></div>`).join('');
   const traderHtml=`<div class="supply-box">무역소: ${st.tradingHouse.map(g=>GOOD_LABEL[g]).join(', ')||'비어있음'} (${st.tradingHouse.length}/4)</div>`;
   el.innerHTML=`
@@ -909,7 +951,7 @@ function renderSupply(st){
       t.addEventListener('click',()=>{ selected={kind:'plantation', supplyIdx:+t.dataset.idx}; renderAll(); setMessage('놓을 빈 농장 칸을 클릭하세요','info'); });
     });
     const q=el.querySelector('.tile[data-kind="quarry"]');
-    if(q && st.quarrySupply>0) q.addEventListener('click',()=>{ selected={kind:'quarry', supplyIdx:null}; renderAll(); setMessage('놓을 빈 농장 칸을 클릭하세요','info'); });
+    if(q && st.quarrySupply>0 && isSettlerPicker) q.addEventListener('click',()=>{ selected={kind:'quarry', supplyIdx:null}; renderAll(); setMessage('놓을 빈 농장 칸을 클릭하세요','info'); });
   }
 }
 function renderPlayers(st){
@@ -957,11 +999,14 @@ function wirePlayerBoardInteractions(div, st, p, idx){
   if(st.phase==='mayor'){
     div.querySelectorAll('[data-kind="plantation-slot"]').forEach(s=>{
       const i=+s.dataset.idx;
-      if(p.plantations[i] && !p.plantations[i].colonist) s.addEventListener('click',()=>doMayorAssign(idx,'plantation',i));
+      const occupied=p.plantations[i] && p.plantations[i].colonist;
+      const empty=p.plantations[i] && !p.plantations[i].colonist;
+      if(empty) s.addEventListener('click',()=>doMayorSlotClick(idx,'plantation',i));
+      else if(occupied) s.addEventListener('click',()=>doMayorSlotClick(idx,'plantation',i));
     });
     div.querySelectorAll('[data-kind="building-slot"]').forEach(s=>{
       const i=+s.dataset.idx;
-      if(!p.buildings[i].colonist) s.addEventListener('click',()=>doMayorAssign(idx,'building',i));
+      s.addEventListener('click',()=>doMayorSlotClick(idx,'building',i));
     });
   }
 }
@@ -980,9 +1025,38 @@ function doSettlerPlace(playerIdx, slotIdx){
   doAdvanceRoleTurn();
 }
 function localSkipSettler(){ selected=null; doAdvanceRoleTurn(); }
+function doMayorSlotClick(playerIdx, kind, slotIdx){
+  const st=activeState();
+  const p=st.players[playerIdx];
+  const slot = kind==='plantation' ? p.plantations[slotIdx] : p.buildings[slotIdx];
+  const occupied = slot && slot.colonist;
+  const empty = kind==='plantation' ? (slot && !slot.colonist) : (slot && !slot.colonist);
+  if(selected && selected.kind==='mayor-move'){
+    if(empty){
+      doMayorMove(playerIdx, selected.fromKind, selected.fromIdx, kind, slotIdx);
+    }
+    selected=null;
+    renderAll();
+    return;
+  }
+  if(occupied){
+    selected={kind:'mayor-move', fromKind:kind, fromIdx:slotIdx};
+    renderAll();
+    setMessage('옮길 빈 칸을 클릭하세요 (같은 칸을 다시 클릭하면 취소)','info');
+    return;
+  }
+  if(empty){
+    doMayorAssign(playerIdx, kind, slotIdx);
+  }
+}
 function doMayorAssign(playerIdx, kind, slotIdx){
   if(isOnline()){ onlineMayorAssign(kind, slotIdx); return; }
   mayorAssignColonist(S, playerIdx, kind, slotIdx);
+  afterLocalChange();
+}
+function doMayorMove(playerIdx, fromKind, fromIdx, toKind, toIdx){
+  if(isOnline()){ onlineMayorMove(fromKind, fromIdx, toKind, toIdx); return; }
+  mayorMoveColonist(S, playerIdx, fromKind, fromIdx, toKind, toIdx);
   afterLocalChange();
 }
 let previewBuildingId=null;
@@ -1193,9 +1267,21 @@ function renderControls(st){
     btn.addEventListener('click',()=>{ selected=null; doAdvanceRoleTurn(); });
     el.appendChild(btn);
   } else if(phase==='mayor'){
+    const p=st.players[currentActorIdx(st)];
+    const remaining=p.mayorAllotment||0;
+    const label=document.createElement('div');
+    label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
+    label.textContent = remaining>0 ? `배치할 이주민 ${remaining}명 남음 (건물·농장 빈 칸을 클릭하세요)` : '이미 배치된 이주민은 다른 칸으로 옮길 수 있어요 (일꾼 있는 칸 클릭 → 옮길 빈 칸 클릭)';
+    el.appendChild(label);
+    if(selected && selected.kind==='mayor-move'){
+      const cancelBtn=document.createElement('button');
+      cancelBtn.className='ctrl-btn'; cancelBtn.textContent='이동 취소';
+      cancelBtn.addEventListener('click',()=>{ selected=null; renderAll(); });
+      el.appendChild(cancelBtn);
+    }
     const btn=document.createElement('button');
     btn.className='ctrl-btn primary'; btn.textContent='배치 완료 (다음 사람)';
-    btn.addEventListener('click',()=>doAdvanceRoleTurn());
+    btn.addEventListener('click',()=>{ selected=null; doAdvanceRoleTurn(); });
     el.appendChild(btn);
   } else if(phase==='builder'){
     const openBtn=document.createElement('button');
@@ -1464,6 +1550,7 @@ async function onlineCommit(mutatorFn){
 function onlinePickRole(roleId){ onlineCommit((room)=>{ pickRole(room, roleId); }); }
 function onlineSettlerPlace(kind, supplyIdx, slotIdx){ onlineCommit((room,idx)=>{ settlerPlaceTile(room, kind, supplyIdx, idx, slotIdx); advanceRoleTurn(room); }); }
 function onlineMayorAssign(kind, slotIdx){ onlineCommit((room,idx)=>{ mayorAssignColonist(room, idx, kind, slotIdx); }); }
+function onlineMayorMove(fromKind, fromIdx, toKind, toIdx){ onlineCommit((room,idx)=>{ mayorMoveColonist(room, idx, fromKind, fromIdx, toKind, toIdx); }); }
 function onlineBuyBuilding(buildingId){ onlineCommit((room,idx)=>{ buyBuilding(room, idx, buildingId); advanceRoleTurn(room); }); }
 function onlineSellGood(good){ onlineCommit((room,idx)=>{ sellGood(room, idx, good); advanceRoleTurn(room); }); }
 function onlineShipGood(good, shipIdx){ onlineCommit((room,idx)=>{ shipGood(room, idx, good, shipIdx); }); }
