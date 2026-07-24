@@ -202,6 +202,12 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
       </div>
       <h2 style="margin-top:18px;">내 순서</h2>
       <div class="row-btns" id="solo-order-grid"></div>
+      <h2 style="margin-top:18px;">컴퓨터 난이도</h2>
+      <div class="row-btns" id="solo-difficulty-grid">
+        <button class="opt-btn" data-diff="easy">쉬움</button>
+        <button class="opt-btn selected" data-diff="normal">보통</button>
+        <button class="opt-btn" data-diff="hard">어려움</button>
+      </div>
     </div>
 
     <div class="panel hidden" id="local-panel">
@@ -870,14 +876,18 @@ function advanceCleanupTurn(S){
 }
 
 /* ============ SIMPLE AI HEURISTICS (solo mode) ============ */
-function aiChooseRole(S, playerIdx){
+function aiChooseRole(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   const availSlots=S.roles.filter(r=>r.available);
+  if(difficulty==='easy' && Math.random()<0.65){
+    return availSlots[Math.floor(Math.random()*availSlots.length)].slotId;
+  }
   const availTypes=availSlots.map(r=>r.roleType);
   const score={};
   if(availTypes.includes('builder')){
     const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12 && !p.buildings.some(x=>x.id===b.id));
     score.builder = affordable.length>0 ? 6+Math.max(...affordable.map(b=>b.vp)) : 0;
+    if(difficulty==='hard' && affordable.some(b=>b.category==='production')) score.builder += 2;
   }
   if(availTypes.includes('craftsman')){
     const totalProdCapable=GOODS.filter(g=>g!=='corn').reduce((s,g)=>{
@@ -889,6 +899,7 @@ function aiChooseRole(S, playerIdx){
   if(availTypes.includes('captain')){
     const totalGoods=GOODS.reduce((s,g)=>s+p.goods[g],0);
     score.captain = totalGoods>0 ? 5+totalGoods : 0;
+    if(difficulty==='hard' && S.vpPool<20 && totalGoods>0) score.captain += 4;
   }
   if(availTypes.includes('trader')){
     const sellable=GOODS.filter(g=>p.goods[g]>0);
@@ -906,11 +917,18 @@ function aiChooseRole(S, playerIdx){
   availSlots.forEach(r=>{ const s=(score[r.roleType]||0)+(r.bonus||0); if(s>bestScore){ bestScore=s; best=r; } });
   return best.slotId;
 }
-function aiSettlerChoice(S, playerIdx){
+function aiSettlerChoice(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   if(filledPlantationCount(p)>=11) return null;
   const emptySlot=p.plantations.findIndex(x=>!x);
   if(emptySlot<0) return null;
+  const canQuarry = S.quarrySupply>0 && (playerIdx===S.roleTurnOrder[0] || hasPower(p,'quarry_option'));
+  if(difficulty==='easy'){
+    const options=S.plantationSupply.map((t,i)=>({kind:'plantation',supplyIdx:i,slotIdx:emptySlot}));
+    if(canQuarry) options.push({kind:'quarry',supplyIdx:null,slotIdx:emptySlot});
+    if(options.length===0) return null;
+    return options[Math.floor(Math.random()*options.length)];
+  }
   // prefer a good matching existing unused production capacity, else corn, else whatever's available
   const wantedGood=GOODS.find(g=>g!=='corn' && p.buildings.some(b=>BUILDING_BY_ID[b.id].good===g) &&
     p.plantations.filter(pl=>pl&&pl.type===g).length < p.buildings.filter(b=>BUILDING_BY_ID[b.id].good===g).reduce((s,b)=>s+BUILDING_BY_ID[b.id].capacity,0));
@@ -918,43 +936,62 @@ function aiSettlerChoice(S, playerIdx){
   if(idx<0) idx=S.plantationSupply.findIndex(t=>t.type==='corn');
   if(idx<0 && S.plantationSupply.length>0) idx=0;
   if(idx>=0) return {kind:'plantation', supplyIdx:idx, slotIdx:emptySlot};
-  if(S.quarrySupply>0) return {kind:'quarry', supplyIdx:null, slotIdx:emptySlot};
+  if(canQuarry) return {kind:'quarry', supplyIdx:null, slotIdx:emptySlot};
   return null;
 }
-function aiMayorChoices(S, playerIdx){
+function aiMayorChoices(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   const moves=[];
   let remaining=p.mayorAllotment||0;
-  // prioritize production buildings, then plantations, then other buildings
   const emptyBuildingSlotIdxs=[];
   p.buildings.forEach((b,i)=>{
     const avail=buildingSlots(b.id)-(b.colonists||0);
     for(let k=0;k<avail;k++) emptyBuildingSlotIdxs.push(i);
   });
   const emptyPlantations=p.plantations.map((pl,i)=>({pl,i})).filter(x=>x.pl&&!x.pl.colonist);
+  if(difficulty==='easy'){
+    const allTargets=[...emptyBuildingSlotIdxs.map(i=>({kind:'building',slotIdx:i})), ...emptyPlantations.map(x=>({kind:'plantation',slotIdx:x.i}))];
+    for(let i=allTargets.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [allTargets[i],allTargets[j]]=[allTargets[j],allTargets[i]]; }
+    allTargets.forEach(t=>{ if(remaining>0){ moves.push(t); remaining--; } });
+    return moves;
+  }
+  // prioritize production buildings, then plantations, then other buildings
   emptyBuildingSlotIdxs.forEach(i=>{ if(remaining>0){ moves.push({kind:'building',slotIdx:i}); remaining--; } });
   emptyPlantations.forEach(x=>{ if(remaining>0){ moves.push({kind:'plantation',slotIdx:x.i}); remaining--; } });
   return moves;
 }
-function aiBuilderChoice(S, playerIdx){
+function aiBuilderChoice(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12 && !p.buildings.some(x=>x.id===b.id));
   if(affordable.length===0) return null;
+  if(difficulty==='easy'){
+    return affordable[Math.floor(Math.random()*affordable.length)].id;
+  }
+  if(difficulty==='hard'){
+    affordable.sort((a,b)=>{
+      const scoreA=a.vp*2 + (a.category==='production' && p.plantations.some(pl=>pl&&pl.type===a.good) ? 3 : 0) - a.cost*0.3;
+      const scoreB=b.vp*2 + (b.category==='production' && p.plantations.some(pl=>pl&&pl.type===b.good) ? 3 : 0) - b.cost*0.3;
+      return scoreB-scoreA;
+    });
+    return affordable[0].id;
+  }
   affordable.sort((a,b)=>b.vp-a.vp || b.cost-a.cost);
   return affordable[0].id;
 }
-function aiCraftsmanBonus(S, playerIdx){
+function aiCraftsmanBonus(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   const choices=S.craftsmanBonusChoices||[];
   if(choices.length===0) return null;
+  if(difficulty==='easy') return choices[Math.floor(Math.random()*choices.length)];
   let best=choices[0], bestAmt=-1;
   choices.forEach(g=>{ if(p.goods[g]>bestAmt){ bestAmt=p.goods[g]; best=g; } });
   return best;
 }
-function aiTraderChoice(S, playerIdx){
+function aiTraderChoice(S, playerIdx, difficulty){
   const p=S.players[playerIdx];
   const sellable=GOODS.filter(g=>p.goods[g]>0 && S.tradingHouse.length<4 && (!S.tradingHouse.includes(g)||hasPower(p,'sell_duplicate_ok')));
   if(sellable.length===0) return null;
+  if(difficulty==='easy') return sellable[Math.floor(Math.random()*sellable.length)];
   sellable.sort((a,b)=>sellPriceFor(b,p,false)-sellPriceFor(a,p,false));
   return sellable[0];
 }
@@ -1006,9 +1043,11 @@ function canIActNow(){
 }
 
 /* ============ NEW GAME (local/solo) ============ */
-function startLocalGame(numPlayers, aiSeatIndices, useExpansion){
+let aiDifficulty='normal';
+function startLocalGame(numPlayers, aiSeatIndices, useExpansion, difficulty){
   mode=(aiSeatIndices && aiSeatIndices.length>0) ? 'solo' : 'local';
   aiSeats=new Set(aiSeatIndices||[]);
+  aiDifficulty=difficulty||'normal';
   const names=Array.from({length:numPlayers},(_,i)=>`플레이어 ${i+1}${aiSeats.has(i)?' 🤖':''}`);
   S=newGameState(numPlayers, useExpansion, names);
   selected=null;
@@ -1357,25 +1396,26 @@ function performAiStep(){
   if(S.gameOver) return;
   const idx=currentActorIdx(S);
   if(!aiSeats.has(idx)) return;
+  const diff=aiDifficulty;
   if(S.phase==='role-pick'){
-    const roleId=aiChooseRole(S, idx);
+    const roleId=aiChooseRole(S, idx, diff);
     pickRole(S, roleId);
   } else if(S.phase==='settler'){
-    const choice=aiSettlerChoice(S, idx);
+    const choice=aiSettlerChoice(S, idx, diff);
     if(choice) settlerPlaceTile(S, choice.kind, choice.supplyIdx, idx, choice.slotIdx);
     advanceRoleTurn(S);
   } else if(S.phase==='mayor'){
-    const moves=aiMayorChoices(S, idx);
+    const moves=aiMayorChoices(S, idx, diff);
     moves.forEach(m=>mayorAssignColonist(S, idx, m.kind, m.slotIdx));
     advanceRoleTurn(S);
   } else if(S.phase==='builder'){
-    const buildingId=aiBuilderChoice(S, idx);
+    const buildingId=aiBuilderChoice(S, idx, diff);
     if(buildingId) buyBuilding(S, idx, buildingId);
     advanceRoleTurn(S);
   } else if(S.phase==='craftsman'){
-    craftsmanBonus(S, idx, aiCraftsmanBonus(S, idx));
+    craftsmanBonus(S, idx, aiCraftsmanBonus(S, idx, diff));
   } else if(S.phase==='trader'){
-    const good=aiTraderChoice(S, idx);
+    const good=aiTraderChoice(S, idx, diff);
     if(good) sellGood(S, idx, good);
     advanceRoleTurn(S);
   } else if(S.phase==='captain'){
@@ -1383,7 +1423,8 @@ function performAiStep(){
     const exportable=GOODS.filter(g=>canExportGood(S,p,g));
     let exportedSomething=false;
     if(exportable.length>0){
-      exportable.sort((a,b)=>p.goods[b]-p.goods[a]); // dump the biggest pile first
+      if(diff==='easy'){ exportable.sort(()=>Math.random()-0.5); }
+      else { exportable.sort((a,b)=>p.goods[b]-p.goods[a]); } // dump the biggest pile first
       const r=exportGoodType(S, idx, exportable[0]);
       exportedSomething=r.amount>0;
     }
@@ -1392,7 +1433,9 @@ function performAiStep(){
     const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
     const cleanIdx=S.roleTurnOrder[S.roleTurnPos];
     const slots=fullyKeptTypeSlots(p);
-    const held=GOODS.filter(g=>p.goods[g]>0).sort((a,b)=>p.goods[b]-p.goods[a]);
+    const held = diff==='easy'
+      ? GOODS.filter(g=>p.goods[g]>0).sort(()=>Math.random()-0.5)
+      : GOODS.filter(g=>p.goods[g]>0).sort((a,b)=>p.goods[b]-p.goods[a]);
     p.cleanupProtected=held.slice(0,slots);
     const unprotectedOrder=[...GOODS].filter(g=>!p.cleanupProtected.includes(g)).sort((a,b)=>SELL_PRICE[a]-SELL_PRICE[b]);
     while(unprotectedTotal(p)>1){
@@ -1815,12 +1858,20 @@ document.querySelectorAll('#mode-grid .opt-btn').forEach(btn=>{
   });
 });
 document.getElementById('start-btn').dataset.mode='solo';
+let soloDifficultyChoice='normal';
+document.querySelectorAll('#solo-difficulty-grid .opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#solo-difficulty-grid .opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    soloDifficultyChoice=btn.dataset.diff;
+  });
+});
 document.getElementById('start-btn').addEventListener('click',()=>{
   const m=document.getElementById('start-btn').dataset.mode;
   showScreen('game');
   if(m==='solo'){
     const aiList=[...Array(soloCount).keys()].filter(i=>i!==soloHumanSeatChoice);
-    startLocalGame(soloCount, aiList, useExpansionChoice);
+    startLocalGame(soloCount, aiList, useExpansionChoice, soloDifficultyChoice);
   } else {
     startLocalGame(chosenCount, [], useExpansionChoice);
   }
