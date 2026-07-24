@@ -249,7 +249,7 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
         <b>④ 창고</b> — 소형/대형 창고 건물이 없으면, 그 라운드에 팔거나 싣지 못한 상품은 라운드가 끝날 때 버려집니다.<br>
         <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.<br>
-        <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있어서, 다 소진되면 그 이후로는 아무도 승점을 더 얻을 수 없습니다.<br>
+        <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있고, <b>선장 역할로 상품을 배에 실을 때만</b> 이 칩에서 가져옵니다 (다 소진되면 그 이후로는 선적으로 승점을 더 얻을 수 없어요). 건물을 지을 때 얻는 승점은 이 칩과 무관하며, 게임이 끝날 때 항상 그대로 합산됩니다.<br>
         <b>⑦ 인원 수에 따라</b> 배 크기·시작 농장·시작 자금·승점 칩 총량·이주민 총량이 규칙에 맞게 달라집니다.<br>
         <b>⑧ 상품 창고</b>도 정해진 수량만 있어서, 다 떨어진 상품은 생산할 수 없어요. 팔거나 싣거나 버린 상품은 다시 창고로 돌아갑니다.
       </div>
@@ -351,7 +351,7 @@ function buildingDescription(b){
     sell_duplicate_ok: "무역소에 이미 같은 색 상품이 있어도 팔 수 있습니다.",
     ship_vp_bonus_1: "상품을 배에 실을 때마다 승점을 2배로 받습니다.",
     free_shipping: "배가 가득 차 있거나 없어도, 부두를 통해 상품을 원하는 만큼 실어 승점을 받을 수 있습니다.",
-    flat_vp_bonus_3: "건설하는 즉시 승점 3점을 추가로 받습니다.",
+    flat_vp_bonus_3: "이 건물 자체의 승점(5점)에 더해, 최종 점수 계산 시 3점을 추가로 더 받습니다.",
     end_per_special_building: "[게임 종료 시] 갖고 있는 특수 건물 1개당 승점 1점.",
     end_per_3_colonists: "[게임 종료 시] 내 섬에 배치된 이주민 3명당 승점 1점.",
     end_per_4_doubloons: "[게임 종료 시] 갖고 있는 동전 4개당 승점 1점.",
@@ -422,7 +422,16 @@ function computeFinalBonusVP(p){
   });
   return bonus;
 }
-function totalScore(p){ return p.vp + computeFinalBonusVP(p); }
+function computeBuildingVP(p){
+  let total=0;
+  p.buildings.forEach(b=>{
+    const bd=BUILDING_BY_ID[b.id];
+    total+=bd.vp;
+    if(bd.power==='flat_vp_bonus_3') total+=3;
+  });
+  return total;
+}
+function totalScore(p){ return p.vp + computeBuildingVP(p) + computeFinalBonusVP(p); }
 function sellPriceFor(good, p, isPicker){
   let price=SELL_PRICE[good]+sellBonus(p)+(isPicker?1:0);
   if(good==='coffee') price += powerCount(p,'sell_bonus_coffee_2')*2;
@@ -482,7 +491,7 @@ function newGameState(numPlayers, useExpansion, playerNames){
     const tile = idx>=0 ? S.plantationDeck.splice(idx,1)[0] : {type:wantType};
     p.plantations[0]={type:tile.type,colonist:false};
   });
-  S.plantationSupply=[]; for(let i=0;i<4;i++){ const t=S.plantationDeck.pop(); if(t) S.plantationSupply.push(t); }
+  S.plantationSupply=[]; for(let i=0;i<numPlayers+1;i++){ const t=S.plantationDeck.pop(); if(t) S.plantationSupply.push(t); }
   S.quarrySupply=8;
   S.buildingSupply={}; ALL_BUILDINGS.forEach(b=>{ if(!b.expansion || S.useExpansion) S.buildingSupply[b.id]=b.supply; });
   // colonists: fixed total per player count, minus the initial batch already waiting on the ship
@@ -636,14 +645,16 @@ function buyBuilding(S, playerIdx, buildingId){
   p.doubloons-=cost;
   p.buildings.push({id:buildingId,colonist:false});
   S.buildingSupply[buildingId]--;
-  awardVP(S, p, BUILDING_BY_ID[buildingId].vp);
+  // NOTE: building VP does NOT draw from the shared victory-point chip pool -- only
+  // shipping goods via Captain does that. Building points are added at final scoring
+  // instead (see computeBuildingVP), matching how the physical building VP is a
+  // printed value on the card rather than chips taken from the bank.
   const power=BUILDING_BY_ID[buildingId].power;
   if(power==='free_plantation'){
     const next=S.plantationDeck.pop();
     const emptySlot=p.plantations.findIndex(x=>!x);
     if(next && emptySlot>=0) p.plantations[emptySlot]={type:next.type,colonist:false};
   }
-  if(power==='flat_vp_bonus_3') awardVP(S, p, 3);
   if(usedBuildingSize(p)>=12) S.endTriggered=true;
   S.lastMove={text:`${p.name}님이 ${BUILDING_BY_ID[buildingId].name}을(를) 건설했습니다`};
   return true;
@@ -706,7 +717,7 @@ function advanceRoleTurn(S){
   S.roleTurnPos++;
   if(S.roleTurnPos>=S.roleTurnOrder.length){
     if(S.activeRoleId==='settler'){
-      while(S.plantationSupply.length<4){ const t=S.plantationDeck.pop(); if(!t) break; S.plantationSupply.push(t); }
+      while(S.plantationSupply.length<S.players.length+1){ const t=S.plantationDeck.pop(); if(!t) break; S.plantationSupply.push(t); }
     }
     if(S.activeRoleId==='mayor'){
       const needed=S.players.reduce((s,p)=>s+p.buildings.filter(b=>!b.colonist).length,0);
@@ -975,7 +986,7 @@ function renderPlayers(st){
     div.innerHTML=`
       <div class="pb-header">
         <div class="pb-name">${idx===st.governorIdx?'👑 ':''}${p.name}${(!isOnline()&&mode==='solo'&&idx===soloHumanSeat)?' (나)':''}${isOnline()&&idx===myPlayerIdx()?' (나)':''}</div>
-        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${p.vp}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span></div>
+        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${totalScore(p)}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span></div>
       </div>
       <div class="pb-row-label">농장 (${filledPlantationCount(p)}/12)</div>
       <div class="pb-slots">${plantHtml}</div>
@@ -1367,20 +1378,20 @@ function renderControls(st){
 
 /* ============ END GAME (local/solo) ============ */
 function finishGame(){
-  const scored=S.players.map(p=>({name:p.name, score:totalScore(p), buildingVp:p.vp, bonusVp:computeFinalBonusVP(p)}));
+  const scored=S.players.map(p=>({name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p)}));
   scored.sort((a,b)=>b.score-a.score);
   document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
-  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (기본 ${s.buildingVp} + 건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp})`).join('<br>');
   document.getElementById('end-overlay').classList.remove('hidden');
 }
 function finishGameOnline(room){
   const scored=room.playerOrder.map(uid=>{
     const p=room.players.find(x=>x.uid===uid);
-    return {name:p.name, score:totalScore(p), buildingVp:p.vp, bonusVp:computeFinalBonusVP(p)};
+    return {name:p.name, score:totalScore(p), shipVp:p.vp, buildingVp:computeBuildingVP(p), bonusVp:computeFinalBonusVP(p)};
   });
   scored.sort((a,b)=>b.score-a.score);
   document.getElementById('end-winner').textContent=scored[0].name+' 승리!';
-  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (기본 ${s.buildingVp} + 건물 보너스 ${s.bonusVp})`).join('<br>');
+  document.getElementById('final-scores').innerHTML=scored.map(s=>`${s.name}: ${s.score}점 (선적 ${s.shipVp} + 건물 ${s.buildingVp} + 특수건물 보너스 ${s.bonusVp})`).join('<br>');
   document.getElementById('end-overlay').classList.remove('hidden');
 }
 
