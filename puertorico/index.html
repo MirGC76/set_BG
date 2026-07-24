@@ -124,6 +124,11 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 .colonist-badge.filled{background:#7a4a28;}
 .colonist-badge.empty{background:#fff;}
 .bldg-tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:6px;font-size:9px;font-weight:800;color:#fff;margin:2px;padding:2px;background:#4a3d2a;border:2px solid transparent;cursor:pointer;text-align:center;line-height:1.1;}
+.cat-indigo{background:var(--indigo) !important;}
+.cat-sugar{background:#8a8a6a !important;color:#1a1a1a !important;}
+.cat-coffee{background:var(--coffee) !important;}
+.cat-tobacco{background:var(--tobacco) !important;}
+.cat-special{background:#6b4f8a !important;}
 .bldg-tile.selected{border-color:#fff;}
 .pb-goods{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
 .good-chip{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.25);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;}
@@ -244,10 +249,10 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분(고른 사람은 1명 추가), 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼(최소 인원 수만큼은 항상) 새 이주민 도착<br>
         &nbsp;· <b>건축가</b> — 모두 순서대로 건물 1개를 구매 가능 (고른 사람은 1 할인)<br>
         &nbsp;· <b>장인</b> — 모두 동시에 상품 생산 (일꾼 있는 농장 × 해당 건물 용량만큼)<br>
-        &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능<br>
-        &nbsp;· <b>선장</b> — 고른 사람부터 순서대로 한 턴에 한 가지 상품만 배에 실음 (실을 수 있으면 반드시), 아무도 실을 수 없을 때까지 계속 돌아감<br>
+        &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능 (같은 색 중복 불가, 사무소 있으면 예외), 턴이 끝날 때 4가지가 다 차 있으면 통째로 비워짐<br>
+        &nbsp;· <b>선장</b> — 고른 사람부터 순서대로 한 턴에 한 가지 상품만, 자리가 있는 만큼 전부 배에 실음 (다른 배가 싣고 있는 종류는 불가, 실을 수 있으면 반드시), 아무도 실을 수 없을 때까지 계속 돌아가고 가득 찬 배는 선장 턴이 끝난 뒤 한꺼번에 출항<br>
         <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
-        <b>④ 창고</b> — 소형/대형 창고 건물이 없으면, 그 라운드에 팔거나 싣지 못한 상품은 라운드가 끝날 때 버려집니다.<br>
+        <b>④ 창고</b> — 선적이 끝난 뒤, 기본적으로 상품 1개만 보관할 수 있어요. 소형 창고가 있으면 원하는 1종류를, 대형 창고까지 있으면 2종류를 추가로 개수 제한 없이 보관할 수 있고, 그 외 나머지는 합쳐서 1개까지만 남기고 버려집니다.<br>
         <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.<br>
         <b>⑥ 승점 칩</b>은 총 75개로 한정되어 있고, <b>선장 역할로 상품을 배에 실을 때만</b> 이 칩에서 가져옵니다 (다 소진되면 그 이후로는 선적으로 승점을 더 얻을 수 없어요). 건물을 지을 때 얻는 승점은 이 칩과 무관하며, 게임이 끝날 때 항상 그대로 합산됩니다.<br>
         <b>⑦ 인원 수에 따라</b> 배 크기·시작 농장·시작 자금·승점 칩 총량·이주민 총량이 규칙에 맞게 달라집니다.<br>
@@ -333,8 +338,8 @@ const ROLE_DESC = {
   mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 이 역할을 고른 사람은 이주민 1명을 추가로 더 받아요. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 (최소 플레이어 수만큼은 항상) 새 이주민이 배에 도착합니다.",
   builder: "총독부터 순서대로, 각자 건물을 하나 구매해 지을 수 있습니다. 이 역할을 고른 사람은 비용이 1 할인돼요.",
   craftsman: "모든 플레이어가 동시에 상품을 생산합니다 (일꾼 있는 농장 수 × 관련 건물 용량만큼). 이 역할을 고른 사람은 생산한 상품 중 하나를 1개 추가로 받아요.",
-  trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요.",
-  captain: "선장을 고른 사람부터 순서대로, 한 턴에 한 가지 상품만 배(또는 부두)에 실을 수 있습니다. 각 수송선은 한 가지 종류의 상품만 실을 수 있어요. 실을 수 있으면 반드시 실어야 해요. 모두를 한 바퀴 돌면서 아무도 실을 수 없을 때까지 계속 돌아갑니다. 실은 개수만큼 승점을 얻습니다.",
+  trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이미 무역소에 있는 색은 팔 수 없어요 (사무소가 있으면 예외). 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요. 상인 턴이 끝날 때 무역소에 4가지가 다 채워져 있으면 통째로 비워집니다.",
+  captain: "선장을 고른 사람부터 순서대로, 한 턴에 한 가지 상품만 배(또는 부두)에 실을 수 있습니다. 각 수송선은 한 가지 종류의 상품만 실을 수 있고, 이미 다른 두 배 중 하나가 싣고 있는 종류는 실을 수 없어요. 자리가 있으면 가진 만큼 전부 실어야 해요. 실을 수 있으면 반드시 실어야 하고, 모두를 한 바퀴 돌면서 아무도 실을 수 없을 때까지 계속 돌아갑니다. 가득 찬 배는 바로 비워지지 않고 선장 턴이 전부 끝난 뒤 한꺼번에 출항합니다. 실은 개수만큼 승점을 얻습니다.",
 };
 function buildingDescription(b){
   if(b.category==='production') return `${GOOD_LABEL[b.good]} 농장에서 생산한 상품을 가공합니다. 이주민 최대 ${b.capacity}명, 한 번에 최대 ${b.capacity}개 생산.`;
@@ -344,8 +349,8 @@ function buildingDescription(b){
     sell_bonus_coffee_2: "커피를 팔 때마다 2금을 추가로 받습니다.",
     sell_bonus_tobacco_2: "인삼을 팔 때마다 2금을 추가로 받습니다.",
     free_plantation: "건설하는 즉시 무작위 농장 타일 1개를 무료로 받아 섬에 놓습니다.",
-    storage_plus_1: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 1 늘어납니다 (없으면 못 판·못 실은 상품은 라운드 끝에 버려져요).",
-    storage_plus_2: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 2 늘어납니다.",
+    storage_plus_1: "라운드가 끝난 뒤 보관할 수 있는 상품 1종류를 개수 제한 없이 더 지정할 수 있습니다 (기본으로 항상 1개는 보관 가능, 이 건물로 원하는 종류 1가지는 전부 보관 가능해져요).",
+    storage_plus_2: "라운드가 끝난 뒤 보관할 수 있는 상품 2종류를 개수 제한 없이 더 지정할 수 있습니다.",
     mayor_bonus_colonist: "시장 역할을 고르면, 원래 특권으로 받는 1명에 더해 이주민 1명을 추가로 받습니다 (총 +2명).",
     settler_bonus_colonist: "개척자 역할을 고르면, 내 섬의 빈 칸에 이주민 1명을 즉시 무료로 배치합니다.",
     sell_duplicate_ok: "무역소에 이미 같은 색 상품이 있어도 팔 수 있습니다.",
@@ -385,7 +390,6 @@ function filledPlantationCount(p){ return p.plantations.filter(x=>x).length; }
 function activeColonistCount(p){ return p.plantations.filter(x=>x&&x.colonist).length + p.buildings.filter(b=>b.colonist).length; }
 function hasPower(p, power){ return p.buildings.some(b=>BUILDING_BY_ID[b.id].power===power); }
 function powerCount(p, power){ return p.buildings.filter(b=>BUILDING_BY_ID[b.id].power===power).length; }
-function storageCapacity(p){ return powerCount(p,'storage_plus_1')*1 + powerCount(p,'storage_plus_2')*2; }
 function activeQuarries(p){ return p.plantations.filter(x=>x&&x.type==='quarry'&&x.colonist).length; }
 function sellBonus(p){ return powerCount(p,'sell_bonus_1')*1 + powerCount(p,'sell_bonus_2')*2; }
 function computeProduction(p){
@@ -549,7 +553,7 @@ function pickRole(S, slotId){
     const n=S.players.length;
     const perPlayer=Math.floor(total/n);
     const remainder=total%n;
-    S.players.forEach(p=>{ p.mayorAllotment=perPlayer; });
+    S.players.forEach(p=>{ p.mayorAllotment=(p.mayorAllotment||0)+perPlayer; });
     for(let k=0;k<remainder;k++){
       const idx=S.roleTurnOrder[k%n];
       S.players[idx].mayorAllotment++;
@@ -648,6 +652,7 @@ function buyBuilding(S, playerIdx, buildingId){
   if(p.doubloons<cost) return false;
   if((S.buildingSupply[buildingId]||0)<=0) return false;
   if(usedBuildingSize(p)+BUILDING_BY_ID[buildingId].size>12) return false;
+  if(p.buildings.some(b=>b.id===buildingId)) return false; // no duplicate building types on one player's board
   p.doubloons-=cost;
   p.buildings.push({id:buildingId,colonist:false});
   S.buildingSupply[buildingId]--;
@@ -685,12 +690,15 @@ function shipGood(S, playerIdx, good, shipIdx){
   const ship=S.ships[shipIdx];
   if(ship.good && ship.good!==good) return null;
   if(ship.amount>=ship.cap) return null;
+  // a crop type already claimed by ANOTHER ship can't also go on this one
+  if(!ship.good && S.ships.some((s,i)=>i!==shipIdx && s.good===good)) return null;
   const amount=Math.min(p.goods[good], ship.cap-ship.amount);
   p.goods[good]-=amount;
   S.goodsBank[good]+=amount;
   ship.good=good; ship.amount+=amount;
   const vp=awardVP(S, p, amount*shipVpMultiplier(p));
-  if(ship.amount>=ship.cap){ ship.good=null; ship.amount=0; }
+  // NOTE: a full ship does NOT depart immediately -- it stays loaded (and unavailable)
+  // until the whole Captain phase ends, at which point all full ships clear at once.
   S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
 }
@@ -705,10 +713,10 @@ function shipViaWharf(S, playerIdx, good){
   return {amount,vp};
 }
 function canShipAnything(S, p){
-  return GOODS.some(g=>p.goods[g]>0 && (S.ships.some(s=>(!s.good||s.good===g)&&s.amount<s.cap) || hasPower(p,'free_shipping')));
+  return GOODS.some(g=>p.goods[g]>0 && (S.ships.some((s,i)=>(!s.good||s.good===g)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===g))) || hasPower(p,'free_shipping')));
 }
 function canExportGood(S, p, good){
-  return p.goods[good]>0 && (S.ships.some(s=>(!s.good||s.good===good)&&s.amount<s.cap) || hasPower(p,'free_shipping'));
+  return p.goods[good]>0 && (S.ships.some((s,i)=>(!s.good||s.good===good)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===good))) || hasPower(p,'free_shipping'));
 }
 function exportGoodType(S, playerIdx, good){
   // One captain "turn" = one crop type, loaded onto as many eligible ships as it takes
@@ -736,6 +744,8 @@ function exportGoodType(S, playerIdx, good){
 function advanceCaptainTurn(S, exportedSomething){
   if(exportedSomething){ S.captainStreak=0; } else { S.captainStreak=(S.captainStreak||0)+1; }
   if(S.captainStreak>=S.roleTurnOrder.length){
+    // Captain phase over: any ship that filled up during the phase departs now (all at once)
+    S.ships.forEach(s=>{ if(s.amount>=s.cap){ s.good=null; s.amount=0; } });
     startCleanupIfNeeded(S);
     return;
   }
@@ -745,14 +755,37 @@ function craftsmanBonus(S, playerIdx, good){
   if(S.goodsBank[good]>0){ S.goodsBank[good]--; S.players[playerIdx].goods[good]++; }
   finishRolePickTurn(S);
 }
-function discardGood(S, playerIdx, good){
+function fullyKeptTypeSlots(p){ return powerCount(p,'storage_plus_1')*1 + powerCount(p,'storage_plus_2')*2; }
+function toggleProtect(S, playerIdx, good){
+  const p=S.players[playerIdx];
+  p.cleanupProtected=p.cleanupProtected||[];
+  const idx=p.cleanupProtected.indexOf(good);
+  if(idx>=0){ p.cleanupProtected.splice(idx,1); return true; }
+  if(p.goods[good]<=0) return false;
+  if(p.cleanupProtected.length>=fullyKeptTypeSlots(p)) return false;
+  p.cleanupProtected.push(good);
+  return true;
+}
+function discardOneUnit(S, playerIdx, good){
   const p=S.players[playerIdx];
   if(p.goods[good]<=0) return false;
   p.goods[good]--;
   S.goodsBank[good]++;
   return true;
 }
-function playerNeedsDiscard(S, p){ return GOODS.reduce((s,g)=>s+p.goods[g],0) > storageCapacity(p); }
+function unprotectedTotal(p){
+  const protectedSet=new Set(p.cleanupProtected||[]);
+  return GOODS.reduce((s,g)=>s+(protectedSet.has(g)?0:p.goods[g]),0);
+}
+function cleanupCompliant(p){ return unprotectedTotal(p)<=1; }
+function playerNeedsDiscard(S, p){
+  // best case: protect the largest piles first, see if what's left (unprotected) still exceeds the 1-unit base allowance
+  const amounts=GOODS.filter(g=>p.goods[g]>0).map(g=>p.goods[g]).sort((a,b)=>b-a);
+  const slots=fullyKeptTypeSlots(p);
+  const protectedSum=amounts.slice(0,slots).reduce((s,x)=>s+x,0);
+  const totalSum=amounts.reduce((s,x)=>s+x,0);
+  return (totalSum-protectedSum) > 1;
+}
 function advanceRoleTurn(S){
   S.roleTurnPos++;
   if(S.roleTurnPos>=S.roleTurnOrder.length){
@@ -765,7 +798,11 @@ function advanceRoleTurn(S){
       const arrive=Math.min(needed, S.colonistPool);
       S.colonistPool-=arrive;
       S.shipColonists+=arrive;
-      S.players.forEach(p=>{ p.mayorAllotment=0; });
+      // any colonist a player couldn't place stays on p.mayorAllotment and carries
+      // over to be placed on their next Mayor turn, instead of being lost
+    }
+    if(S.activeRoleId==='trader' && S.tradingHouse.length>=4){
+      S.tradingHouse=[];
     }
     if(S.activeRoleId==='captain'){ startCleanupIfNeeded(S); return; }
     finishRolePickTurn(S);
@@ -775,13 +812,15 @@ function advanceRoleTurn(S){
 function startCleanupIfNeeded(S){
   const needy=S.players.map((p,i)=>i).filter(i=>playerNeedsDiscard(S,S.players[i]));
   if(needy.length===0){ finishRolePickTurn(S); return; }
+  needy.forEach(i=>{ S.players[i].cleanupProtected=[]; });
   S.phase='cleanup';
   S.roleTurnOrder=needy;
   S.roleTurnPos=0;
 }
 function advanceCleanupTurn(S){
   const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
-  if(playerNeedsDiscard(S,p)) return; // still needs to discard more
+  if(!cleanupCompliant(p)) return; // still needs to protect/discard more
+  p.cleanupProtected=[];
   S.roleTurnPos++;
   if(S.roleTurnPos>=S.roleTurnOrder.length){ finishRolePickTurn(S); }
 }
@@ -793,7 +832,7 @@ function aiChooseRole(S, playerIdx){
   const availTypes=availSlots.map(r=>r.roleType);
   const score={};
   if(availTypes.includes('builder')){
-    const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12);
+    const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12 && !p.buildings.some(x=>x.id===b.id));
     score.builder = affordable.length>0 ? 6+Math.max(...affordable.map(b=>b.vp)) : 0;
   }
   if(availTypes.includes('craftsman')){
@@ -851,7 +890,7 @@ function aiMayorChoices(S, playerIdx){
 }
 function aiBuilderChoice(S, playerIdx){
   const p=S.players[playerIdx];
-  const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12);
+  const affordable=ALL_BUILDINGS.filter(b=>(S.buildingSupply[b.id]||0)>0 && buildingCost(b.id,p,true)<=p.doubloons && usedBuildingSize(p)+b.size<=12 && !p.buildings.some(x=>x.id===b.id));
   if(affordable.length===0) return null;
   affordable.sort((a,b)=>b.vp-a.vp || b.cost-a.cost);
   return affordable[0].id;
@@ -1021,13 +1060,14 @@ function renderPlayers(st){
     }).join('');
     const bldgHtml=p.buildings.map((b,i)=>{
       const bd=BUILDING_BY_ID[b.id];
-      return `<span class="bldg-tile colonist-dot" data-kind="building-slot" data-idx="${i}">${bd.name}<span class="colonist-badge ${b.colonist?'filled':'empty'}"></span></span>`;
+      const catClass = bd.category==='production' ? `cat-${bd.good}` : 'cat-special';
+      return `<span class="bldg-tile ${catClass} colonist-dot" data-kind="building-slot" data-idx="${i}">${bd.name}<span class="colonist-badge ${b.colonist?'filled':'empty'}"></span></span>`;
     }).join('') || '<span style="color:var(--muted);font-size:11px;">건물 없음</span>';
     const goodsHtml=GOODS.map(g=>p.goods[g]>0?`<div class="good-chip"><div class="dot" style="background:var(--${g})"></div>${GOOD_LABEL[g]} ${p.goods[g]}</div>`:'').join('');
     div.innerHTML=`
       <div class="pb-header">
         <div class="pb-name">${idx===st.governorIdx?'👑 ':''}${p.name}${(!isOnline()&&mode==='solo'&&idx===soloHumanSeat)?' (나)':''}${isOnline()&&idx===myPlayerIdx()?' (나)':''}</div>
-        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${totalScore(p)}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span>${(st.phase==='mayor' && (p.mayorAllotment||0)>0)?`<span style="color:var(--gold);">배치 대기 <b>${p.mayorAllotment}</b>명</span>`:''}</div>
+        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${totalScore(p)}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span>${(p.mayorAllotment||0)>0?`<span style="color:var(--gold);">배치 대기 <b>${p.mayorAllotment}</b>명</span>`:''}</div>
       </div>
       <div class="pb-row-label">농장 (${filledPlantationCount(p)}/12)</div>
       <div class="pb-slots">${plantHtml}</div>
@@ -1121,11 +1161,13 @@ function doOpenBuildList(){
   el.classList.remove('hidden');
   el.innerHTML=list.map(b=>{
     const cost=buildingCost(b.id,p,isPicker);
-    const canAfford=p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
-    return `<div class="build-card ${canAfford?'':'disabled'} ${b.expansion?'expansion':''} ${previewBuildingId===b.id?'previewed':''}" data-id="${b.id}">
+    const alreadyOwned=p.buildings.some(x=>x.id===b.id);
+    const canAfford=!alreadyOwned && p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
+    const catClass = b.category==='production' ? `cat-${b.good}` : 'cat-special';
+    return `<div class="build-card ${catClass} ${canAfford?'':'disabled'} ${b.expansion?'expansion':''} ${previewBuildingId===b.id?'previewed':''}" data-id="${b.id}">
       <div class="bname">${b.name}${b.expansion?' 🌟':''}</div>
       <div>크기 ${b.size} · VP ${b.vp}</div>
-      <div class="bcost">${cost}금</div>
+      <div class="bcost">${alreadyOwned?'보유중':cost+'금'}</div>
       <div style="color:var(--muted);">재고 ${st.buildingSupply[b.id]}</div>
     </div>`;
   }).join('');
@@ -1142,11 +1184,13 @@ function renderBuildingInfoPanel(st, p, isPicker){
   if(!previewBuildingId){ el.innerHTML=''; return; }
   const b=BUILDING_BY_ID[previewBuildingId];
   const cost=buildingCost(b.id,p,isPicker);
-  const canAfford=p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
+  const alreadyOwned=p.buildings.some(x=>x.id===b.id);
+  const canAfford=!alreadyOwned && p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
   el.innerHTML=`
     <div class="info-box">
       <div class="info-title">${b.name}${b.expansion?' 🌟':''}</div>
       <div class="info-desc">${buildingDescription(b)}</div>
+      ${alreadyOwned?'<div style="color:var(--gold);font-size:12px;margin-bottom:8px;">이미 이 건물을 갖고 있어서 같은 건물을 또 지을 수 없어요.</div>':''}
       <button class="ctrl-btn primary" id="confirm-build-btn" ${canAfford?'':'disabled'}>이 건물 짓기 (${cost}금)</button>
     </div>
   `;
@@ -1198,11 +1242,19 @@ function doCraftsmanBonus(good){
   craftsmanBonus(S, playerIdx, good);
   afterLocalChange();
 }
-function doDiscardGood(good){
+function doToggleProtect(good){
   const st=activeState();
   const playerIdx=st.roleTurnOrder[st.roleTurnPos];
-  if(isOnline()){ onlineDiscardGood(good); return; }
-  discardGood(S, playerIdx, good);
+  if(isOnline()){ onlineToggleProtect(good); return; }
+  toggleProtect(S, playerIdx, good);
+  advanceCleanupTurn(S);
+  afterLocalChange();
+}
+function doDiscardOneUnit(good){
+  const st=activeState();
+  const playerIdx=st.roleTurnOrder[st.roleTurnPos];
+  if(isOnline()){ onlineDiscardOneUnit(good); return; }
+  discardOneUnit(S, playerIdx, good);
   advanceCleanupTurn(S);
   afterLocalChange();
 }
@@ -1275,10 +1327,15 @@ function performAiStep(){
     advanceCaptainTurn(S, exportedSomething);
   } else if(S.phase==='cleanup'){
     const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
-    const cheapOrder=[...GOODS].sort((a,b)=>SELL_PRICE[a]-SELL_PRICE[b]);
-    for(const g of cheapOrder){
-      while(playerNeedsDiscard(S,p) && p.goods[g]>0) discardGood(S, S.roleTurnOrder[S.roleTurnPos], g);
-      if(!playerNeedsDiscard(S,p)) break;
+    const cleanIdx=S.roleTurnOrder[S.roleTurnPos];
+    const slots=fullyKeptTypeSlots(p);
+    const held=GOODS.filter(g=>p.goods[g]>0).sort((a,b)=>p.goods[b]-p.goods[a]);
+    p.cleanupProtected=held.slice(0,slots);
+    const unprotectedOrder=[...GOODS].filter(g=>!p.cleanupProtected.includes(g)).sort((a,b)=>SELL_PRICE[a]-SELL_PRICE[b]);
+    while(unprotectedTotal(p)>1){
+      const g=unprotectedOrder.find(x=>p.goods[x]>0);
+      if(!g) break;
+      discardOneUnit(S, cleanIdx, g);
     }
     advanceCleanupTurn(S);
   }
@@ -1388,18 +1445,31 @@ function renderControls(st){
     }
   } else if(phase==='cleanup'){
     const p=st.players[st.roleTurnOrder[st.roleTurnPos]];
-    const cap=storageCapacity(p);
-    const total=GOODS.reduce((s,g)=>s+p.goods[g],0);
+    const slots=fullyKeptTypeSlots(p);
+    p.cleanupProtected=p.cleanupProtected||[];
     const label=document.createElement('div');
     label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
-    label.textContent=`창고 용량 ${cap}, 현재 ${total}개 — ${total-cap}개를 버려야 해요`;
+    label.textContent = slots>0
+      ? `기본 1개 + 창고로 최대 ${slots}가지 종류를 개수 제한 없이 보관할 수 있어요. 보관할 종류를 골라 "보호"하고, 나머지는 합쳐서 1개까지만 남기고 버리세요. (현재 미보호분 합계: ${unprotectedTotal(p)}개)`
+      : `창고가 없어서 상품을 1개까지만 보관할 수 있어요. 나머지는 버리세요. (현재 보유: ${unprotectedTotal(p)}개)`;
     el.appendChild(label);
     GOODS.forEach(g=>{
       if(p.goods[g]<=0) return;
-      const btn=document.createElement('button');
-      btn.className='ctrl-btn'; btn.textContent=`${GOOD_LABEL[g]} 버리기 (${p.goods[g]}개 보유)`;
-      btn.addEventListener('click',()=>doDiscardGood(g));
-      el.appendChild(btn);
+      const isProtected=p.cleanupProtected.includes(g);
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:6px;align-items:center;';
+      const protectBtn=document.createElement('button');
+      protectBtn.className='ctrl-btn'+(isProtected?' primary':'');
+      protectBtn.textContent=`${GOOD_LABEL[g]} ${p.goods[g]}개 — ${isProtected?'보호중 (해제)':'보호하기'}`;
+      protectBtn.disabled = !isProtected && p.cleanupProtected.length>=slots;
+      protectBtn.addEventListener('click',()=>doToggleProtect(g));
+      el.appendChild(protectBtn);
+      if(!isProtected){
+        const discardBtn=document.createElement('button');
+        discardBtn.className='ctrl-btn'; discardBtn.textContent='1개 버리기';
+        discardBtn.addEventListener('click',()=>doDiscardOneUnit(g));
+        el.appendChild(discardBtn);
+      }
     });
   }
 }
@@ -1600,7 +1670,8 @@ function onlineExportGood(good){
   });
 }
 function onlineCraftsmanBonus(good){ onlineCommit((room)=>{ craftsmanBonus(room, room.currentPickerIdx, good); }); }
-function onlineDiscardGood(good){ onlineCommit((room)=>{ const idx=room.roleTurnOrder[room.roleTurnPos]; discardGood(room, idx, good); advanceCleanupTurn(room); }); }
+function onlineToggleProtect(good){ onlineCommit((room)=>{ const idx=room.roleTurnOrder[room.roleTurnPos]; toggleProtect(room, idx, good); advanceCleanupTurn(room); }); }
+function onlineDiscardOneUnit(good){ onlineCommit((room)=>{ const idx=room.roleTurnOrder[room.roleTurnPos]; discardOneUnit(room, idx, good); advanceCleanupTurn(room); }); }
 function onlineAdvanceRoleTurn(){ onlineCommit((room)=>{ advanceRoleTurn(room); }); }
 
 /* ============ SETUP SCREEN WIRING ============ */
