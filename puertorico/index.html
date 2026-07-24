@@ -575,6 +575,7 @@ function pickRole(S, slotId){
   else if(roleType==='builder'){ S.phase='builder'; S.lastMove={text:`${picker.name}님이 건축가를 선택했습니다`}; }
   else if(roleType==='craftsman'){
     S.phase='craftsman';
+    const producedByPicker=new Set();
     S.roleTurnOrder.forEach(idx=>{
       const pl=S.players[idx];
       const prod=computeProduction(pl);
@@ -582,8 +583,10 @@ function pickRole(S, slotId){
         const amount=Math.min(prod[g], S.goodsBank[g]);
         pl.goods[g]+=amount;
         S.goodsBank[g]-=amount;
+        if(idx===pickerIdx && amount>0) producedByPicker.add(g);
       });
     });
+    S.craftsmanBonusChoices=[...producedByPicker];
     S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
   }
   else if(roleType==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
@@ -897,8 +900,10 @@ function aiBuilderChoice(S, playerIdx){
 }
 function aiCraftsmanBonus(S, playerIdx){
   const p=S.players[playerIdx];
-  let best='corn', bestAmt=-1;
-  GOODS.forEach(g=>{ if(p.goods[g]>bestAmt){ bestAmt=p.goods[g]; best=g; } });
+  const choices=S.craftsmanBonusChoices||[];
+  if(choices.length===0) return null;
+  let best=choices[0], bestAmt=-1;
+  choices.forEach(g=>{ if(p.goods[g]>bestAmt){ bestAmt=p.goods[g]; best=g; } });
   return best;
 }
 function aiTraderChoice(S, playerIdx){
@@ -1394,16 +1399,24 @@ function renderControls(st){
     skipBtn.addEventListener('click',()=>doAdvanceRoleTurn());
     el.appendChild(skipBtn);
   } else if(phase==='craftsman'){
+    const choices=st.craftsmanBonusChoices||[];
     const label=document.createElement('div');
     label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
-    label.textContent='보너스로 +1 받을 상품을 고르세요:';
+    label.textContent = choices.length>0 ? '내가 생산한 상품 중 보너스로 +1 받을 것을 고르세요:' : '이번에 직접 생산한 상품이 없어서 보너스를 받을 수 없어요.';
     el.appendChild(label);
-    GOODS.forEach(g=>{
+    if(choices.length>0){
+      choices.forEach(g=>{
+        const btn=document.createElement('button');
+        btn.className='ctrl-btn'; btn.textContent=GOOD_LABEL[g];
+        btn.addEventListener('click',()=>doCraftsmanBonus(g));
+        el.appendChild(btn);
+      });
+    } else {
       const btn=document.createElement('button');
-      btn.className='ctrl-btn'; btn.textContent=GOOD_LABEL[g];
-      btn.addEventListener('click',()=>doCraftsmanBonus(g));
+      btn.className='ctrl-btn primary'; btn.textContent='계속하기';
+      btn.addEventListener('click',()=>doCraftsmanBonus(null));
       el.appendChild(btn);
-    });
+    }
   } else if(phase==='trader'){
     const p=st.players[currentActorIdx(st)];
     const isPicker=currentActorIdx(st)===st.roleTurnOrder[0];
