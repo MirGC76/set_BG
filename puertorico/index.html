@@ -241,11 +241,11 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
         <b>② 역할 7가지</b><br>
         &nbsp;· <b>광부</b> (카드 2장) — 고른 사람만 동전 1개 획득<br>
         &nbsp;· <b>개척자</b> — 모두 순서대로 공개된 농장 타일 1개를 섬에 놓음 (채석장은 고른 사람만 가능), 모두 끝나면 타일이 한꺼번에 새로 채워짐<br>
-        &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분, 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼(최소 인원 수만큼은 항상) 새 이주민 도착<br>
+        &nbsp;· <b>시장</b> — 배의 이주민을 모두 똑같이 나누고 남는 인원은 고른 사람부터 순서대로 배분(고른 사람은 1명 추가), 각자 배치(재배치도 가능), 끝나면 빈 건물 칸 수만큼(최소 인원 수만큼은 항상) 새 이주민 도착<br>
         &nbsp;· <b>건축가</b> — 모두 순서대로 건물 1개를 구매 가능 (고른 사람은 1 할인)<br>
         &nbsp;· <b>장인</b> — 모두 동시에 상품 생산 (일꾼 있는 농장 × 해당 건물 용량만큼)<br>
         &nbsp;· <b>상인</b> — 모두 순서대로 상품 1개를 무역소에 판매 가능<br>
-        &nbsp;· <b>선장</b> — 모두 순서대로 배에 상품을 실어 승점 획득 (실을 수 있으면 반드시 실어야 함)<br>
+        &nbsp;· <b>선장</b> — 고른 사람부터 순서대로 한 턴에 한 가지 상품만 배에 실음 (실을 수 있으면 반드시), 아무도 실을 수 없을 때까지 계속 돌아감<br>
         <b>③ 고르지 않은 역할</b>에는 동전이 쌓여서, 나중에 고르는 사람이 보너스로 가져갑니다.<br>
         <b>④ 창고</b> — 소형/대형 창고 건물이 없으면, 그 라운드에 팔거나 싣지 못한 상품은 라운드가 끝날 때 버려집니다.<br>
         <b>⑤ 종료</b> — 누군가의 건물 칸(12칸)이 가득 차면 그 라운드를 끝으로 게임이 종료되고, 승점이 가장 높은 사람이 승리합니다.<br>
@@ -330,11 +330,11 @@ const ROLES_DEF = [{"id":"prospector","name":"광부","copies":2},{"id":"settler
 const ROLE_DESC = {
   prospector: "고른 사람만 동전 1개를 은행에서 가져옵니다. 다른 사람에게는 아무 효과가 없어요. (카드가 2장 있어서 같은 라운드에 두 명이 고를 수 있어요)",
   settler: "총독부터 순서대로, 공개된 농장 타일 중 하나를 골라 자신의 섬 빈 칸에 놓을 수 있습니다 (채석장은 이 역할을 고른 사람만 가져갈 수 있어요). 가져간 타일은 모두의 차례가 끝난 뒤 한꺼번에 새로 채워집니다.",
-  mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 (최소 플레이어 수만큼은 항상) 새 이주민이 배에 도착합니다.",
+  mayor: "배에 있는 이주민을 모든 플레이어가 똑같이 나눠 갖고, 남는 인원은 고른 사람부터 순서대로 한 명씩 더 받습니다. 이 역할을 고른 사람은 이주민 1명을 추가로 더 받아요. 각자 자신의 농장·건물에 배치하며, 이미 배치된 이주민을 다른 칸으로 옮길 수도 있어요. 모두 끝나면 그때까지 비어 있는 건물 칸 수만큼 (최소 플레이어 수만큼은 항상) 새 이주민이 배에 도착합니다.",
   builder: "총독부터 순서대로, 각자 건물을 하나 구매해 지을 수 있습니다. 이 역할을 고른 사람은 비용이 1 할인돼요.",
   craftsman: "모든 플레이어가 동시에 상품을 생산합니다 (일꾼 있는 농장 수 × 관련 건물 용량만큼). 이 역할을 고른 사람은 생산한 상품 중 하나를 1개 추가로 받아요.",
   trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요.",
-  captain: "총독부터 순서대로, 각자 상품을 배에 실어야 합니다 (실을 수 있으면 반드시 실어야 해요). 실은 개수만큼 승점을 얻습니다.",
+  captain: "선장을 고른 사람부터 순서대로, 한 턴에 한 가지 상품만 배(또는 부두)에 실을 수 있습니다. 각 수송선은 한 가지 종류의 상품만 실을 수 있어요. 실을 수 있으면 반드시 실어야 해요. 모두를 한 바퀴 돌면서 아무도 실을 수 없을 때까지 계속 돌아갑니다. 실은 개수만큼 승점을 얻습니다.",
 };
 function buildingDescription(b){
   if(b.category==='production') return `${GOOD_LABEL[b.good]} 농장에서 생산한 상품을 가공합니다. 이주민 최대 ${b.capacity}명, 한 번에 최대 ${b.capacity}개 생산.`;
@@ -346,7 +346,7 @@ function buildingDescription(b){
     free_plantation: "건설하는 즉시 무작위 농장 타일 1개를 무료로 받아 섬에 놓습니다.",
     storage_plus_1: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 1 늘어납니다 (없으면 못 판·못 실은 상품은 라운드 끝에 버려져요).",
     storage_plus_2: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 2 늘어납니다.",
-    mayor_bonus_colonist: "시장 역할을 고르면, 이주민이 1명 더 도착합니다.",
+    mayor_bonus_colonist: "시장 역할을 고르면, 원래 특권으로 받는 1명에 더해 이주민 1명을 추가로 받습니다 (총 +2명).",
     settler_bonus_colonist: "개척자 역할을 고르면, 내 섬의 빈 칸에 이주민 1명을 즉시 무료로 배치합니다.",
     sell_duplicate_ok: "무역소에 이미 같은 색 상품이 있어도 팔 수 있습니다.",
     ship_vp_bonus_1: "상품을 배에 실을 때마다 승점을 2배로 받습니다.",
@@ -555,6 +555,12 @@ function pickRole(S, slotId){
       S.players[idx].mayorAllotment++;
     }
     S.shipColonists=0;
+    // role-picker privilege: +1 extra colonist, drawn from the pool
+    if(S.colonistPool>0){
+      picker.mayorAllotment=(picker.mayorAllotment||0)+1;
+      S.colonistPool--;
+    }
+    // Hospice / Immigration Office stack an additional +1 on top of the base privilege
     if(hasPower(picker,'mayor_bonus_colonist') && S.colonistPool>0){
       picker.mayorAllotment=(picker.mayorAllotment||0)+1;
       S.colonistPool--;
@@ -577,7 +583,7 @@ function pickRole(S, slotId){
     S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
   }
   else if(roleType==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
-  else if(roleType==='captain'){ S.phase='captain'; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
+  else if(roleType==='captain'){ S.phase='captain'; S.captainStreak=0; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
   return true;
 }
 function finishRolePickTurn(S){
@@ -700,6 +706,40 @@ function shipViaWharf(S, playerIdx, good){
 }
 function canShipAnything(S, p){
   return GOODS.some(g=>p.goods[g]>0 && (S.ships.some(s=>(!s.good||s.good===g)&&s.amount<s.cap) || hasPower(p,'free_shipping')));
+}
+function canExportGood(S, p, good){
+  return p.goods[good]>0 && (S.ships.some(s=>(!s.good||s.good===good)&&s.amount<s.cap) || hasPower(p,'free_shipping'));
+}
+function exportGoodType(S, playerIdx, good){
+  // One captain "turn" = one crop type, loaded onto as many eligible ships as it takes
+  // to fit everything the player has of that type (plus the wharf, if they own one).
+  const p=S.players[playerIdx];
+  let totalAmount=0, totalVp=0;
+  let progressed=true;
+  while(p.goods[good]>0 && progressed){
+    progressed=false;
+    for(let i=0;i<S.ships.length;i++){
+      if(p.goods[good]<=0) break;
+      const r=shipGood(S, playerIdx, good, i);
+      if(r){ totalAmount+=r.amount; totalVp+=r.vp; progressed=true; }
+    }
+  }
+  if(p.goods[good]>0 && hasPower(p,'free_shipping')){
+    const r=shipViaWharf(S, playerIdx, good);
+    if(r){ totalAmount+=r.amount; totalVp+=r.vp; }
+  }
+  if(totalAmount>0){
+    S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${totalAmount}개를 수출하여 +${totalVp}점을 얻었습니다`};
+  }
+  return {amount:totalAmount, vp:totalVp};
+}
+function advanceCaptainTurn(S, exportedSomething){
+  if(exportedSomething){ S.captainStreak=0; } else { S.captainStreak=(S.captainStreak||0)+1; }
+  if(S.captainStreak>=S.roleTurnOrder.length){
+    startCleanupIfNeeded(S);
+    return;
+  }
+  S.roleTurnPos=(S.roleTurnPos+1)%S.roleTurnOrder.length;
 }
 function craftsmanBonus(S, playerIdx, good){
   if(S.goodsBank[good]>0){ S.goodsBank[good]--; S.players[playerIdx].goods[good]++; }
@@ -987,7 +1027,7 @@ function renderPlayers(st){
     div.innerHTML=`
       <div class="pb-header">
         <div class="pb-name">${idx===st.governorIdx?'👑 ':''}${p.name}${(!isOnline()&&mode==='solo'&&idx===soloHumanSeat)?' (나)':''}${isOnline()&&idx===myPlayerIdx()?' (나)':''}</div>
-        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${totalScore(p)}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span></div>
+        <div class="pb-stats"><span>동전 <b>${p.doubloons}</b></span><span>승점 <b>${totalScore(p)}</b></span><span>건물칸 ${usedBuildingSize(p)}/12</span>${(st.phase==='mayor' && (p.mayorAllotment||0)>0)?`<span style="color:var(--gold);">배치 대기 <b>${p.mayorAllotment}</b>명</span>`:''}</div>
       </div>
       <div class="pb-row-label">농장 (${filledPlantationCount(p)}/12)</div>
       <div class="pb-slots">${plantHtml}</div>
@@ -1137,21 +1177,19 @@ function doSellGood(good){
   if(price!=null) setMessage(S.lastMove.text,'good');
   doAdvanceRoleTurn();
 }
-function doShipGood(good, shipIdx){
+function doExportGood(good){
   const st=activeState();
   const playerIdx=currentActorIdx(st);
-  if(isOnline()){ onlineShipGood(good, shipIdx); return; }
-  const r=shipGood(S, playerIdx, good, shipIdx);
-  if(r) setMessage(S.lastMove.text,'good');
-  renderAll();
-}
-function doShipViaWharf(good){
-  const st=activeState();
-  const playerIdx=currentActorIdx(st);
-  if(isOnline()){ onlineShipViaWharf(good); return; }
-  const r=shipViaWharf(S, playerIdx, good);
-  if(r) setMessage(S.lastMove.text,'good');
-  renderAll();
+  if(isOnline()){ onlineExportGood(good); return; }
+  if(good===null){
+    advanceCaptainTurn(S, false);
+    afterLocalChange();
+    return;
+  }
+  const r=exportGoodType(S, playerIdx, good);
+  if(r.amount>0) setMessage(S.lastMove.text,'good');
+  advanceCaptainTurn(S, r.amount>0);
+  afterLocalChange();
 }
 function doCraftsmanBonus(good){
   const st=activeState();
@@ -1227,20 +1265,14 @@ function performAiStep(){
     advanceRoleTurn(S);
   } else if(S.phase==='captain'){
     const p=S.players[idx];
-    let shippedSomething=false;
-    for(const g of GOODS){
-      while(p.goods[g]>0){
-        let shipped=false;
-        for(let i=0;i<S.ships.length;i++){
-          if(shipGood(S, idx, g, i)){ shipped=true; shippedSomething=true; break; }
-        }
-        if(!shipped){
-          if(hasPower(p,'free_shipping')){ shipViaWharf(S, idx, g); shippedSomething=true; }
-          break;
-        }
-      }
+    const exportable=GOODS.filter(g=>canExportGood(S,p,g));
+    let exportedSomething=false;
+    if(exportable.length>0){
+      exportable.sort((a,b)=>p.goods[b]-p.goods[a]); // dump the biggest pile first
+      const r=exportGoodType(S, idx, exportable[0]);
+      exportedSomething=r.amount>0;
     }
-    advanceRoleTurn(S);
+    advanceCaptainTurn(S, exportedSomething);
   } else if(S.phase==='cleanup'){
     const p=S.players[S.roleTurnOrder[S.roleTurnPos]];
     const cheapOrder=[...GOODS].sort((a,b)=>SELL_PRICE[a]-SELL_PRICE[b]);
@@ -1334,29 +1366,24 @@ function renderControls(st){
     el.appendChild(skipBtn);
   } else if(phase==='captain'){
     const p=st.players[currentActorIdx(st)];
+    const label=document.createElement('div');
+    label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
+    label.textContent='한 턴에 한 가지 상품만 수출할 수 있어요. 실을 수 있는 사람이 없을 때까지 계속됩니다.';
+    el.appendChild(label);
+    let anyExportable=false;
     GOODS.forEach(g=>{
-      if(p.goods[g]<=0) return;
-      st.ships.forEach((s,i)=>{
-        if(s.good && s.good!==g) return;
-        if(s.amount>=s.cap) return;
-        const btn=document.createElement('button');
-        btn.className='ctrl-btn primary';
-        btn.textContent=`${GOOD_LABEL[g]} → 배${i+1} (${Math.min(p.goods[g], s.cap-s.amount)}개)`;
-        btn.addEventListener('click',()=>doShipGood(g,i));
-        el.appendChild(btn);
-      });
-      if(hasPower(p,'free_shipping')){
-        const btn=document.createElement('button');
-        btn.className='ctrl-btn primary';
-        btn.textContent=`${GOOD_LABEL[g]} → 부두로 전량 선적`;
-        btn.addEventListener('click',()=>doShipViaWharf(g));
-        el.appendChild(btn);
-      }
-    });
-    if(!canShipAnything(st,p)){
+      if(!canExportGood(st,p,g)) return;
+      anyExportable=true;
       const btn=document.createElement('button');
-      btn.className='ctrl-btn primary'; btn.textContent='실을 수 없음 (다음 사람)';
-      btn.addEventListener('click',()=>doAdvanceRoleTurn());
+      btn.className='ctrl-btn primary';
+      btn.textContent=`${GOOD_LABEL[g]} 수출하기 (${p.goods[g]}개 보유)`;
+      btn.addEventListener('click',()=>doExportGood(g));
+      el.appendChild(btn);
+    });
+    if(!anyExportable){
+      const btn=document.createElement('button');
+      btn.className='ctrl-btn primary'; btn.textContent='수출할 수 없음 (다음 사람)';
+      btn.addEventListener('click',()=>doExportGood(null));
       el.appendChild(btn);
     }
   } else if(phase==='cleanup'){
@@ -1565,8 +1592,13 @@ function onlineMayorAssign(kind, slotIdx){ onlineCommit((room,idx)=>{ mayorAssig
 function onlineMayorMove(fromKind, fromIdx, toKind, toIdx){ onlineCommit((room,idx)=>{ mayorMoveColonist(room, idx, fromKind, fromIdx, toKind, toIdx); }); }
 function onlineBuyBuilding(buildingId){ onlineCommit((room,idx)=>{ buyBuilding(room, idx, buildingId); advanceRoleTurn(room); }); }
 function onlineSellGood(good){ onlineCommit((room,idx)=>{ sellGood(room, idx, good); advanceRoleTurn(room); }); }
-function onlineShipGood(good, shipIdx){ onlineCommit((room,idx)=>{ shipGood(room, idx, good, shipIdx); }); }
-function onlineShipViaWharf(good){ onlineCommit((room,idx)=>{ shipViaWharf(room, idx, good); }); }
+function onlineExportGood(good){
+  onlineCommit((room,idx)=>{
+    if(good===null){ advanceCaptainTurn(room, false); return; }
+    const r=exportGoodType(room, idx, good);
+    advanceCaptainTurn(room, r.amount>0);
+  });
+}
 function onlineCraftsmanBonus(good){ onlineCommit((room)=>{ craftsmanBonus(room, room.currentPickerIdx, good); }); }
 function onlineDiscardGood(good){ onlineCommit((room)=>{ const idx=room.roleTurnOrder[room.roleTurnPos]; discardGood(room, idx, good); advanceCleanupTurn(room); }); }
 function onlineAdvanceRoleTurn(){ onlineCommit((room)=>{ advanceRoleTurn(room); }); }
