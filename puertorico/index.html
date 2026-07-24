@@ -526,6 +526,7 @@ function pickRole(S, slotId){
   if(roleType==='settler'){
     S.phase='settler';
     S.lastMove={text:`${picker.name}님이 개척자를 선택했습니다`};
+    applyHaciendaBonus(S, pickerIdx);
   }
   else if(roleType==='mayor'){
     // colonists on the ship are divided EQUALLY among all players; any remainder goes
@@ -588,6 +589,13 @@ function endRound(S){
   S.governorIdx=(S.governorIdx+1)%S.players.length;
   S.currentPickerIdx=S.governorIdx; S.picksThisRound=0; S.round++;
   S.phase='role-pick'; S.activeRoleId=null;
+}
+function applyHaciendaBonus(S, playerIdx){
+  const p=S.players[playerIdx];
+  if(!hasPower(p,'free_plantation')) return;
+  const next=S.plantationDeck.pop();
+  const emptySlot=p.plantations.findIndex(x=>!x);
+  if(next && emptySlot>=0) p.plantations[emptySlot]={type:next.type,colonist:false};
 }
 function settlerPlaceTile(S, kind, supplyIdx, playerIdx, slotIdx){
   const p=S.players[playerIdx];
@@ -663,11 +671,6 @@ function buyBuilding(S, playerIdx, buildingId){
   // instead (see computeBuildingVP), matching how the physical building VP is a
   // printed value on the card rather than chips taken from the bank.
   const power=BUILDING_BY_ID[buildingId].power;
-  if(power==='free_plantation'){
-    const next=S.plantationDeck.pop();
-    const emptySlot=p.plantations.findIndex(x=>!x);
-    if(next && emptySlot>=0) p.plantations[emptySlot]={type:next.type,colonist:false};
-  }
   // University (대학): if the BUYER owns one, the newly-built building gets a free colonist immediately
   if(hasPower(p,'builder_new_building_colonist') && S.colonistPool>0){
     p.buildings[p.buildings.length-1].colonists=1;
@@ -814,6 +817,9 @@ function advanceRoleTurn(S){
     if(S.activeRoleId==='captain'){ startCleanupIfNeeded(S); return; }
     finishRolePickTurn(S);
     return;
+  }
+  if(S.activeRoleId==='settler'){
+    applyHaciendaBonus(S, S.roleTurnOrder[S.roleTurnPos]);
   }
 }
 function startCleanupIfNeeded(S){
