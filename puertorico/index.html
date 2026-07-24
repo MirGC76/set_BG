@@ -109,8 +109,8 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 .tile.disabled{opacity:0.3;cursor:not-allowed;}
 .ship-box{display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;}
 
-.players-area{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px;}
-.player-board{background:rgba(255,255,255,0.03);border:2px solid var(--line);border-radius:12px;padding:10px 12px;}
+.players-area{width:100%;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;margin-top:6px;align-items:flex-start;}
+.player-board{background:rgba(255,255,255,0.03);border:2px solid var(--line);border-radius:12px;padding:10px 12px;flex:1 1 220px;min-width:200px;display:flex;flex-direction:column;}
 .player-board.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,164,65,0.15);}
 .pb-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
 .pb-name{font-weight:800;font-size:13.5px;}
@@ -162,6 +162,17 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 #end-modal .scores{margin:14px 0;font-size:13.5px;color:var(--muted);line-height:1.9;text-align:left;display:inline-block;}
 #config-error .box{max-width:520px;background:var(--bg-mid);border:1px solid var(--bad);border-radius:14px;padding:28px;text-align:center;}
 #config-error code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
+#help-overlay{position:fixed;inset:0;background:rgba(6,10,8,0.88);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;}
+#help-modal{background:var(--bg-mid);border:1px solid var(--line);border-radius:16px;padding:20px 22px;max-width:640px;width:95%;max-height:85vh;display:flex;flex-direction:column;}
+.help-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0;}
+.help-modal-header h2{margin:0;font-size:18px;color:var(--gold);}
+.help-modal-body{overflow-y:auto;padding-right:6px;}
+.help-modal-body h3{font-size:13px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:16px 0 8px;}
+.help-modal-body h3:first-child{margin-top:0;}
+.help-entry{background:rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;margin-bottom:6px;}
+.help-entry .h-name{font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:3px;}
+.help-entry .h-name .h-meta{color:var(--muted);font-weight:600;font-size:11.5px;margin-left:6px;}
+.help-entry .h-desc{font-size:12px;color:var(--muted);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -267,6 +278,7 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
   <div id="game" class="hidden">
     <div class="topbar">
       <button class="icon-btn" id="quit-btn">← 처음으로</button>
+      <button class="icon-btn" id="help-btn">📖 역할·건물 설명</button>
       <div class="info-chip" id="round-chip">라운드 1</div>
       <div class="zoom-row">
         <span style="font-size:11.5px;color:var(--muted);">화면 크기</span>
@@ -288,6 +300,21 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
     <div class="players-area" id="players-area"></div>
   </div>
 
+</div>
+
+<div id="help-overlay" class="hidden">
+  <div id="help-modal">
+    <div class="help-modal-header">
+      <h2>역할·건물 설명</h2>
+      <button class="icon-btn" id="help-close-btn">닫기 ✕</button>
+    </div>
+    <div class="help-modal-body">
+      <h3>역할 (7종)</h3>
+      <div id="help-roles-list"></div>
+      <h3>건물 (23종)</h3>
+      <div id="help-buildings-list"></div>
+    </div>
+  </div>
 </div>
 
 <div id="end-overlay" class="hidden">
@@ -1805,6 +1832,29 @@ document.getElementById('quit-btn').addEventListener('click',()=>{
   leaveOnline();
   document.getElementById('end-overlay').classList.add('hidden');
   showScreen('setup');
+});
+function renderHelpModal(){
+  const rolesEl=document.getElementById('help-roles-list');
+  rolesEl.innerHTML=ROLES_DEF.map(r=>`
+    <div class="help-entry">
+      <div class="h-name">${r.name}${r.copies>1?`<span class="h-meta">카드 ${r.copies}장</span>`:''}</div>
+      <div class="h-desc">${ROLE_DESC[r.id]}</div>
+    </div>
+  `).join('');
+  const buildingsEl=document.getElementById('help-buildings-list');
+  buildingsEl.innerHTML=ALL_BUILDINGS.map(b=>`
+    <div class="help-entry">
+      <div class="h-name">${b.name}<span class="h-meta">크기 ${b.size} · 비용 ${b.cost}금 · 승점 ${b.vp} · 수량 ${b.supply}개</span></div>
+      <div class="h-desc">${buildingDescription(b)}</div>
+    </div>
+  `).join('');
+}
+document.getElementById('help-btn').addEventListener('click',()=>{
+  renderHelpModal();
+  document.getElementById('help-overlay').classList.remove('hidden');
+});
+document.getElementById('help-close-btn').addEventListener('click',()=>{
+  document.getElementById('help-overlay').classList.add('hidden');
 });
 document.getElementById('restart-btn').addEventListener('click',()=>{
   document.getElementById('end-overlay').classList.add('hidden');
