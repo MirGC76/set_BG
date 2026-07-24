@@ -120,7 +120,9 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 .pb-slots{display:flex;flex-wrap:wrap;gap:3px;}
 .slot-empty{width:26px;height:26px;border-radius:6px;border:2px dashed var(--line);}
 .colonist-dot{position:relative;}
-.colonist-dot::after{content:"●";position:absolute;top:-6px;right:-4px;font-size:9px;color:#fff;text-shadow:0 0 2px #000;}
+.colonist-badge{position:absolute;top:-5px;right:-4px;width:11px;height:11px;border-radius:50%;border:1.5px solid #222;box-shadow:0 0 2px rgba(0,0,0,0.6);}
+.colonist-badge.filled{background:#7a4a28;}
+.colonist-badge.empty{background:#fff;}
 .bldg-tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:6px;font-size:9px;font-weight:800;color:#fff;margin:2px;padding:2px;background:#4a3d2a;border:2px solid transparent;cursor:pointer;text-align:center;line-height:1.1;}
 .bldg-tile.selected{border-color:#fff;}
 .pb-goods{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
@@ -138,6 +140,11 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
 .build-card.disabled{opacity:0.35;cursor:not-allowed;}
 .build-card .bname{font-weight:800;font-size:12px;margin-bottom:3px;}
 .build-card .bcost{color:var(--gold);font-weight:800;}
+.role-card.previewed{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3);}
+.info-box{max-width:640px;margin:6px auto 10px;background:rgba(217,164,65,0.1);border:2px solid var(--gold);border-radius:12px;padding:12px 16px;text-align:center;}
+.info-title{font-weight:900;font-size:14px;margin-bottom:6px;color:var(--gold);}
+.info-desc{font-size:12.5px;color:var(--text);line-height:1.6;margin-bottom:10px;}
+.build-card.previewed{border-color:#fff;}
 .build-card.expansion{border-color:#6b8f7a;}
 
 #end-overlay,#config-error{position:fixed;inset:0;background:rgba(6,10,8,0.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
@@ -277,8 +284,10 @@ h1.title{font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;margi
     <div class="banner info" id="banner">게임을 시작합니다</div>
 
     <div class="roles-row" id="roles-row"></div>
+    <div id="role-info-panel"></div>
     <div class="supply-row" id="supply-row"></div>
     <div class="build-list hidden" id="build-list"></div>
+    <div id="building-info-panel"></div>
     <div class="controls-row" id="action-controls"></div>
 
     <div class="players-area" id="players-area"></div>
@@ -315,9 +324,42 @@ import {
 /* ============ DATA ============ */
 const GOODS=["corn","indigo","sugar","coffee","tobacco"];
 const SELL_PRICE={"corn":0,"indigo":1,"sugar":2,"tobacco":3,"coffee":4};
-const GOOD_LABEL={corn:"옥수수",indigo:"인디고",sugar:"설탕",coffee:"커피",tobacco:"담배"};
-const ALL_BUILDINGS = [{"id":"small_indigo","name":"소형 인디고 공장","size":1,"cost":1,"vp":0,"category":"production","good":"indigo","capacity":1,"supply":4,"expansion":false},{"id":"indigo_plant","name":"인디고 공장","size":2,"cost":2,"vp":1,"category":"production","good":"indigo","capacity":3,"supply":3,"expansion":false},{"id":"small_sugar","name":"소형 제당소","size":1,"cost":2,"vp":0,"category":"production","good":"sugar","capacity":1,"supply":4,"expansion":false},{"id":"sugar_mill","name":"제당소","size":2,"cost":4,"vp":1,"category":"production","good":"sugar","capacity":3,"supply":3,"expansion":false},{"id":"small_tobacco","name":"소형 담배 건조장","size":1,"cost":3,"vp":0,"category":"production","good":"tobacco","capacity":1,"supply":4,"expansion":false},{"id":"tobacco_factory","name":"담배 공장","size":2,"cost":7,"vp":2,"category":"production","good":"tobacco","capacity":3,"supply":3,"expansion":false},{"id":"coffee_roaster","name":"커피 로스터리","size":2,"cost":6,"vp":2,"category":"production","good":"coffee","capacity":2,"supply":3,"expansion":false},{"id":"small_market","name":"소규모 시장","size":1,"cost":1,"vp":0,"category":"special","power":"sell_bonus_1","supply":2,"expansion":false},{"id":"hacienda","name":"농장 저택","size":1,"cost":2,"vp":0,"category":"special","power":"free_plantation","supply":2,"expansion":false},{"id":"small_warehouse","name":"소형 창고","size":1,"cost":3,"vp":0,"category":"special","power":"storage_plus_1","supply":2,"expansion":false},{"id":"hospice","name":"구빈원","size":2,"cost":4,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":2,"expansion":false},{"id":"office","name":"사무소","size":2,"cost":5,"vp":1,"category":"special","power":"sell_duplicate_ok","supply":2,"expansion":false},{"id":"large_market","name":"대형 시장","size":2,"cost":5,"vp":1,"category":"special","power":"sell_bonus_2","supply":2,"expansion":false},{"id":"university","name":"대학","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":2,"expansion":false},{"id":"large_warehouse","name":"대형 창고","size":2,"cost":6,"vp":1,"category":"special","power":"storage_plus_2","supply":2,"expansion":false},{"id":"harbor","name":"항구","size":3,"cost":8,"vp":2,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":false},{"id":"wharf","name":"부두","size":3,"cost":9,"vp":3,"category":"special","power":"free_shipping","supply":1,"expansion":false},{"id":"city_hall","name":"시청","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_special_building","supply":1,"expansion":false},{"id":"fortress","name":"요새","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_3_colonists","supply":1,"expansion":false},{"id":"customs_house","name":"세관","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_4_doubloons","supply":1,"expansion":false},{"id":"guild_hall","name":"길드 홀","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_2_production","supply":1,"expansion":false},{"id":"residence","name":"주택","size":3,"cost":10,"vp":4,"category":"special","power":"end_plantation_table","supply":1,"expansion":false},{"id":"coffee_exporter","name":"커피 수출상의 저택","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_coffee_2","supply":1,"expansion":true},{"id":"tobacco_distillery","name":"담배 증류소","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_tobacco_2","supply":1,"expansion":true},{"id":"grand_hotel","name":"대저택","size":3,"cost":9,"vp":5,"category":"special","power":"flat_vp_bonus_3","supply":1,"expansion":true},{"id":"immigration_office","name":"이민 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":1,"expansion":true},{"id":"grand_market","name":"대형 시장 (확장)","size":2,"cost":6,"vp":1,"category":"special","power":"sell_bonus_2","supply":1,"expansion":true},{"id":"naval_base","name":"해군 기지","size":3,"cost":9,"vp":3,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":true},{"id":"grand_wharf","name":"대형 부두","size":3,"cost":11,"vp":4,"category":"special","power":"free_shipping","supply":1,"expansion":true},{"id":"plantation_office","name":"농장 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":1,"expansion":true}];
+const GOOD_LABEL={corn:"옥수수",indigo:"인디고",sugar:"설탕",coffee:"커피",tobacco:"인삼"};
+const ALL_BUILDINGS = [{"id":"small_indigo","name":"소형 인디고 공장","size":1,"cost":1,"vp":0,"category":"production","good":"indigo","capacity":1,"supply":4,"expansion":false},{"id":"indigo_plant","name":"인디고 공장","size":2,"cost":2,"vp":1,"category":"production","good":"indigo","capacity":3,"supply":3,"expansion":false},{"id":"small_sugar","name":"소형 제당소","size":1,"cost":2,"vp":0,"category":"production","good":"sugar","capacity":1,"supply":4,"expansion":false},{"id":"sugar_mill","name":"제당소","size":2,"cost":4,"vp":1,"category":"production","good":"sugar","capacity":3,"supply":3,"expansion":false},{"id":"small_tobacco","name":"소형 인삼 건조장","size":1,"cost":3,"vp":0,"category":"production","good":"tobacco","capacity":1,"supply":4,"expansion":false},{"id":"tobacco_factory","name":"인삼 공장","size":2,"cost":7,"vp":2,"category":"production","good":"tobacco","capacity":3,"supply":3,"expansion":false},{"id":"coffee_roaster","name":"커피 로스터리","size":2,"cost":6,"vp":2,"category":"production","good":"coffee","capacity":2,"supply":3,"expansion":false},{"id":"small_market","name":"소규모 시장","size":1,"cost":1,"vp":0,"category":"special","power":"sell_bonus_1","supply":2,"expansion":false},{"id":"hacienda","name":"농장 저택","size":1,"cost":2,"vp":0,"category":"special","power":"free_plantation","supply":2,"expansion":false},{"id":"small_warehouse","name":"소형 창고","size":1,"cost":3,"vp":0,"category":"special","power":"storage_plus_1","supply":2,"expansion":false},{"id":"hospice","name":"구빈원","size":2,"cost":4,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":2,"expansion":false},{"id":"office","name":"사무소","size":2,"cost":5,"vp":1,"category":"special","power":"sell_duplicate_ok","supply":2,"expansion":false},{"id":"large_market","name":"대형 시장","size":2,"cost":5,"vp":1,"category":"special","power":"sell_bonus_2","supply":2,"expansion":false},{"id":"university","name":"대학","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":2,"expansion":false},{"id":"large_warehouse","name":"대형 창고","size":2,"cost":6,"vp":1,"category":"special","power":"storage_plus_2","supply":2,"expansion":false},{"id":"harbor","name":"항구","size":3,"cost":8,"vp":2,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":false},{"id":"wharf","name":"부두","size":3,"cost":9,"vp":3,"category":"special","power":"free_shipping","supply":1,"expansion":false},{"id":"city_hall","name":"시청","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_special_building","supply":1,"expansion":false},{"id":"fortress","name":"요새","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_3_colonists","supply":1,"expansion":false},{"id":"customs_house","name":"세관","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_4_doubloons","supply":1,"expansion":false},{"id":"guild_hall","name":"길드 홀","size":3,"cost":10,"vp":4,"category":"special","power":"end_per_2_production","supply":1,"expansion":false},{"id":"residence","name":"주택","size":3,"cost":10,"vp":4,"category":"special","power":"end_plantation_table","supply":1,"expansion":false},{"id":"coffee_exporter","name":"커피 수출상의 저택","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_coffee_2","supply":1,"expansion":true},{"id":"tobacco_distillery","name":"인삼 증류소","size":2,"cost":7,"vp":2,"category":"special","power":"sell_bonus_tobacco_2","supply":1,"expansion":true},{"id":"grand_hotel","name":"대저택","size":3,"cost":9,"vp":5,"category":"special","power":"flat_vp_bonus_3","supply":1,"expansion":true},{"id":"immigration_office","name":"이민 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"mayor_bonus_colonist","supply":1,"expansion":true},{"id":"grand_market","name":"대형 시장 (확장)","size":2,"cost":6,"vp":1,"category":"special","power":"sell_bonus_2","supply":1,"expansion":true},{"id":"naval_base","name":"해군 기지","size":3,"cost":9,"vp":3,"category":"special","power":"ship_vp_bonus_1","supply":1,"expansion":true},{"id":"grand_wharf","name":"대형 부두","size":3,"cost":11,"vp":4,"category":"special","power":"free_shipping","supply":1,"expansion":true},{"id":"plantation_office","name":"농장 사무소","size":2,"cost":5,"vp":1,"category":"special","power":"settler_bonus_colonist","supply":1,"expansion":true}];
 const ROLES_DEF = [{"id":"prospector","name":"탐험가"},{"id":"settler","name":"개척자"},{"id":"mayor","name":"시장"},{"id":"builder","name":"건축가"},{"id":"craftsman","name":"장인"},{"id":"trader","name":"상인"},{"id":"captain","name":"선장"}];
+const ROLE_DESC = {
+  prospector: "고른 사람만 동전 1개를 은행에서 가져옵니다. 다른 사람에게는 아무 효과가 없어요.",
+  settler: "총독부터 순서대로, 공개된 농장 타일이나 채석장 중 하나를 골라 자신의 섬 빈 칸에 놓을 수 있습니다 (원하면 건너뛰어도 돼요).",
+  mayor: "새 이주민이 배에 도착합니다. 총독부터 순서대로, 각자 자신의 농장·건물 빈 칸에 이주민을 원하는 만큼 배치합니다.",
+  builder: "총독부터 순서대로, 각자 건물을 하나 구매해 지을 수 있습니다. 이 역할을 고른 사람은 비용이 1 할인돼요.",
+  craftsman: "모든 플레이어가 동시에 상품을 생산합니다 (일꾼 있는 농장 수 × 관련 건물 용량만큼). 이 역할을 고른 사람은 생산한 상품 중 하나를 1개 추가로 받아요.",
+  trader: "총독부터 순서대로, 각자 상품을 하나 무역소에 팔 수 있습니다. 이 역할을 고른 사람은 판매 금액에 1금이 추가돼요.",
+  captain: "총독부터 순서대로, 각자 상품을 배에 실어야 합니다 (실을 수 있으면 반드시 실어야 해요). 실은 개수만큼 승점을 얻습니다.",
+};
+function buildingDescription(b){
+  if(b.category==='production') return `${GOOD_LABEL[b.good]} 농장에서 생산한 상품을 가공합니다. 이주민 최대 ${b.capacity}명, 한 번에 최대 ${b.capacity}개 생산.`;
+  const map={
+    sell_bonus_1: "상품을 팔 때마다 1금을 추가로 받습니다.",
+    sell_bonus_2: "상품을 팔 때마다 2금을 추가로 받습니다.",
+    sell_bonus_coffee_2: "커피를 팔 때마다 2금을 추가로 받습니다.",
+    sell_bonus_tobacco_2: "인삼을 팔 때마다 2금을 추가로 받습니다.",
+    free_plantation: "건설하는 즉시 무작위 농장 타일 1개를 무료로 받아 섬에 놓습니다.",
+    storage_plus_1: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 1 늘어납니다 (없으면 못 판·못 실은 상품은 라운드 끝에 버려져요).",
+    storage_plus_2: "라운드가 끝날 때 남겨둘 수 있는 상품 저장 용량이 2 늘어납니다.",
+    mayor_bonus_colonist: "시장 역할을 고르면, 이주민이 1명 더 도착합니다.",
+    settler_bonus_colonist: "개척자 역할을 고르면, 내 섬의 빈 칸에 이주민 1명을 즉시 무료로 배치합니다.",
+    sell_duplicate_ok: "무역소에 이미 같은 색 상품이 있어도 팔 수 있습니다.",
+    ship_vp_bonus_1: "상품을 배에 실을 때마다 승점을 2배로 받습니다.",
+    free_shipping: "배가 가득 차 있거나 없어도, 부두를 통해 상품을 원하는 만큼 실어 승점을 받을 수 있습니다.",
+    flat_vp_bonus_3: "건설하는 즉시 승점 3점을 추가로 받습니다.",
+    end_per_special_building: "[게임 종료 시] 갖고 있는 특수 건물 1개당 승점 1점.",
+    end_per_3_colonists: "[게임 종료 시] 내 섬에 배치된 이주민 3명당 승점 1점.",
+    end_per_4_doubloons: "[게임 종료 시] 갖고 있는 동전 4개당 승점 1점.",
+    end_per_2_production: "[게임 종료 시] 갖고 있는 생산 건물 2개당 승점 1점.",
+    end_plantation_table: "[게임 종료 시] 일꾼이 배치된 농장 수에 따라 승점 2~13점 (많을수록 큰 폭으로 증가).",
+  };
+  return map[b.power] || "";
+}
 const BUILDING_BY_ID = Object.fromEntries(ALL_BUILDINGS.map(b=>[b.id,b]));
 
 /* ============ SHARED UI HELPERS ============ */
@@ -432,14 +474,14 @@ function newGameState(numPlayers, useExpansion, playerNames){
     const wantType = i<indigoStarters ? 'indigo' : 'corn';
     const idx=S.plantationDeck.findIndex(t=>t.type===wantType);
     const tile = idx>=0 ? S.plantationDeck.splice(idx,1)[0] : {type:wantType};
-    p.plantations[0]={type:tile.type,colonist:true};
+    p.plantations[0]={type:tile.type,colonist:false};
   });
   S.plantationSupply=[]; for(let i=0;i<4;i++){ const t=S.plantationDeck.pop(); if(t) S.plantationSupply.push(t); }
   S.quarrySupply=8;
   S.buildingSupply={}; ALL_BUILDINGS.forEach(b=>{ if(!b.expansion || S.useExpansion) S.buildingSupply[b.id]=b.supply; });
-  // colonists: fixed total per player count, minus the one already placed on each player's
-  // starting plantation, minus the initial batch already waiting on the ship
-  S.colonistPool=COLONIST_TOTAL_BY_COUNT[numPlayers]-numPlayers-numPlayers;
+  // colonists: fixed total per player count, minus the initial batch already waiting on the ship
+  // (starting plantations begin empty now, so nothing is pre-placed on player boards)
+  S.colonistPool=COLONIST_TOTAL_BY_COUNT[numPlayers]-numPlayers;
   S.shipColonists=numPlayers;
   S.vpPool=VP_CHIPS_BY_COUNT[numPlayers];
   // goods bank: a finite, shared, REPLENISHING supply of each good type. Production draws
@@ -472,10 +514,22 @@ function pickRole(S, roleId){
     finishRolePickTurn(S);
     return true;
   }
-  if(roleId==='settler'){ S.phase='settler'; S.lastMove={text:`${picker.name}님이 개척자를 선택했습니다`}; }
+  if(roleId==='settler'){
+    S.phase='settler';
+    S.lastMove={text:`${picker.name}님이 개척자를 선택했습니다`};
+    if(hasPower(picker,'settler_bonus_colonist') && S.colonistPool>0){
+      let slot=picker.plantations.findIndex(x=>x && !x.colonist);
+      if(slot>=0){ picker.plantations[slot].colonist=true; S.colonistPool--; }
+      else {
+        const bslot=picker.buildings.findIndex(b=>!b.colonist);
+        if(bslot>=0){ picker.buildings[bslot].colonist=true; S.colonistPool--; }
+      }
+    }
+  }
   else if(roleId==='mayor'){
-    const arriving=Math.min(1,S.colonistPool);
-    S.colonistPool-=arriving; S.shipColonists+=arriving+0; // colonists already waiting on ship (from prior rounds) carry over automatically since shipColonists isn't reset
+    const bonus=hasPower(picker,'mayor_bonus_colonist')?1:0;
+    const arriving=Math.min(1+bonus,S.colonistPool);
+    S.colonistPool-=arriving; S.shipColonists+=arriving; // colonists already waiting on ship (from prior rounds) carry over automatically since shipColonists isn't reset
     S.phase='mayor';
     S.lastMove={text:`${picker.name}님이 시장을 선택했습니다 (이주민 ${S.shipColonists}명 대기 중)`};
   }
@@ -776,6 +830,7 @@ function startLocalGame(numPlayers, aiSeatIndices, useExpansion){
   const names=Array.from({length:numPlayers},(_,i)=>`플레이어 ${i+1}${aiSeats.has(i)?' 🤖':''}`);
   S=newGameState(numPlayers, useExpansion, names);
   selected=null;
+  previewRoleId=null; previewBuildingId=null;
   applyZoom();
   renderAll();
   setMessage(`${S.players[0].name}님부터 역할을 고르세요 (총독)`,'info');
@@ -793,11 +848,12 @@ function renderAll(){
   renderControls(st);
 }
 function renderTop(st){ document.getElementById('round-chip').textContent=`라운드 ${st.round}`; }
+let previewRoleId=null;
 function renderRoles(st){
   const el=document.getElementById('roles-row');
   const canPick = st.phase==='role-pick' && canIActNow();
   el.innerHTML=st.roles.map(r=>`
-    <div class="role-card ${r.available?'':'taken'}" data-role="${r.id}">
+    <div class="role-card ${r.available?'':'taken'} ${previewRoleId===r.id?'previewed':''}" data-role="${r.id}">
       <div class="rname">${r.name}</div>
       <div class="rbonus">${r.bonus>0?'+'+r.bonus+'금':''}</div>
     </div>
@@ -805,9 +861,33 @@ function renderRoles(st){
   if(canPick){
     el.querySelectorAll('.role-card').forEach(div=>{
       const r=st.roles.find(x=>x.id===div.dataset.role);
-      if(r.available) div.addEventListener('click',()=>doPickRole(r.id));
+      if(r.available) div.addEventListener('click',()=>{
+        previewRoleId = (previewRoleId===r.id) ? null : r.id;
+        renderRoles(st);
+        renderRoleInfoPanel(st);
+      });
     });
+  } else if(previewRoleId){
+    previewRoleId=null;
   }
+  renderRoleInfoPanel(st);
+}
+function renderRoleInfoPanel(st){
+  const el=document.getElementById('role-info-panel');
+  if(!previewRoleId || st.phase!=='role-pick' || !canIActNow()){ el.innerHTML=''; return; }
+  const r=st.roles.find(x=>x.id===previewRoleId);
+  el.innerHTML=`
+    <div class="info-box">
+      <div class="info-title">${r.name}</div>
+      <div class="info-desc">${ROLE_DESC[r.id]}</div>
+      <button class="ctrl-btn primary" id="confirm-role-btn">이 역할 선택하기</button>
+    </div>
+  `;
+  document.getElementById('confirm-role-btn').addEventListener('click',()=>{
+    const rid=previewRoleId;
+    previewRoleId=null;
+    doPickRole(rid);
+  });
 }
 function renderSupply(st){
   const el=document.getElementById('supply-row');
@@ -843,11 +923,11 @@ function renderPlayers(st){
     const plantHtml=Array(12).fill(null).map((_,i)=>{
       const pl=p.plantations[i];
       if(!pl) return `<div class="slot-empty" data-kind="plantation-slot" data-idx="${i}"></div>`;
-      return `<span class="tile ${pl.type} ${pl.colonist?'colonist-dot':''}" data-kind="plantation-slot" data-idx="${i}">${pl.type[0].toUpperCase()}</span>`;
+      return `<span class="tile ${pl.type} colonist-dot" data-kind="plantation-slot" data-idx="${i}">${pl.type[0].toUpperCase()}<span class="colonist-badge ${pl.colonist?'filled':'empty'}"></span></span>`;
     }).join('');
     const bldgHtml=p.buildings.map((b,i)=>{
       const bd=BUILDING_BY_ID[b.id];
-      return `<span class="bldg-tile ${b.colonist?'colonist-dot':''}" data-kind="building-slot" data-idx="${i}">${bd.name}</span>`;
+      return `<span class="bldg-tile colonist-dot" data-kind="building-slot" data-idx="${i}">${bd.name}<span class="colonist-badge ${b.colonist?'filled':'empty'}"></span></span>`;
     }).join('') || '<span style="color:var(--muted);font-size:11px;">건물 없음</span>';
     const goodsHtml=GOODS.map(g=>p.goods[g]>0?`<div class="good-chip"><div class="dot" style="background:var(--${g})"></div>${GOOD_LABEL[g]} ${p.goods[g]}</div>`:'').join('');
     div.innerHTML=`
@@ -905,6 +985,7 @@ function doMayorAssign(playerIdx, kind, slotIdx){
   mayorAssignColonist(S, playerIdx, kind, slotIdx);
   afterLocalChange();
 }
+let previewBuildingId=null;
 function doOpenBuildList(){
   const st=activeState();
   const p=st.players[currentActorIdx(st)];
@@ -915,16 +996,42 @@ function doOpenBuildList(){
   el.innerHTML=list.map(b=>{
     const cost=buildingCost(b.id,p,isPicker);
     const canAfford=p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
-    return `<div class="build-card ${canAfford?'':'disabled'} ${b.expansion?'expansion':''}" data-id="${b.id}">
+    return `<div class="build-card ${canAfford?'':'disabled'} ${b.expansion?'expansion':''} ${previewBuildingId===b.id?'previewed':''}" data-id="${b.id}">
       <div class="bname">${b.name}${b.expansion?' 🌟':''}</div>
       <div>크기 ${b.size} · VP ${b.vp}</div>
       <div class="bcost">${cost}금</div>
       <div style="color:var(--muted);">재고 ${st.buildingSupply[b.id]}</div>
     </div>`;
   }).join('');
-  el.querySelectorAll('.build-card:not(.disabled)').forEach(div=>{
-    div.addEventListener('click',()=>doBuyBuilding(div.dataset.id));
+  el.querySelectorAll('.build-card').forEach(div=>{
+    div.addEventListener('click',()=>{
+      previewBuildingId = (previewBuildingId===div.dataset.id) ? null : div.dataset.id;
+      doOpenBuildList();
+    });
   });
+  renderBuildingInfoPanel(st, p, isPicker);
+}
+function renderBuildingInfoPanel(st, p, isPicker){
+  const el=document.getElementById('building-info-panel');
+  if(!previewBuildingId){ el.innerHTML=''; return; }
+  const b=BUILDING_BY_ID[previewBuildingId];
+  const cost=buildingCost(b.id,p,isPicker);
+  const canAfford=p.doubloons>=cost && usedBuildingSize(p)+b.size<=12;
+  el.innerHTML=`
+    <div class="info-box">
+      <div class="info-title">${b.name}${b.expansion?' 🌟':''}</div>
+      <div class="info-desc">${buildingDescription(b)}</div>
+      <button class="ctrl-btn primary" id="confirm-build-btn" ${canAfford?'':'disabled'}>이 건물 짓기 (${cost}금)</button>
+    </div>
+  `;
+  const btn=document.getElementById('confirm-build-btn');
+  if(canAfford){
+    btn.addEventListener('click',()=>{
+      const bid=previewBuildingId;
+      previewBuildingId=null;
+      doBuyBuilding(bid);
+    });
+  }
 }
 function doBuyBuilding(buildingId){
   const st=activeState();
@@ -932,6 +1039,7 @@ function doBuyBuilding(buildingId){
   if(isOnline()){ onlineBuyBuilding(buildingId); return; }
   const ok=buyBuilding(S, playerIdx, buildingId);
   document.getElementById('build-list').classList.add('hidden');
+  document.getElementById('building-info-panel').innerHTML='';
   if(ok) setMessage(S.lastMove.text,'good');
   doAdvanceRoleTurn();
 }
@@ -980,6 +1088,7 @@ function doAdvanceRoleTurn(){
   afterLocalChange();
 }
 function afterLocalChange(){
+  previewRoleId=null; previewBuildingId=null;
   renderAll();
   const st=S;
   if(st.gameOver){ finishGame(); return; }
@@ -1288,6 +1397,7 @@ function onRoomUpdate(room){
     if(document.getElementById('game').classList.contains('hidden')){
       applyZoom(); showScreen('game');
     }
+    if(versionChanged){ selected=null; previewRoleId=null; previewBuildingId=null; }
     renderAll();
     if(versionChanged && room.lastMove){ setMessage(room.lastMove.text,'info'); }
     else {
@@ -1336,7 +1446,7 @@ document.getElementById('lobby-start-btn').addEventListener('click', async ()=>{
   await set(ref(db, `puertoricoRooms/${roomCode}`), freshS);
 });
 document.getElementById('lobby-leave-btn').addEventListener('click', ()=>{ leaveOnline(); showScreen('setup'); });
-function leaveOnline(){ if(roomUnsub){ roomUnsub(); roomUnsub=null; } roomCode=null; onlineRoom=null; selected=null; }
+function leaveOnline(){ if(roomUnsub){ roomUnsub(); roomUnsub=null; } roomCode=null; onlineRoom=null; selected=null; previewRoleId=null; previewBuildingId=null; }
 
 async function onlineCommit(mutatorFn){
   const roomRef=ref(db, `puertoricoRooms/${roomCode}`);
