@@ -383,7 +383,7 @@ function buildingDescription(b){
     end_per_3_colonists: "[게임 종료 시] 자신의 섬·건물 및 산후안 대기실에 있는 이주민 3명당 승점 1점.",
     end_per_4_doubloons: "[게임 종료 시] 갖고 있는 동전 4개당 승점 1점.",
     end_per_production_tiered: "[게임 종료 시] 자신이 지은 소형 생산 건물 1개당 승점 1점, 대형 생산 건물 1개당 승점 2점.",
-    end_plantation_table: "[게임 종료 시] 일꾼이 배치된 농장/채석장 수에 따라 승점 2~13점 (많을수록 큰 폭으로 증가).",
+    end_plantation_table: "[게임 종료 시] 채석장을 제외한 농장 수에 따라 승점을 받습니다 (9개 이하: 4점 / 10개: 5점 / 11개: 6점 / 12개: 7점).",
   };
   return map[b.power] || "";
 }
@@ -430,12 +430,12 @@ function buildingCost(buildingId, p, isPickerDiscount){
   let cost=base-activeQuarries(p)-(isPickerDiscount?1:0);
   return Math.max(0,cost);
 }
+function nonQuarryPlantationCount(p){ return p.plantations.filter(x=>x && x.type!=='quarry').length; }
 function residenceVP(filled){
-  if(filled>=12) return 13;
-  if(filled>=11) return 10;
-  if(filled>=10) return 7;
-  if(filled>=9) return 4;
-  return 2;
+  if(filled>=12) return 7;
+  if(filled>=11) return 6;
+  if(filled>=10) return 5;
+  return 4;
 }
 function computeFinalBonusVP(p){
   let bonus=0;
@@ -449,7 +449,7 @@ function computeFinalBonusVP(p){
     else if(b.power==='end_per_production_tiered'){
       owned.filter(x=>x.category==='production').forEach(pb=>{ bonus += pb.capacity===1 ? 1 : 2; });
     }
-    else if(b.power==='end_plantation_table') bonus+=residenceVP(filledPlantationCount(p));
+    else if(b.power==='end_plantation_table') bonus+=residenceVP(nonQuarryPlantationCount(p));
   });
   return bonus;
 }
@@ -535,6 +535,7 @@ function newGameState(numPlayers, useExpansion, playerNames){
   S.ships=SHIP_CAPACITIES_BY_COUNT[numPlayers].map(cap=>({cap, good:null, amount:0}));
   S.tradingHouse=[];
   S.lastMove=null;
+  S.pendingExportGood=null;
   return S;
 }
 function currentActorIdx(S){
@@ -609,7 +610,7 @@ function pickRole(S, slotId){
     S.lastMove={text:`${picker.name}님이 장인을 선택했습니다 (모두 생산!)`};
   }
   else if(roleType==='trader'){ S.phase='trader'; S.lastMove={text:`${picker.name}님이 상인을 선택했습니다`}; }
-  else if(roleType==='captain'){ S.phase='captain'; S.captainStreak=0; S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
+  else if(roleType==='captain'){ S.phase='captain'; S.captainStreak=0; S.players.forEach(pl=>{ pl.wharfUsedThisRound=false; }); S.lastMove={text:`${picker.name}님이 선장을 선택했습니다`}; }
   return true;
 }
 function finishRolePickTurn(S){
@@ -748,21 +749,32 @@ function shipGood(S, playerIdx, good, shipIdx){
   S.lastMove={text:`${p.name}님이 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
 }
+function canUseWharf(p){ return hasPower(p,'free_shipping') && !p.wharfUsedThisRound; }
 function shipViaWharf(S, playerIdx, good){
   const p=S.players[playerIdx];
-  if(p.goods[good]<=0 || !hasPower(p,'free_shipping')) return null;
+  if(p.goods[good]<=0 || !canUseWharf(p)) return null;
   const amount=p.goods[good];
   p.goods[good]=0;
   S.goodsBank[good]+=amount;
   const vp=awardVP(S, p, amount+harborBonus(p));
+  p.wharfUsedThisRound=true;
   S.lastMove={text:`${p.name}님이 부두로 ${GOOD_LABEL[good]} ${amount}개를 선적하여 +${vp}점을 얻었습니다`};
   return {amount,vp};
 }
 function canShipAnything(S, p){
-  return GOODS.some(g=>p.goods[g]>0 && (S.ships.some((s,i)=>(!s.good||s.good===g)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===g))) || hasPower(p,'free_shipping')));
+  return GOODS.some(g=>p.goods[g]>0 && (S.ships.some((s,i)=>(!s.good||s.good===g)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===g))) || canUseWharf(p)));
+}
+function eligibleShipsFor(S, good){
+  return S.ships.map((s,i)=>i).filter(i=>{
+    const s=S.ships[i];
+    if(s.amount>=s.cap) return false;
+    if(s.good && s.good!==good) return false;
+    if(!s.good && S.ships.some((s2,i2)=>i2!==i && s2.good===good)) return false;
+    return true;
+  });
 }
 function canExportGood(S, p, good){
-  return p.goods[good]>0 && (S.ships.some((s,i)=>(!s.good||s.good===good)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===good))) || hasPower(p,'free_shipping'));
+  return p.goods[good]>0 && (S.ships.some((s,i)=>(!s.good||s.good===good)&&s.amount<s.cap&&!(!s.good&&S.ships.some((s2,i2)=>i2!==i&&s2.good===good))) || canUseWharf(p));
 }
 function exportGoodType(S, playerIdx, good){
   // One captain "turn" = one crop type, loaded onto as many eligible ships as it takes
@@ -778,7 +790,7 @@ function exportGoodType(S, playerIdx, good){
       if(r){ totalAmount+=r.amount; totalVp+=r.vp; progressed=true; }
     }
   }
-  if(p.goods[good]>0 && hasPower(p,'free_shipping')){
+  if(p.goods[good]>0 && canUseWharf(p)){
     const r=shipViaWharf(S, playerIdx, good);
     if(r){ totalAmount+=r.amount; totalVp+=r.vp; }
   }
@@ -1053,7 +1065,6 @@ function startLocalGame(numPlayers, aiSeatIndices, useExpansion, difficulty){
   S=newGameState(numPlayers, useExpansion, names);
   selected=null;
   previewRoleId=null; previewBuildingId=null;
-  applyZoom();
   renderAll();
   setMessage(`${S.players[0].name}님부터 역할을 고르세요 (총독)`,'info');
   maybeTriggerAiTurn();
@@ -1333,9 +1344,44 @@ function doExportGood(good){
     afterLocalChange();
     return;
   }
-  const r=exportGoodType(S, playerIdx, good);
-  if(r.amount>0) setMessage(S.lastMove.text,'good');
-  advanceCaptainTurn(S, r.amount>0);
+  const eligible=eligibleShipsFor(S, good);
+  const alreadyLoaded=eligible.filter(i=>S.ships[i].good===good);
+  const emptyOnes=eligible.filter(i=>!S.ships[i].good);
+  if(alreadyLoaded.length>0 || emptyOnes.length<=1){
+    // no real ambiguity (a ship already carries this type, or only one empty option exists) -- resolve automatically
+    const r=exportGoodType(S, playerIdx, good);
+    if(r.amount>0) setMessage(S.lastMove.text,'good');
+    advanceCaptainTurn(S, r.amount>0);
+    afterLocalChange();
+    return;
+  }
+  // multiple empty ships to choose from -- let the player pick
+  S.pendingExportGood=good;
+  renderAll();
+  setMessage('상품을 실을 배를 고르세요','info');
+}
+function doExportToShip(shipIdx){
+  const st=activeState();
+  const playerIdx=currentActorIdx(st);
+  const good=st.pendingExportGood;
+  if(isOnline()){ onlineExportToShip(good, shipIdx); return; }
+  const r=shipGood(S, playerIdx, good, shipIdx);
+  if(r) setMessage(S.lastMove.text,'good');
+  const p=S.players[playerIdx];
+  if(p.goods[good]>0){
+    const eligible=eligibleShipsFor(S, good);
+    const emptyOnes=eligible.filter(i=>!S.ships[i].good);
+    if(emptyOnes.length>1){
+      S.pendingExportGood=good;
+      renderAll();
+      setMessage('남은 상품을 실을 배를 고르세요','info');
+      return;
+    }
+    const r2=exportGoodType(S, playerIdx, good);
+    if(r2.amount>0) setMessage(S.lastMove.text,'good');
+  }
+  S.pendingExportGood=null;
+  advanceCaptainTurn(S, true);
   afterLocalChange();
 }
 function doCraftsmanBonus(good){
@@ -1367,7 +1413,7 @@ function doAdvanceRoleTurn(){
   afterLocalChange();
 }
 function afterLocalChange(){
-  previewRoleId=null; previewBuildingId=null;
+  previewRoleId=null; previewBuildingId=null; if(S) S.pendingExportGood=null;
   renderAll();
   const st=S;
   if(st.gameOver){ finishGame(); return; }
@@ -1538,6 +1584,23 @@ function renderControls(st){
     el.appendChild(skipBtn);
   } else if(phase==='captain'){
     const p=st.players[currentActorIdx(st)];
+    if(st.pendingExportGood){
+      const good=st.pendingExportGood;
+      const label=document.createElement('div');
+      label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
+      label.textContent=`${GOOD_LABEL[good]} ${p.goods[good]}개를 실을 배를 고르세요 (빈 배가 여러 척이에요)`;
+      el.appendChild(label);
+      const eligible=eligibleShipsFor(st, good);
+      eligible.filter(i=>!st.ships[i].good).forEach(i=>{
+        const s=st.ships[i];
+        const btn=document.createElement('button');
+        btn.className='ctrl-btn primary';
+        btn.textContent=`배 ${i+1} (용량 ${s.cap}칸)`;
+        btn.addEventListener('click',()=>doExportToShip(i));
+        el.appendChild(btn);
+      });
+      return;
+    }
     const label=document.createElement('div');
     label.style.cssText='color:var(--muted);font-size:12.5px;width:100%;text-align:center;margin-bottom:6px;';
     label.textContent='한 턴에 한 가지 상품만 수출할 수 있어요. 실을 수 있는 사람이 없을 때까지 계속됩니다.';
@@ -1781,8 +1844,29 @@ function onlineSellGood(good){ onlineCommit((room,idx)=>{ sellGood(room, idx, go
 function onlineExportGood(good){
   onlineCommit((room,idx)=>{
     if(good===null){ advanceCaptainTurn(room, false); return; }
-    const r=exportGoodType(room, idx, good);
-    advanceCaptainTurn(room, r.amount>0);
+    const eligible=eligibleShipsFor(room, good);
+    const alreadyLoaded=eligible.filter(i=>room.ships[i].good===good);
+    const emptyOnes=eligible.filter(i=>!room.ships[i].good);
+    if(alreadyLoaded.length>0 || emptyOnes.length<=1){
+      const r=exportGoodType(room, idx, good);
+      advanceCaptainTurn(room, r.amount>0);
+      return;
+    }
+    room.pendingExportGood=good;
+  });
+}
+function onlineExportToShip(good, shipIdx){
+  onlineCommit((room,idx)=>{
+    shipGood(room, idx, good, shipIdx);
+    const p=room.players[idx];
+    if(p.goods[good]>0){
+      const eligible=eligibleShipsFor(room, good);
+      const emptyOnes=eligible.filter(i=>!room.ships[i].good);
+      if(emptyOnes.length>1){ room.pendingExportGood=good; return; } // still ambiguous -- wait for the player's next ship choice
+      exportGoodType(room, idx, good);
+    }
+    room.pendingExportGood=null;
+    advanceCaptainTurn(room, true);
   });
 }
 function onlineCraftsmanBonus(good){ onlineCommit((room)=>{ craftsmanBonus(room, room.currentPickerIdx, good); }); }
